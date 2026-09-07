@@ -5,6 +5,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
   },
   // Schema validation and client generation work without database credentials.
   // Commands that connect to PostgreSQL require DIRECT_URL in .env.
