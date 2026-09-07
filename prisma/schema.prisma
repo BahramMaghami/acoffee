@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String    @db.VarChar(100)
+  /// Normalize email to lowercase and trim before every lookup/write.
+  email        String    @unique @db.VarChar(254)
+  passwordHash String    @db.VarChar(255)
+  role         Role      @default(CUSTOMER)
+  addresses    Address[]
+  orders       Order[]
+  cart         Cart?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientName String   @db.VarChar(100)
+  phone         String   @db.VarChar(20)
+  province      String   @db.VarChar(100)
+  city          String   @db.VarChar(100)
+  addressLine   String   @db.VarChar(500)
+  postalCode    String   @db.VarChar(10)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String      @db.VarChar(150)
+  slug        String      @unique @db.VarChar(200)
+  description String      @db.Text
+  stock       Int         @default(0)
+  /// All money fields store whole toman; never use floating-point arithmetic.
+  price       Decimal     @db.Decimal(14, 0)
+  weightGrams Int
+  imageUrl    String?     @db.Text
+  isActive    Boolean     @default(true)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, createdAt])
+}
+
+model Cart {
+  id             String     @id @default(cuid())
+  userId         String?    @unique
+  user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Exactly one owner: a user or the hash of a random guest cookie token.
+  guestTokenHash String?    @unique @db.VarChar(64)
+  /// Required for guest carts; enforced in the SQL migration.
+  expiresAt      DateTime?  @db.Timestamptz(3)
+  items          CartItem[]
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@index([expiresAt])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([cartId, productId])
+  @@index([productId])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  number        Int           @unique @default(autoincrement())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  /// Amounts are calculated on the server from current product prices.
+  subtotal      Decimal       @db.Decimal(14, 0)
+  shippingFee   Decimal       @default(0) @db.Decimal(14, 0)
+  discount      Decimal       @default(0) @db.Decimal(14, 0)
+  total         Decimal       @db.Decimal(14, 0)
+  /// Shipping snapshot, independent of the user's editable address book.
+  recipientName String        @db.VarChar(100)
+  phone         String        @db.VarChar(20)
+  province      String        @db.VarChar(100)
+  city          String        @db.VarChar(100)
+  addressLine   String        @db.VarChar(500)
+  postalCode    String        @db.VarChar(10)
+  items         OrderItem[]
+  paidAt        DateTime?     @db.Timestamptz(3)
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  /// Immutable product snapshots preserve order history after product edits/deletion.
+  productName String   @db.VarChar(150)
+  productSlug String   @db.VarChar(200)
+  weightGrams Int
+  unitPrice   Decimal  @db.Decimal(14, 0)
+  quantity    Int
+  lineTotal   Decimal  @db.Decimal(14, 0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([orderId])
+  @@index([productId])
+}

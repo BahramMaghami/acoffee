@@ -1,4 +1,18 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# acoffee
+
+فروشگاه فارسی قهوه با Next.js، Prisma 7 و PostgreSQL روی Neon.
+
+مرحلهٔ فعلی: زیرساخت دیتابیس. راه‌اندازی و تصمیم‌های مدل‌سازی در [راهنمای دیتابیس](docs/database.md) ثبت شده‌اند. صفحهٔ سایت هنوز قالب اولیهٔ Next.js است.
+
+## مسیر توسعه
+
+1. دیتابیس و migration، سپس اتصال و اعتبارسنجی روی Neon.
+2. NextAuth فقط با Credentials و session از نوع JWT با اعتبار ۱۴ روز؛ ثبت‌نام/ورود با Zod، React Hook Form و Server Actions. کاربران با Prisma ذخیره می‌شوند؛ جدول‌های OAuth و session دیتابیسی برای این روش کاربرد ندارند.
+3. رابط فارسی و RTL با shadcn؛ قرمز، مشکی و قهوه‌ای، با تنظیم نهایی رنگ‌ها پس از دریافت لوگو. طراحی ساده، مدرن و اختصاصی؛ کامپوننت‌های اختصاصی هر صفحه کنار `page.tsx` همان صفحه.
+4. محصولات و سبد مهمان عمومی؛ ورود برای نهایی‌کردن خرید و حساب کاربری. مدیریت و عملیات حساس نیز کنترل دسترسی سمت سرور دارند.
+5. util مشترک نمایش شمسی و تبدیل ورودی شمسی به زمان میلادی؛ منطقهٔ زمانی نمایش `Asia/Tehran`، ذخیره‌سازی میلادی.
+
+Server Actionهای مدل‌های اصلی در `actions/user.actions.ts`، `actions/product.actions.ts`، `actions/cart.actions.ts` و `actions/order.actions.ts` قرار می‌گیرند. ورودی‌ها با Zod اعتبارسنجی می‌شوند؛ شناسهٔ کاربر، نقش، قیمت و موجودی از سمت سرور بررسی می‌شوند. هر مرحلهٔ مهم پس از بررسی commit می‌شود.
 
 ## Getting Started
 
