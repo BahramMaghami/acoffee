@@ -1,69 +1,84 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { ArrowLeft, Coffee, PackageCheck, Bean } from 'lucide-react'
+import { HomeHero } from './home-hero'
+import { ProductCard } from './shop/product-card'
+import { products } from '@/lib/storefront'
+import { Button } from '@/components/ui/button'
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <HomeHero />
+      <div className="promise-strip shell">
+        <div>
+          <Bean />
+          <span>دانه‌های منتخب</span>
+          <small>هر طعم، با یک انتخاب خوب شروع می‌شود</small>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div>
+          <Coffee />
+          <span>آسیاب برای فنجان تو</span>
+          <small>متناسب با روشی که قهوه‌ات را دم می‌کنی</small>
         </div>
-      </main>
-    </div>
-  );
+        <div>
+          <PackageCheck />
+          <span>عطر قهوه، در بسته می‌ماند</span>
+          <small>بسته‌بندی با توجه به تازگی و کیفیت</small>
+        </div>
+      </div>
+      <section className="shell collection-section">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">سلیقهٔ تو، انتخاب تو</span>
+            <h2>فنجان بعدی‌ات اینجاست.</h2>
+          </div>
+          <Link className="quiet-link" href="/shop">
+            همهٔ قهوه‌ها <ArrowLeft size={18} />
+          </Link>
+        </div>
+        <div className="product-grid">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+      <section className="story-band">
+        <div className="shell story-band-inner">
+          <span className="story-letter" aria-hidden="true">
+            a.
+          </span>
+          <div>
+            <span className="eyebrow">کمی دربارهٔ ما</span>
+            <h2>
+              قهوهٔ خوب،
+              <br />
+              بهانهٔ یک حال خوب.
+            </h2>
+          </div>
+          <div>
+            <p>
+              آ از علاقه به همین لحظه‌های ساده شروع شد؛ عطر قهوه در خانه،
+              فنجانی روی میز کار و گپی که کمی طولانی‌تر می‌شود. ما اینجاییم تا
+              سهم کوچکی در این لحظه‌ها داشته باشیم.
+            </p>
+            <Link className="quiet-link" href="/about">
+              داستان آ <ArrowLeft size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="shell brew-teaser">
+        <div>
+          <span className="eyebrow">از قهوه‌ات بیشتر لذت ببر</span>
+          <h2>فنجان بهتر، با چند قدم ساده.</h2>
+          <p>موکاپات، فرنچ‌پرس یا وی۶۰؟ از همین‌جا شروع کن.</p>
+        </div>
+        <Button asChild variant="outline" size="lg">
+          <Link href="/guide">
+            راهنمای دم‌آوری <ArrowLeft />
+          </Link>
+        </Button>
+      </section>
+    </>
+  )
 }
