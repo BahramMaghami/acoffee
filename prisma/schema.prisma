@@ -12,6 +12,15 @@ enum Role {
   ADMIN
 }
 
+/// Persistent per-identity throttling for Credentials login and registration.
+model AuthRateLimit {
+  key      String   @id @db.VarChar(64)
+  attempts Int      @default(1)
+  resetsAt DateTime @db.Timestamptz(3)
+
+  @@index([resetsAt])
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -78,6 +87,7 @@ model Product {
 
 model Cart {
   id             String     @id @default(cuid())
+  checkoutKey    String     @unique @default(uuid()) @db.VarChar(36)
   userId         String?    @unique
   user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Exactly one owner: a user or the hash of a random guest cookie token.
@@ -107,6 +117,7 @@ model CartItem {
 
 model Order {
   id            String        @id @default(cuid())
+  checkoutKey   String?       @unique @db.VarChar(36)
   number        Int           @unique @default(autoincrement())
   userId        String
   user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -115,6 +126,7 @@ model Order {
   /// Amounts are calculated on the server from current product prices.
   subtotal      Decimal       @db.Decimal(14, 0)
   shippingFee   Decimal       @default(0) @db.Decimal(14, 0)
+  shippingFeeFinalized Boolean @default(false)
   discount      Decimal       @default(0) @db.Decimal(14, 0)
   total         Decimal       @db.Decimal(14, 0)
   /// Shipping snapshot, independent of the user's editable address book.

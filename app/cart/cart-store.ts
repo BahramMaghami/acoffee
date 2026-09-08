@@ -70,6 +70,7 @@ function save(items: CartItem[]) {
 
 export function useCart() {
   const raw = useSyncExternalStore(subscribe, getSnapshot, () => '[]')
+  const hydrated = useSyncExternalStore(subscribe, () => true, () => false)
   const items = useMemo(() => parseCart(raw), [raw])
   const count = items.reduce((total, item) => total + item.quantity, 0)
 
@@ -91,5 +92,5 @@ export function useCart() {
     setQuantity(productId, current + quantity)
   }
 
-  return { items, count, add, setQuantity }
+  return { items, count, add, setQuantity, hydrated }
 }

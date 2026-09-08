@@ -107,12 +107,11 @@ export function CartContent() {
             <dd>{formatPrice(subtotal)}</dd>
           </div>
         </dl>
-        <Button className="w-full" size="lg" disabled>
-          ثبت سفارش به‌زودی فعال می‌شود
+        <Button className="w-full" size="lg" asChild>
+          <Link href="/checkout/address">ادامهٔ خرید <ArrowLeft /></Link>
         </Button>
         <p>
-          فعلاً می‌توانی قهوه‌ها را انتخاب کنی و سبدت را برای بعد نگه داری.
-          پرداخت و ثبت سفارش هنوز فعال نیست.
+          در قدم بعد، آدرس ارسال را ثبت می‌کنی و سفارش را بررسی می‌کنی.
         </p>
       </aside>
     </div>

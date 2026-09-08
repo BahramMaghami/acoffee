@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Server Function arguments include passwords in authentication forms.
+  logging: { serverFunctions: false },
 };
 
 export default nextConfig;

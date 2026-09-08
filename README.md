@@ -2,7 +2,7 @@
 
 فروشگاه فارسی قهوه با Next.js، Prisma 7 و PostgreSQL روی Neon.
 
-مرحلهٔ فعلی: پیش‌نمایش فارسی فروشگاه با shadcn، محصولات نمونه و سبد قابل تعامل. با `npm run dev` سایت را ببینید. مسیرها، محدوده، تصاویر و تست‌ها در [راهنمای رابط](docs/ui-preview.md) و راه‌اندازی Neon در [راهنمای دیتابیس](docs/database.md) ثبت شده‌اند. احراز هویت مرحلهٔ بعد است.
+مرحلهٔ فعلی: فروشگاه فارسی با shadcn، محصولات نمونه و سبد محلی، همراه با ورود و ثبت‌نام واقعی و حساب محافظت‌شده. با `npm run dev` سایت را ببینید. جزئیات در [راهنمای رابط](docs/ui-preview.md)، [راهنمای دیتابیس](docs/database.md) و [راهنمای احراز هویت](docs/authentication.md) ثبت شده‌اند.
 
 ## مسیر توسعه
 
@@ -32,7 +32,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+فونت فارسی پروژه `Vazirmatn Variable` است و به‌صورت محلی از بستهٔ `@fontsource-variable/vazirmatn` بارگذاری می‌شود.
 
 ## Learn More
 

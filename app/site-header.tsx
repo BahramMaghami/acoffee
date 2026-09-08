@@ -7,6 +7,7 @@ import { ArrowUpLeft, Menu, Search, ShoppingBag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCart } from './cart/cart-store'
 import { formatNumber } from '@/lib/storefront'
+import { UserMenu, type HeaderUser } from './user-menu'
 
 const links = [
   { href: '/shop', label: 'قهوه‌های ما' },
@@ -14,7 +15,7 @@ const links = [
   { href: '/guide', label: 'راهنمای دم‌آوری' },
 ]
 
-export function SiteHeader() {
+export function SiteHeader({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { count } = useCart()
@@ -48,6 +49,7 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="header-actions">
+            <UserMenu user={user} />
             <Button asChild variant="ghost" size="icon" className="search-link">
               <Link href="/shop#search" aria-label="جست‌وجوی قهوه">
                 <Search />
