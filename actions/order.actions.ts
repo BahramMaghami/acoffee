@@ -26,7 +26,7 @@ export async function placeOrderAction(input: unknown) {
       return tx.order.create({ data: { userId: user.id, checkoutKey: quote.checkoutKey,
         ...quote.shipping, subtotal: quote.subtotal, shippingFee: quote.shippingFee, total: quote.total,
         items: { create: quote.items } }, select: { id: true } })
-    }, { timeout: 15_000 })
+    }, { maxWait: 10_000, timeout: 30_000 })
     revalidatePath('/account')
     return { success: true as const, orderId: order.id }
   } catch (error) {

@@ -2,12 +2,16 @@ import type { Metadata } from 'next'
 import { requireUser } from '@/lib/current-user'
 import { getDb } from '@/lib/db'
 import { AddressForm } from './address-form'
+import { logAuthError } from '@/lib/auth-error'
 
 export const metadata: Metadata = { title: 'آدرس ارسال' }
 
 export default async function AddressPage() {
   const user = await requireUser('/checkout/address')
-  const address = await getDb().address.findFirst({ where: { userId: user.id }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }] })
+  const address = await getDb().address.findFirst({ where: { userId: user.id }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }] }).catch((error: unknown) => {
+    logAuthError('read-address', error)
+    throw new Error('اطلاعات آدرس دریافت نشد.')
+  })
   const initial = address ? { province: address.province, city: address.city, addressLine: address.addressLine,
     postalCode: address.postalCode, phone: address.phone } : undefined
   return <>

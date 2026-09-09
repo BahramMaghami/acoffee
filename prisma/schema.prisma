@@ -87,7 +87,7 @@ model Product {
 
 model Cart {
   id             String     @id @default(cuid())
-  checkoutKey    String     @unique @default(uuid()) @db.VarChar(36)
+  checkoutKey    String     @unique @default(dbgenerated("gen_random_uuid()::text")) @db.VarChar(36)
   userId         String?    @unique
   user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Exactly one owner: a user or the hash of a random guest cookie token.

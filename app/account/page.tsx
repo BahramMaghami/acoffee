@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'حساب من' }
 export default async function AccountPage() {
   const user = await requireUser()
   const orders = await getDb().order.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' }, take: 20,
-    select: { id: true, number: true, total: true, paymentStatus: true, createdAt: true } })
+    select: { id: true, number: true, total: true, paymentStatus: true, createdAt: true } }).catch(() => { throw new Error('سفارش‌های حساب دریافت نشد.') })
   const initial = Array.from(user.name.trim())[0]?.toLocaleUpperCase() || 'آ'
   return (
     <div className="shell page-space account-page">

@@ -2,7 +2,10 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import { getDb } from './db'
 
-export async function consumeAuthAttempt(email: string, operation: 'login' | 'register') {
+export async function consumeAuthAttempt(
+  email: string,
+  operation: 'login' | 'register',
+) {
   const key = createHash('sha256').update(`${operation}:${email}`).digest('hex')
   const limit = operation === 'login' ? 8 : 3
   const seconds = operation === 'login' ? 15 * 60 : 60 * 60

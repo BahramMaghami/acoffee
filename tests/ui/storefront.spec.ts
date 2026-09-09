@@ -60,7 +60,7 @@ test("cart adds quantities, persists on reload, updates totals and removes produ
   await expect(page.locator(".cart-product-copy output")).toHaveText("۲");
   await page.getByRole("button", { name: "افزایش تعداد ترکیب روزانه" }).click();
   await expect(page.locator(".summary-total dd")).toHaveText("۱٬۱۵۵٬۰۰۰ تومان");
-  await expect(page.getByRole("button", { name: "ثبت سفارش به‌زودی فعال می‌شود" })).toBeDisabled();
+  await expect(page.getByRole("link", { name: "ادامهٔ خرید", exact: true })).toHaveAttribute("href", "/checkout/address");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.screenshot({ path: `artifacts/ui/cart-${testInfo.project.name}.png`, fullPage: true });

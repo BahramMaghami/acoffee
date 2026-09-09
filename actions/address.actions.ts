@@ -18,7 +18,7 @@ export async function saveAddressAction(input: unknown) {
       const data = { ...parsed.data, recipientName: user.name }
       if (existing) await tx.address.update({ where: { id: existing.id }, data })
       else await tx.address.create({ data: { ...data, userId: user.id } })
-    }, { timeout: 15_000 })
+    }, { maxWait: 10_000, timeout: 30_000 })
     return { success: true as const }
   } catch (error) {
     logAuthError('save-address', error)

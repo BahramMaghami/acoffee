@@ -26,7 +26,7 @@ export async function saveCheckoutCartAction(input: unknown) {
         create: { userId: user.id }, update: { checkoutKey: randomUUID() } })
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
       await tx.cartItem.createMany({ data: items.map((item) => ({ ...item, cartId: cart.id })) })
-    }, { timeout: 15_000 })
+    }, { maxWait: 10_000, timeout: 30_000 })
     return { success: true as const }
   } catch (error) {
     logAuthError('checkout-cart', error)

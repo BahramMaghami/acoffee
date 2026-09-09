@@ -90,7 +90,11 @@ test.describe('Neon checkout', () => {
     const headers = { 'next-action': request.headers()['next-action'], 'content-type': request.headers()['content-type'], origin: 'http://127.0.0.1:3000' }
     const body = request.postData()!
     // Replay an identical POST twice; both must resolve to the existing order.
-    await Promise.all([page.request.post(request.url(), { headers, data: body }), page.request.post(request.url(), { headers, data: body })])
+    const retries = await Promise.all([page.request.post(request.url(), { headers, data: body }), page.request.post(request.url(), { headers, data: body })])
+    for (const response of retries) {
+      expect(response.ok()).toBe(true)
+      expect(await response.text()).toContain(`"orderId":"${order.id}"`)
+    }
     expect(await db.order.count({ where: { userId: user.id } })).toBe(1)
     await page.reload()
     await expect(page.getByRole('heading', { level: 1 })).toContainText('سفارش شمارهٔ')

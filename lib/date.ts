@@ -1,5 +1,8 @@
 const persianDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-  year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tehran',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'Asia/Tehran',
 })
 
 /** Format a Gregorian database timestamp for Persian UI; never mutate stored dates. */
