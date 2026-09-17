@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db'
 import { cartInputSchema } from '@/lib/validators/checkout'
 import { CheckoutError, lockCheckout } from '@/lib/checkout'
 import { logAuthError } from '@/lib/auth-error'
+import { findVariant } from '@/lib/storefront'
 
 export async function saveCheckoutCartAction(input: unknown) {
   const user = await getCurrentUser()
@@ -15,11 +16,12 @@ export async function saveCheckoutCartAction(input: unknown) {
   try {
     await getDb().$transaction(async (tx) => {
       await lockCheckout(tx, user.id)
-      // The current guest storefront uses slugs as its local product identifiers.
+      // One exact SKU per weight/roast/grade; never merge distinct selections.
       const products = await tx.product.findMany({ where: { slug: { in: parsed.data.map((item) => item.productId) }, isActive: true } })
       const items = parsed.data.map((item) => {
         const product = products.find((product) => product.slug === item.productId)
-        if (!product || product.stock < item.quantity) throw new CheckoutError('یک قهوه ناموجود است یا تعدادش از موجودی بیشتر شده. سبد را ویرایش کن.')
+        const variant = findVariant(item.productId)
+        if (!variant || !product || product.weightGrams !== variant.weightGrams || Number(product.price) <= 0 || product.stock < item.quantity) throw new CheckoutError('قیمت یا موجودی این انتخاب هنوز آماده نیست. سبد را بررسی کن.')
         return { productId: product.id, quantity: item.quantity }
       })
       const cart = await tx.cart.upsert({ where: { userId: user.id },

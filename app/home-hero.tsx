@@ -25,7 +25,7 @@ export function HomeHero() {
         </p>
         <div className="hero-cta">
           <Button asChild size="lg">
-            <Link href="/shop">
+            <Link href="#coffee-selection">
               قهوه‌ات را انتخاب کن <ArrowLeft />
             </Link>
           </Button>
@@ -47,8 +47,8 @@ export function HomeHero() {
           sizes="(max-width: 760px) 100vw, 53vw"
         />
         <div className="hero-photo-caption">
-          <span>ترکیب روزانه</span>
-          <span dir="ltr">NO. 01 — DAILY BLEND</span>
+          <span>قهوه‌های آ</span>
+          <span dir="ltr">ACOFFEE</span>
         </div>
         <span className="photo-index" aria-hidden="true">
           a.

@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { products, formatNumber } from '@/lib/storefront'
+import { products, formatNumber, visibleCategories, cafeGroups, startingPrice } from '@/lib/storefront'
 import { ProductCard } from './product-card'
+import { CafeOffer } from './cafe-offer'
 
 const categories = [
   { value: 'all', label: 'همهٔ قهوه‌ها' },
-  { value: 'blend', label: 'ترکیبی' },
-  { value: 'arabica', label: 'تک‌خاستگاه' },
+  ...visibleCategories,
 ]
 const normalize = (text: string) =>
   text
@@ -20,24 +20,23 @@ const normalize = (text: string) =>
     .trim()
     .toLowerCase()
 
-export function ShopCatalog() {
-  const [category, setCategory] = useState('all')
+export function ShopCatalog({ initialCategory = 'all', idPrefix = 'shop' }: { initialCategory?: string; idPrefix?: string }) {
+  const [category, setCategory] = useState(initialCategory)
+  const [group, setGroup] = useState('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('default')
   const filtered = products
     .filter(
       (product) =>
         (category === 'all' || product.category === category) &&
+        (category !== 'cafe' || group === 'all' || product.cafeGroup === group) &&
         normalize(
-          `${product.name} ${product.notes.join(' ')} ${product.origin}`,
+          `${product.name} ${product.grades.includes('vip') ? 'vip' : ''}`,
         ).includes(normalize(query)),
     )
     .sort((a, b) =>
-      sort === 'lowest'
-        ? a.price - b.price
-        : sort === 'highest'
-          ? b.price - a.price
-          : 0,
+      sort === 'default' ? 0 : startingPrice(a) === null ? (startingPrice(b) === null ? 0 : 1)
+        : startingPrice(b) === null ? -1 : sort === 'lowest' ? startingPrice(a)! - startingPrice(b)! : startingPrice(b)! - startingPrice(a)!,
     )
 
   return (
@@ -49,7 +48,7 @@ export function ShopCatalog() {
               key={item.value}
               type="button"
               aria-pressed={category === item.value}
-              onClick={() => setCategory(item.value)}
+              onClick={() => { setCategory(item.value); setGroup('all') }}
             >
               {item.label}
             </button>
@@ -57,17 +56,21 @@ export function ShopCatalog() {
         </div>
         <div className="catalog-search">
           <Search size={17} />
-          <label htmlFor="search" className="sr-only">
+          <label htmlFor={`${idPrefix}-search`} className="sr-only">
             جست‌وجوی قهوه
           </label>
           <Input
-            id="search"
+            id={`${idPrefix}-search`}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="دنبال چه طعمی می‌گردی؟"
           />
         </div>
       </div>
+      {category === 'cafe' && <div className="filter-tabs cafe-subcategories" aria-label="گروه قهوهٔ کافه">
+        {[{ value: 'all', label: 'همهٔ قهوه‌های کافه' }, ...cafeGroups].map((item) => <button key={item.value} type="button" aria-pressed={group === item.value} onClick={() => setGroup(item.value)}>{item.label}</button>)}
+      </div>}
+      {category === 'cafe' && <CafeOffer />}
       <div className="catalog-results">
         <span aria-live="polite">
           {formatNumber(filtered.length)} قهوه برای انتخاب
@@ -100,6 +103,7 @@ export function ShopCatalog() {
             variant="outline"
             onClick={() => {
               setCategory('all')
+              setGroup('all')
               setQuery('')
             }}
           >

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useSyncExternalStore } from 'react'
-import { products } from '@/lib/storefront'
+import { findVariant, maxCartQuantity } from '@/lib/storefront'
 
 const key = 'acoffee:preview-cart:v1'
 const event = 'acoffee:cart-change'
@@ -30,13 +30,13 @@ function parseCart(raw: string): CartItem[] {
         item.quantity <= 0
       )
         continue
-      const product = products.find((product) => product.id === item.productId)
+      const product = findVariant(item.productId)
       if (product)
         quantities.set(
           product.id,
           Math.min(
             (quantities.get(product.id) ?? 0) + item.quantity,
-            product.stock,
+            maxCartQuantity,
           ),
         )
     }
@@ -75,14 +75,17 @@ export function useCart() {
   const count = items.reduce((total, item) => total + item.quantity, 0)
 
   function setQuantity(productId: string, quantity: number) {
-    const product = products.find((product) => product.id === productId)
+    const product = findVariant(productId)
     if (!product || !Number.isSafeInteger(quantity)) return
-    const current = parseCart(getSnapshot()).filter(
-      (item) => item.productId !== productId,
-    )
-    if (quantity > 0)
-      current.push({ productId, quantity: Math.min(quantity, product.stock) })
-    save(current)
+    const current = parseCart(getSnapshot())
+    if (quantity <= 0) {
+      save(current.filter((item) => item.productId !== productId))
+      return
+    }
+    const next = { productId, quantity: Math.min(quantity, maxCartQuantity) }
+    save(current.some((item) => item.productId === productId)
+      ? current.map((item) => item.productId === productId ? next : item)
+      : [...current, next])
   }
 
   function add(productId: string, quantity = 1) {

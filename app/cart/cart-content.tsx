@@ -1,22 +1,23 @@
 'use client'
 
-import Image from 'next/image'
+import { ProductVisual } from '@/app/shop/product-visual'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { products, formatPrice, formatNumber } from '@/lib/storefront'
+import { findVariant, maxCartQuantity, formatPrice, formatNumber } from '@/lib/storefront'
 import { useCart } from './cart-store'
 
 export function CartContent() {
   const { items, count, setQuantity } = useCart()
   const lines = items.flatMap((item) => {
-    const product = products.find((product) => product.id === item.productId)
-    return product ? [{ product, quantity: item.quantity }] : []
+    const variant = findVariant(item.productId)
+    return variant ? [{ product: variant.product, variant, quantity: item.quantity }] : []
   })
   const subtotal = lines.reduce(
-    (total, { product, quantity }) => total + product.price * quantity,
+    (total, { variant, quantity }) => total + (variant.price ?? 0) * quantity,
     0,
   )
+  const awaitingPrices = lines.some(({ variant }) => variant.price === null)
   if (!lines.length)
     return (
       <div className="empty-state cart-empty">
@@ -39,35 +40,30 @@ export function CartContent() {
           <span>قهوه‌های انتخابی</span>
           <span>{formatNumber(count)} بسته</span>
         </div>
-        {lines.map(({ product, quantity }) => (
-          <article className="cart-row" key={product.id}>
+        {lines.map(({ product, variant, quantity }) => (
+          <article className="cart-row" key={variant.id}>
             <Link href={`/shop/${product.slug}`} className="cart-product-image">
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                sizes="120px"
-              />
+              <ProductVisual name={product.name} />
             </Link>
             <div className="cart-product-copy">
               <Link href={`/shop/${product.slug}`}>
                 <h2>{product.name}</h2>
               </Link>
-              <p>۲۵۰ گرم · {product.roast}</p>
-              <span>{formatPrice(product.price)}</span>
+              <p>{variant.label}</p>
+              <span>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price)}</span>
               <div className="quantity-control">
                 <button
-                  aria-label={`افزایش تعداد ${product.name}`}
-                  disabled={quantity >= product.stock}
-                  onClick={() => setQuantity(product.id, quantity + 1)}
+                  aria-label={`افزایش تعداد ${product.name} ${variant.label}`}
+                  disabled={quantity >= maxCartQuantity}
+                  onClick={() => setQuantity(variant.id, quantity + 1)}
                 >
                   <Plus size={15} />
                 </button>
                 <output>{formatNumber(quantity)}</output>
                 <button
-                  aria-label={`کاهش تعداد ${product.name}`}
+                  aria-label={`کاهش تعداد ${product.name} ${variant.label}`}
                   disabled={quantity <= 1}
-                  onClick={() => setQuantity(product.id, quantity - 1)}
+                  onClick={() => setQuantity(variant.id, quantity - 1)}
                 >
                   <Minus size={15} />
                 </button>
@@ -77,12 +73,12 @@ export function CartContent() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`حذف ${product.name}`}
-                onClick={() => setQuantity(product.id, 0)}
+                aria-label={`حذف ${product.name} ${variant.label}`}
+                onClick={() => setQuantity(variant.id, 0)}
               >
                 <Trash2 />
               </Button>
-              <strong>{formatPrice(product.price * quantity)}</strong>
+              <strong>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price * quantity)}</strong>
             </div>
           </article>
         ))}
@@ -96,7 +92,7 @@ export function CartContent() {
         <dl>
           <div>
             <dt>جمع کالاها ({formatNumber(count)} بسته)</dt>
-            <dd>{formatPrice(subtotal)}</dd>
+            <dd>{awaitingPrices ? 'پس از اعلام قیمت' : formatPrice(subtotal)}</dd>
           </div>
           <div>
             <dt>هزینهٔ ارسال</dt>
@@ -104,12 +100,12 @@ export function CartContent() {
           </div>
           <div className="summary-total">
             <dt>جمع سبد</dt>
-            <dd>{formatPrice(subtotal)}</dd>
+            <dd>{awaitingPrices ? 'پس از اعلام قیمت' : formatPrice(subtotal)}</dd>
           </div>
         </dl>
-        <Button className="w-full" size="lg" asChild>
+        {awaitingPrices ? <Button className="w-full" size="lg" disabled>در انتظار اعلام قیمت</Button> : <Button className="w-full" size="lg" asChild>
           <Link href="/checkout/address">ادامهٔ خرید <ArrowLeft /></Link>
-        </Button>
+        </Button>}
         <p>
           در قدم بعد، آدرس ارسال را ثبت می‌کنی و سفارش را بررسی می‌کنی.
         </p>

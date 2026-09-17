@@ -4,6 +4,9 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto'
 import { hash } from 'bcryptjs'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { PrismaClient } from '../../generated/prisma/client'
+import { variants } from '../../lib/storefront'
+
+const pricedVariant = variants.find((variant) => variant.price !== null && !variant.roast && variant.weightGrams === 250)
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 
@@ -16,6 +19,7 @@ test('checkout requires login and preserves the destination', async ({ page }) =
 
 test.describe('Neon checkout', () => {
   test.skip(process.env.CHECKOUT_E2E !== '1', 'Set CHECKOUT_E2E=1 to test real checkout writes.')
+  test.skip(!pricedVariant, 'New catalog prices are intentionally empty; configure a priced 250g SKU and seed it before live checkout tests.')
   test.setTimeout(180_000)
   const identities: string[] = []
   let db: PrismaClient
@@ -39,9 +43,9 @@ test.describe('Neon checkout', () => {
     const passwordHash = await hash(password, 12)
     const user = await db.user.create({ data: { name: 'خریدار آزمایشی آ', email, passwordHash } })
     const other = await db.user.create({ data: { name: 'حساب دوم آزمایشی', email: otherEmail, passwordHash } })
-    const product = await db.product.findUniqueOrThrow({ where: { slug: 'daily-blend' } })
+    const product = await db.product.findUniqueOrThrow({ where: { slug: pricedVariant!.id } })
     expect(product.stock).toBeGreaterThanOrEqual(2)
-    await page.goto('/shop/daily-blend')
+    await page.goto('/shop/' + pricedVariant!.product.slug)
     await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
     await page.goto('/cart')
     await page.getByRole('link', { name: 'ادامهٔ خرید', exact: true }).click()

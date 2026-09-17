@@ -592,6 +592,20 @@ p {
     sans-serif;
   letter-spacing: 1.5px;
 }
+.product-placeholder { position: absolute; inset: 0; display: grid; place-items: center; background: #eee9e1; color: #8a2928; }
+.product-placeholder > span { font-size: clamp(60px, 10vw, 125px); font-weight: 500; line-height: 1; opacity: .7; }
+.cart-product-image .product-placeholder > span { font-size: 40px; }
+.catalog-toolbar .filter-tabs { flex-wrap: wrap; }
+.purchase-options { display: grid; gap: 22px; margin-bottom: 28px; }
+.purchase-options legend { font-size: 12px; margin-bottom: 10px; }
+.option-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.option-buttons button { border: 1px solid var(--border); border-radius: 4px; padding: 10px 17px; font-size: 12px; }
+.option-buttons button[aria-pressed='true'] { color: var(--primary); border-color: var(--primary); background: #f2e7df; }
+.cafe-subcategories { flex-wrap: wrap; margin-block: 12px 25px; }
+.cafe-offer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; background: #efebe2; border-radius: 4px; padding: 28px; margin-block: 24px 30px; }
+.cafe-offer h2 { font-size: 24px; font-weight: 650; margin-block: 9px; }
+.cafe-offer p { font-size: 12px; line-height: 2.2; color: var(--muted-foreground); }
+#coffee-selection { scroll-margin-top: 110px; }
 .catalog-toolbar {
   display: flex;
   justify-content: space-between;

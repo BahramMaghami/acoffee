@@ -1,14 +1,17 @@
 import Link from 'next/link'
 import { ArrowLeft, Coffee, PackageCheck, Bean } from 'lucide-react'
 import { HomeHero } from './home-hero'
-import { ProductCard } from './shop/product-card'
-import { products } from '@/lib/storefront'
+import { ShopCatalog } from './shop/shop-catalog'
 import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   return (
     <>
       <HomeHero />
+      <section className="shell collection-section" id="coffee-selection">
+        <div className="section-heading"><div><span className="eyebrow">قهوه‌های آ</span><h2>قهوه‌ات را انتخاب کن.</h2></div></div>
+        <ShopCatalog initialCategory="retail" idPrefix="home" />
+      </section>
       <div className="promise-strip shell">
         <div>
           <Bean />
@@ -26,22 +29,6 @@ export default function HomePage() {
           <small>بسته‌بندی با توجه به تازگی و کیفیت</small>
         </div>
       </div>
-      <section className="shell collection-section">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">سلیقهٔ تو، انتخاب تو</span>
-            <h2>فنجان بعدی‌ات اینجاست.</h2>
-          </div>
-          <Link className="quiet-link" href="/shop">
-            همهٔ قهوه‌ها <ArrowLeft size={18} />
-          </Link>
-        </div>
-        <div className="product-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
       <section className="story-band">
         <div className="shell story-band-inner">
           <span className="story-letter" aria-hidden="true">

@@ -2,6 +2,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import type { Prisma } from '@/generated/prisma/client'
 import { getDb } from './db'
+import { findVariant } from './storefront'
 
 export class CheckoutError extends Error {}
 
@@ -23,6 +24,9 @@ export async function checkoutQuote(
     throw new CheckoutError('سبد خرید خالی است. دوباره قهوه‌هایت را انتخاب کن.')
   if (!address) throw new CheckoutError('ابتدا آدرس ارسال را ذخیره کن.')
   const items = cart.items.map(({ product, quantity }) => {
+    const variant = findVariant(product.slug)
+    if (!variant || variant.weightGrams !== product.weightGrams || Number(product.price) <= 0)
+      throw new CheckoutError('این انتخاب در فهرست فعلی آمادهٔ سفارش نیست. سبد را دوباره بررسی کن.')
     if (!product.isActive || product.stock < quantity)
       throw new CheckoutError(
         `موجودی «${product.name}» کافی نیست. سبدت را ویرایش کن.`,
