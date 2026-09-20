@@ -3,9 +3,8 @@ export const formatNumber = (value: number) =>
 export const formatPrice = (value: number) => `${formatNumber(value)} تومان`
 
 export const categories = [
-  { value: 'retail', label: 'قهوه‌های ترکیبی' },
-  { value: 'cafe', label: 'قهوه‌های مخصوص کافه‌ها' },
   { value: 'blend', label: 'قهوه‌های بلند' },
+  { value: 'cafe', label: 'قهوه‌های مخصوص کافه‌ها' },
   { value: 'traditional', label: 'قهوه‌های سنتی' },
 ] as const
 export const cafeGroups = [
@@ -63,13 +62,9 @@ function coffee(
   }
 }
 const catalog: StoreProduct[] = [
-  coffee('arabica-100', 'قهوه ۱۰۰٪ عربیکا', 'retail'),
-  coffee('espresso-blend-arabica-100', 'قهوه اسپرسو بلند ۱۰۰٪ عربیکا', 'retail'),
-  coffee('italian-roast-arabica-100', 'قهوه ایتالین رست ۱۰۰٪ عربیکا', 'retail'),
-  coffee('arabica-80', 'قهوه ۸۰٪ عربیکا', 'retail'),
-  coffee('arabica-70', 'قهوه ۷۰٪ عربیکا', 'retail'),
-  coffee('arabica-50', 'قهوه ۵۰٪ عربیکا', 'retail'),
-  coffee('robusta-100', 'قهوه ۱۰۰٪ روبوستا', 'retail'),
+  // These coffees keep their original weight-only options and SKUs.
+  { ...coffee('arabica-100', 'قهوه ۱۰۰٪ عربیکا', 'blend'), roasts: [] },
+  { ...coffee('italian-roast-arabica-100', 'قهوه ایتالین رست ۱۰۰٪ عربیکا', 'blend'), roasts: [] },
   coffee('cafe-vietnam-cherry-aa', 'ویتنام چری AA', 'cafe', 'robusta'),
   coffee('cafe-peaberry', 'پی بی', 'cafe', 'robusta'),
   coffee('cafe-indonesia-ap1', 'اندونزی AP1', 'cafe', 'robusta'),

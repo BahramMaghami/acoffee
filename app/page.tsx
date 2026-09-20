@@ -10,7 +10,7 @@ export default function HomePage() {
       <HomeHero />
       <section className="shell collection-section" id="coffee-selection">
         <div className="section-heading"><div><span className="eyebrow">قهوه‌های آ</span><h2>قهوه‌ات را انتخاب کن.</h2></div></div>
-        <ShopCatalog initialCategory="retail" idPrefix="home" />
+        <ShopCatalog idPrefix="home" />
       </section>
       <div className="promise-strip shell">
         <div>

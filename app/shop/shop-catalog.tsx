@@ -4,14 +4,10 @@ import { useState } from 'react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { products, formatNumber, visibleCategories, cafeGroups, startingPrice } from '@/lib/storefront'
+import { products, formatNumber, visibleCategories, cafeGroups, startingPrice, type Category, type CafeGroup } from '@/lib/storefront'
 import { ProductCard } from './product-card'
 import { CafeOffer } from './cafe-offer'
 
-const categories = [
-  { value: 'all', label: 'همهٔ قهوه‌ها' },
-  ...visibleCategories,
-]
 const normalize = (text: string) =>
   text
     .replaceAll('ي', 'ی')
@@ -20,16 +16,16 @@ const normalize = (text: string) =>
     .trim()
     .toLowerCase()
 
-export function ShopCatalog({ initialCategory = 'all', idPrefix = 'shop' }: { initialCategory?: string; idPrefix?: string }) {
-  const [category, setCategory] = useState(initialCategory)
-  const [group, setGroup] = useState('all')
+export function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) {
+  const [category, setCategory] = useState<Category>(visibleCategories[0].value)
+  const [group, setGroup] = useState<CafeGroup>(cafeGroups[0].value)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('default')
   const filtered = products
     .filter(
       (product) =>
-        (category === 'all' || product.category === category) &&
-        (category !== 'cafe' || group === 'all' || product.cafeGroup === group) &&
+        product.category === category &&
+        (category !== 'cafe' || product.cafeGroup === group) &&
         normalize(
           `${product.name} ${product.grades.includes('vip') ? 'vip' : ''}`,
         ).includes(normalize(query)),
@@ -43,12 +39,12 @@ export function ShopCatalog({ initialCategory = 'all', idPrefix = 'shop' }: { in
     <>
       <div className="catalog-toolbar">
         <div className="filter-tabs" aria-label="نوع قهوه">
-          {categories.map((item) => (
+          {visibleCategories.map((item) => (
             <button
               key={item.value}
               type="button"
               aria-pressed={category === item.value}
-              onClick={() => { setCategory(item.value); setGroup('all') }}
+              onClick={() => { setCategory(item.value); setGroup(cafeGroups[0].value) }}
             >
               {item.label}
             </button>
@@ -68,7 +64,7 @@ export function ShopCatalog({ initialCategory = 'all', idPrefix = 'shop' }: { in
         </div>
       </div>
       {category === 'cafe' && <div className="filter-tabs cafe-subcategories" aria-label="گروه قهوهٔ کافه">
-        {[{ value: 'all', label: 'همهٔ قهوه‌های کافه' }, ...cafeGroups].map((item) => <button key={item.value} type="button" aria-pressed={group === item.value} onClick={() => setGroup(item.value)}>{item.label}</button>)}
+        {cafeGroups.map((item) => <button key={item.value} type="button" aria-pressed={group === item.value} onClick={() => setGroup(item.value)}>{item.label}</button>)}
       </div>}
       {category === 'cafe' && <CafeOffer />}
       <div className="catalog-results">
@@ -98,16 +94,14 @@ export function ShopCatalog({ initialCategory = 'all', idPrefix = 'shop' }: { in
         <div className="empty-state">
           <Search size={32} />
           <h2>این طعم را پیدا نکردیم.</h2>
-          <p>یک عبارت دیگر امتحان کن یا همهٔ قهوه‌ها را ببین.</p>
+          <p>یک عبارت دیگر امتحان کن یا جست‌وجو را پاک کن.</p>
           <Button
             variant="outline"
             onClick={() => {
-              setCategory('all')
-              setGroup('all')
               setQuery('')
             }}
           >
-            نمایش همهٔ قهوه‌ها
+            پاک کردن جست‌وجو
           </Button>
         </div>
       )}

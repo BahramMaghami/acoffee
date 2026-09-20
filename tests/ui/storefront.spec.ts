@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
-import { products, variants, maxCartQuantity } from '../../lib/storefront'
+import { variants, maxCartQuantity } from '../../lib/storefront'
 
 test('home keeps the hero and shows coffee selection immediately after it', async ({ page }, testInfo) => {
   const errors: string[] = []
@@ -9,11 +9,12 @@ test('home keeps the hero and shows coffee selection immediately after it', asyn
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('روز خوب')
   await expect(page.locator('main > section.hero + #coffee-selection')).toBeVisible()
-  await expect(page.locator('.product-card')).toHaveCount(7)
+  await expect(page.locator('.product-card')).toHaveCount(8)
+  await expect(page.locator('.catalog-toolbar .filter-tabs button')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
   await expect(page.locator('.product-card img')).toHaveCount(0)
-  await expect(page.locator('.product-placeholder')).toHaveCount(7)
+  await expect(page.locator('.product-placeholder')).toHaveCount(8)
   await page.getByRole('button', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(7)
+  await expect(page.locator('.product-card')).toHaveCount(4)
   await expect(page.locator('.cafe-offer')).toContainText('۵ کیلوگرم و بیشتر')
   await expect(page.locator('.cafe-offer')).not.toContainText('تومان')
   await expect(page.locator('.cafe-offer a')).toHaveCount(0)
@@ -30,14 +31,19 @@ test('home keeps the hero and shows coffee selection immediately after it', asyn
 
 test('catalog filters cafe groups and traditional products and searches VIP', async ({ page }) => {
   await page.goto('/shop')
-  await expect(page.locator('.product-card')).toHaveCount(products.length)
+  await expect(page.locator('.product-card')).toHaveCount(8)
+  await expect(page.locator('.catalog-toolbar .filter-tabs button')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
+  await expect(page.getByRole('button', { name: 'قهوه‌های بلند', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true }).click()
+  await expect(page.locator('.cafe-subcategories button')).toHaveText(['قهوه‌های روبوستا', 'قهوه‌های عربیکا'])
   await page.getByRole('button', { name: 'قهوه‌های روبوستا', exact: true }).click()
   await expect(page.locator('.product-card')).toHaveCount(4)
   await page.getByRole('button', { name: 'قهوه‌های عربیکا', exact: true }).click()
   await expect(page.locator('.product-card')).toHaveCount(3)
   await page.getByRole('button', { name: 'قهوه‌های بلند', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(6)
+  await expect(page.locator('.product-card')).toHaveCount(8)
+  await expect(page.locator('.product-card h3').filter({ hasText: 'قهوه ۱۰۰٪ عربیکا' })).toHaveCount(1)
+  await expect(page.locator('.product-card h3').filter({ hasText: 'قهوه ایتالین رست ۱۰۰٪ عربیکا' })).toHaveCount(1)
   await expect(page.locator('.cafe-subcategories')).toHaveCount(0)
   await expect(page.locator('.product-card .tasting-notes')).toHaveText(Array(6).fill('معمولی / VIP'))
   await page.getByRole('textbox', { name: 'جست‌وجوی قهوه', exact: true }).fill('VIP')
@@ -45,7 +51,9 @@ test('catalog filters cafe groups and traditional products and searches VIP', as
   await expect(page.locator('.product-card h3')).toHaveText(['۱۰۰٪ روبوستا', '۸۰٪ روبوستا', '۷۰٪ روبوستا', '۵۰٪ روبوستا', '۸۰٪ عربیکا', '۱۰۰٪ عربیکا'])
   await page.getByRole('textbox', { name: 'جست‌وجوی قهوه', exact: true }).fill('پیدا نمی‌شود')
   await expect(page.getByText('این طعم را پیدا نکردیم.')).toBeVisible()
-  await page.getByRole('button', { name: 'نمایش همهٔ قهوه‌ها' }).click()
+  await page.getByRole('button', { name: 'پاک کردن جست‌وجو' }).click()
+  await expect(page.locator('.product-card')).toHaveCount(8)
+  await expect(page.getByRole('button', { name: 'قهوه‌های بلند', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'قهوه‌های سنتی', exact: true }).click()
   await expect(page.locator('.product-card')).toHaveCount(2)
   await expect(page.locator('.product-card h3')).toHaveText(['قهوه ترک', 'قهوه ارمنی'])
