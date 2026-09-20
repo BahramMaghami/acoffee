@@ -29,6 +29,7 @@ test('home keeps the hero and shows every category in a separate slider', async 
 })
 
 test('RTL sliders move independently with buttons, keyboard and native scrolling', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/shop')
   const blend = page.getByRole('region', { name: 'قهوه‌های بلند', exact: true })
   const cafe = page.getByRole('region', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true })
@@ -60,6 +61,23 @@ test('RTL sliders move independently with buttons, keyboard and native scrolling
     await expect(traditional.getByRole('button', { name: 'محصولات بعدی' })).toBeEnabled()
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('sliders advance every three seconds, loop and pause during keyboard interaction', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/shop')
+  await page.mouse.move(0, 0)
+  const track = page.locator('#shop-blend-track')
+  await expect(page.getByRole('region', { name: 'قهوه‌های بلند', exact: true }).getByRole('button', { name: 'محصولات بعدی' })).toBeEnabled()
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft), { timeout: 5000 }).toBeLessThan(-100)
+  await track.focus()
+  await track.evaluate((element) => element.scrollTo({ left: -element.scrollWidth, behavior: 'instant' }))
+  const lastPosition = await track.evaluate((element) => element.scrollLeft)
+  // Wait longer than one interval to verify focus prevents automatic movement.
+  await page.waitForTimeout(3200)
+  expect(await track.evaluate((element) => element.scrollLeft)).toBe(lastPosition)
+  await track.evaluate((element) => element.blur())
+  await expect.poll(() => track.evaluate((element) => Math.abs(element.scrollLeft)), { timeout: 5000 }).toBeLessThan(2)
 })
 
 test('view all opens the complete matching category and supports direct navigation', async ({ page }) => {
