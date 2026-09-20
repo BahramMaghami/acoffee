@@ -1,26 +1,25 @@
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
-import { variants, maxCartQuantity } from '../../lib/storefront'
+import { products, variants, maxCartQuantity } from '../../lib/storefront'
 
-test('home keeps the hero and shows coffee selection immediately after it', async ({ page }, testInfo) => {
+test('home keeps the hero and shows every category in a separate slider', async ({ page }, testInfo) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('روز خوب')
   await expect(page.locator('main > section.hero + #coffee-selection')).toBeVisible()
-  await expect(page.locator('.product-card')).toHaveCount(8)
-  await expect(page.locator('.catalog-toolbar .filter-tabs button')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
+  await expect(page.locator('.category-slider')).toHaveCount(3)
+  await expect(page.locator('.category-slider-heading h2')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
+  await expect(page.locator('.filter-tabs')).toHaveCount(0)
+  await expect(page.locator('.product-card')).toHaveCount(17)
   await expect(page.locator('.product-card img')).toHaveCount(0)
-  await expect(page.locator('.product-placeholder')).toHaveCount(8)
-  await page.getByRole('button', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(4)
+  await expect(page.locator('.product-placeholder')).toHaveCount(17)
   await expect(page.locator('.cafe-offer')).toContainText('۵ کیلوگرم و بیشتر')
   await expect(page.locator('.cafe-offer')).not.toContainText('تومان')
   await expect(page.locator('.cafe-offer a')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await mkdir('artifacts/ui', { recursive: true })
-  await page.screenshot({ path: 'artifacts/ui/home-cafe-' + testInfo.project.name + '.png', fullPage: true })
+  await page.screenshot({ path: 'artifacts/ui/home-sliders-' + testInfo.project.name + '.png', fullPage: true })
   if (testInfo.project.name === 'mobile') {
     await page.getByRole('button', { name: 'باز کردن منو' }).click()
     await page.getByRole('navigation', { name: 'منوی موبایل' }).getByRole('link', { name: 'قهوه‌های ما' }).click()
@@ -29,37 +28,60 @@ test('home keeps the hero and shows coffee selection immediately after it', asyn
   expect(errors).toEqual([])
 })
 
-test('catalog filters cafe groups and traditional products and searches VIP', async ({ page }) => {
+test('RTL sliders move independently with buttons, keyboard and native scrolling', async ({ page }, testInfo) => {
   await page.goto('/shop')
-  await expect(page.locator('.product-card')).toHaveCount(8)
-  await expect(page.locator('.catalog-toolbar .filter-tabs button')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
-  await expect(page.getByRole('button', { name: 'قهوه‌های بلند', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('button', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true }).click()
-  await expect(page.locator('.cafe-subcategories button')).toHaveText(['قهوه‌های روبوستا', 'قهوه‌های عربیکا'])
-  await page.getByRole('button', { name: 'قهوه‌های روبوستا', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(4)
-  await page.getByRole('button', { name: 'قهوه‌های عربیکا', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(3)
-  await page.getByRole('button', { name: 'قهوه‌های بلند', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(8)
-  await expect(page.locator('.product-card h3').filter({ hasText: 'قهوه ۱۰۰٪ عربیکا' })).toHaveCount(1)
-  await expect(page.locator('.product-card h3').filter({ hasText: 'قهوه ایتالین رست ۱۰۰٪ عربیکا' })).toHaveCount(1)
-  await expect(page.locator('.cafe-subcategories')).toHaveCount(0)
-  await expect(page.locator('.product-card .tasting-notes')).toHaveText(Array(6).fill('معمولی / VIP'))
-  await page.getByRole('textbox', { name: 'جست‌وجوی قهوه', exact: true }).fill('VIP')
-  await expect(page.locator('.product-card')).toHaveCount(6)
-  await expect(page.locator('.product-card h3')).toHaveText(['۱۰۰٪ روبوستا', '۸۰٪ روبوستا', '۷۰٪ روبوستا', '۵۰٪ روبوستا', '۸۰٪ عربیکا', '۱۰۰٪ عربیکا'])
-  await page.getByRole('textbox', { name: 'جست‌وجوی قهوه', exact: true }).fill('پیدا نمی‌شود')
-  await expect(page.getByText('این طعم را پیدا نکردیم.')).toBeVisible()
-  await page.getByRole('button', { name: 'پاک کردن جست‌وجو' }).click()
-  await expect(page.locator('.product-card')).toHaveCount(8)
-  await expect(page.getByRole('button', { name: 'قهوه‌های بلند', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('button', { name: 'قهوه‌های سنتی', exact: true }).click()
-  await expect(page.locator('.product-card')).toHaveCount(2)
-  await expect(page.locator('.product-card h3')).toHaveText(['قهوه ترک', 'قهوه ارمنی'])
-  await page.getByRole('combobox', { name: 'مرتب‌سازی' }).selectOption('lowest')
-  await expect(page.locator('.product-card-price')).not.toContainText(['۰ تومان', '۰ تومان'])
+  const blend = page.getByRole('region', { name: 'قهوه‌های بلند', exact: true })
+  const cafe = page.getByRole('region', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true })
+  const traditional = page.getByRole('region', { name: 'قهوه‌های سنتی', exact: true })
+  await expect(blend.locator('.product-card')).toHaveCount(8)
+  await expect(cafe.locator('.product-card')).toHaveCount(7)
+  await expect(traditional.locator('.product-card')).toHaveCount(2)
+  const track = blend.locator('.category-slider-track')
+  const previous = blend.getByRole('button', { name: 'محصولات قبلی' })
+  const next = blend.getByRole('button', { name: 'محصولات بعدی' })
+  await expect(previous).toBeDisabled()
+  await expect(next).toBeEnabled()
+  await next.click()
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeLessThan(-100)
+  await expect(previous).toBeEnabled()
+  expect(await cafe.locator('.category-slider-track').evaluate((element) => element.scrollLeft)).toBe(0)
+  await previous.click()
+  await expect(previous).toBeDisabled()
+  await track.focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeLessThan(-100)
+  // The same native scroll surface supports touch swipes and trackpad scrolling.
+  await track.evaluate((element) => element.scrollTo({ left: -element.scrollWidth, behavior: 'instant' }))
+  await expect(next).toBeDisabled()
+  await expect(previous).toBeEnabled()
+  if (testInfo.project.name === 'desktop') {
+    await expect(traditional.getByRole('button', { name: 'محصولات بعدی' })).toBeDisabled()
+  } else {
+    await expect(traditional.getByRole('button', { name: 'محصولات بعدی' })).toBeEnabled()
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('view all opens the complete matching category and supports direct navigation', async ({ page }) => {
+  for (const [category, label, count] of [
+    ['blend', 'قهوه‌های بلند', 8],
+    ['cafe', 'قهوه‌های مخصوص کافه‌ها', 7],
+    ['traditional', 'قهوه‌های سنتی', 2],
+  ] as const) {
+    await page.goto('/shop')
+    const section = page.getByRole('region', { name: label, exact: true })
+    await section.getByRole('link', { name: 'مشاهدهٔ همه', exact: true }).click()
+    await expect(page).toHaveURL(new RegExp('/shop/category/' + category + '$'))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(label)
+    await expect(page.locator('.product-card')).toHaveCount(count)
+    await expect(page.locator('.product-card h3')).toHaveText(products.filter((product) => product.category === category).map((product) => product.name))
+    await expect(page.locator('.filter-tabs, .category-slider')).toHaveCount(0)
+    await page.reload()
+    await expect(page.locator('.product-card')).toHaveCount(count)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.goto('/shop/category/missing')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('این صفحه را پیدا نکردیم.')
 })
 
 test('weight, roast and VIP selections remain separate and survive cart reload', async ({ page }, testInfo) => {
