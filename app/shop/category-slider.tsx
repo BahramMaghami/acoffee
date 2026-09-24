@@ -58,6 +58,8 @@ export function CategorySlider({ id, title, href, count, children }: {
 
   return (
     <section
+      id={id}
+      tabIndex={-1}
       className="category-slider"
       aria-labelledby={`${id}-title`}
       aria-roledescription="اسلایدر"
