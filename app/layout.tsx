@@ -5,6 +5,7 @@ import { SiteFooter } from './site-footer'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 import './auth.css'
+import './brand-theme.css'
 import { auth } from '@/auth'
 
 export const metadata: Metadata = {
