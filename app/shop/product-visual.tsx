@@ -1,5 +1,6 @@
-export function ProductVisual({ name }: { name: string }) {
-  return <div className="product-placeholder" role="img" aria-label={'جای تصویر ' + name}>
-    <span aria-hidden="true">آ</span>
-  </div>
+import Image from 'next/image'
+import { storefrontImage } from '@/lib/storefront'
+
+export function ProductVisual({ name, sizes = '(max-width: 600px) 84vw, (max-width: 900px) 50vw, 33vw' }: { name: string; sizes?: string }) {
+  return <Image src={storefrontImage} alt={`بستهٔ آ — ${name}`} fill sizes={sizes} style={{ objectFit: 'contain', backgroundColor: '#151515' }} />
 }

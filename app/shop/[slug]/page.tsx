@@ -27,7 +27,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     </nav>
     <div className="product-detail">
       <div className="detail-image">
-        <ProductVisual name={product.name} />
+        <ProductVisual name={product.name} sizes="(max-width: 760px) 100vw, 50vw" />
         <span className="detail-image-caption" dir="ltr">ACOFFEE</span>
       </div>
       <div className="detail-copy">
@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <ProductPurchase product={product} />
       </div>
     </div>
-    {product.category === 'cafe' && <CafeOffer />}
+    {product.category === 'wholesale' && <CafeOffer />}
     <section className="related-products">
       <div className="section-heading"><h2>قهوه‌های دیگر</h2><Link className="quiet-link" href="/shop">همهٔ قهوه‌ها <ArrowLeft size={17} /></Link></div>
       <div className="product-grid related-grid">{products.filter((item) => item.id !== product.id && item.category === product.category).slice(0, 3).map((item) => <ProductCard product={item} key={item.id} />)}</div>

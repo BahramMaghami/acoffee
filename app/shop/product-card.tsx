@@ -1,7 +1,7 @@
 import { ProductVisual } from './product-visual'
 import Link from 'next/link'
 import { ArrowUpLeft } from 'lucide-react'
-import { categories, cafeGroups, startingPrice, formatPrice, type StoreProduct } from '@/lib/storefront'
+import { categories, cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, type StoreProduct } from '@/lib/storefront'
 
 export function ProductCard({ product }: { product: StoreProduct }) {
   const price = startingPrice(product)
@@ -14,7 +14,8 @@ export function ProductCard({ product }: { product: StoreProduct }) {
     </Link>
     <div className="product-card-meta"><span>{category}</span><span>انتخاب وزن در سفارش</span></div>
     <h3><Link href={'/shop/' + product.slug}>{product.name}</Link></h3>
-    {product.grades.length > 1 && <p className="tasting-notes">معمولی / VIP</p>}
+    <p className="product-card-weights">{product.weights.map(formatWeight).join(' · ')}</p>
+    {product.grades.length > 1 && <p className="tasting-notes" dir="ltr">{product.grades.map((grade) => gradeLabels[grade]).join(' / ')}</p>}
     <div className="product-card-price"><span>{price === null ? 'قیمت به‌زودی' : 'از ' + formatPrice(price)}</span><Link href={'/shop/' + product.slug}>انتخاب قهوه</Link></div>
   </article>
 }

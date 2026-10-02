@@ -36,7 +36,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <div className="product-grid">
         {items.map((product) => <ProductCard key={product.id} product={product} />)}
       </div>
-      {selected.value === 'cafe' && <CafeOffer />}
+      {selected.value === 'wholesale' && <CafeOffer />}
     </div>
   )
 }

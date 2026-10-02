@@ -6,7 +6,7 @@ import { Minus, Plus, ShoppingBag } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/app/cart/cart-store'
-import { formatNumber, formatPrice, productVariant, roastOptions, maxCartQuantity, type StoreProduct, type Roast, type Grade } from '@/lib/storefront'
+import { formatNumber, formatWeight, formatPrice, productVariant, roastOptions, gradeLabels, maxCartQuantity, type StoreProduct, type Roast, type Grade } from '@/lib/storefront'
 
 export function ProductPurchase({ product }: { product: StoreProduct }) {
   const [quantity, setQuantity] = useState(1)
@@ -22,11 +22,11 @@ export function ProductPurchase({ product }: { product: StoreProduct }) {
   return <div className="product-purchase">
     <div className="purchase-options">
       <fieldset><legend>وزن بسته</legend><div className="option-buttons">{product.weights.map((value) =>
-        <button key={value} type="button" aria-pressed={weight === value} onClick={() => setWeight(value)}>{formatNumber(value)} گرم</button>)}</div></fieldset>
+        <button key={value} type="button" aria-pressed={weight === value} onClick={() => setWeight(value)}>{formatWeight(value)}</button>)}</div></fieldset>
       {product.roasts.length > 0 && <fieldset><legend>درجهٔ رست</legend><div className="option-buttons">{roastOptions.filter((option) => product.roasts.includes(option.value)).map((option) =>
         <button key={option.value} type="button" aria-pressed={roast === option.value} onClick={() => setRoast(option.value)}>{option.label}</button>)}</div></fieldset>}
       {product.grades.length > 1 && <fieldset><legend>نوع قهوه</legend><div className="option-buttons">{product.grades.map((value) =>
-        <button key={value} type="button" aria-pressed={grade === value} onClick={() => setGrade(value)}>{value === 'vip' ? 'VIP' : 'معمولی'}</button>)}</div></fieldset>}
+        <button key={value} type="button" dir="ltr" aria-pressed={grade === value} onClick={() => setGrade(value)}>{gradeLabels[value]}</button>)}</div></fieldset>}
     </div>
     <div className="purchase-price"><div><span className="eyebrow">{variant.label}</span><strong>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price)}</strong></div></div>
     <div className="purchase-actions">

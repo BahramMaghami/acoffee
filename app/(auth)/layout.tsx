@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { storefrontImage } from '@/lib/storefront'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
@@ -17,11 +18,12 @@ export default function AuthLayout({
         <div className="auth-form-panel">{children}</div>
         <aside className="auth-photo">
           <Image
-            src="/images/coffee-ritual.png"
-            alt="یک فنجان قهوهٔ آ در نور آفتاب"
+            src={storefrontImage}
+            style={{ objectFit: 'contain', backgroundColor: '#151515' }}
+            alt="بستهٔ قهوه آ"
             fill
             sizes="(max-width: 760px) 0px, 45vw"
-            priority
+            preload
           />
           <div className="auth-photo-copy">
             <span dir="ltr">A LITTLE RITUAL. A BETTER DAY.</span>

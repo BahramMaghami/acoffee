@@ -43,7 +43,7 @@ export function CartContent() {
         {lines.map(({ product, variant, quantity }) => (
           <article className="cart-row" key={variant.id}>
             <Link href={`/shop/${product.slug}`} className="cart-product-image">
-              <ProductVisual name={product.name} />
+              <ProductVisual name={product.name} sizes="100px" />
             </Link>
             <div className="cart-product-copy">
               <Link href={`/shop/${product.slug}`}>

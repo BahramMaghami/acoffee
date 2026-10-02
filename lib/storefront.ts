@@ -1,11 +1,16 @@
 export const formatNumber = (value: number) =>
   new Intl.NumberFormat('fa-IR').format(value)
 export const formatPrice = (value: number) => `${formatNumber(value)} تومان`
+export const formatWeight = (grams: number) => grams >= 1000 ? `${formatNumber(grams / 1000)} کیلوگرم` : `${formatNumber(grams)} گرم`
+export const storefrontImage = '/images/acoffee.jpg'
+export const gradeLabels = { standard: 'Commercial Blend', vip: 'Premium Blend' } as const
 
 export const categories = [
-  { value: 'blend', label: 'قهوه‌های بلند' },
-  { value: 'cafe', label: 'قهوه‌های مخصوص کافه‌ها' },
-  { value: 'traditional', label: 'قهوه‌های سنتی' },
+  { value: 'blend', label: 'قهوه ترکیبی' },
+  { value: 'cafe', label: 'قهوه تک دان' },
+  { value: 'wholesale', label: 'قهوه کافه/شرکت‌ها' },
+  { value: 'traditional', label: 'قهوه سنتی' },
+  { value: 'nescafe', label: 'نسکافه' },
 ] as const
 export const cafeGroups = [
   { value: 'robusta', label: 'قهوه‌های روبوستا' },
@@ -13,8 +18,8 @@ export const cafeGroups = [
 ] as const
 export const weightOptions = [100, 250, 500] as const
 export const roastOptions = [
-  { value: 'medium', label: 'مدیوم رست' },
-  { value: 'dark', label: 'دارک رست' },
+  { value: 'medium', label: 'مدیوم' },
+  { value: 'medium-dark', label: 'مدیوم-دارک' },
 ] as const
 export type Roast = (typeof roastOptions)[number]['value']
 export type Grade = 'standard' | 'vip'
@@ -55,22 +60,21 @@ function coffee(
     cafeGroup,
     description,
     origin: '',
-    weights: weightOptions,
-    roasts: category === 'cafe' || category === 'blend' ? ['medium', 'dark'] : [],
+    weights: category === 'wholesale' ? [5000] : weightOptions,
+    roasts:
+      category === 'cafe' || category === 'blend' || category === 'wholesale' ? ['medium', 'medium-dark'] : [],
     grades: vip ? ['standard', 'vip'] : ['standard'],
     prices: {},
   }
 }
 const catalog: StoreProduct[] = [
-  // These coffees keep their original weight-only options and SKUs.
-  { ...coffee('arabica-100', 'قهوه ۱۰۰٪ عربیکا', 'blend'), roasts: [] },
-  { ...coffee('italian-roast-arabica-100', 'قهوه ایتالین رست ۱۰۰٪ عربیکا', 'blend'), roasts: [] },
   coffee('cafe-vietnam-cherry-aa', 'ویتنام چری AA', 'cafe', 'robusta'),
   coffee('cafe-peaberry', 'پی بی', 'cafe', 'robusta'),
   coffee('cafe-indonesia-ap1', 'اندونزی AP1', 'cafe', 'robusta'),
+  coffee('cafe-indonesia-ek', 'اندونزی EK', 'cafe', 'robusta'),
   coffee('cafe-uganda', 'اوگاندا', 'cafe', 'robusta'),
   coffee('cafe-colombia', 'کلمبیا', 'cafe', 'arabica'),
-  coffee('cafe-ethiopia-lekempti', 'اتیوپی لمکبتی', 'cafe', 'arabica'),
+  coffee('cafe-ethiopia-lekempti', 'اتیوپی لمکپتی', 'cafe', 'arabica'),
   coffee('cafe-brazil-rio', 'برزیل ریو', 'cafe', 'arabica'),
   // Preserve existing slugs and SKUs when moving products between categories.
   coffee('cafe-blend-robusta-100', '۱۰۰٪ روبوستا', 'blend', undefined, true),
@@ -79,8 +83,10 @@ const catalog: StoreProduct[] = [
   coffee('cafe-blend-robusta-50', '۵۰٪ روبوستا', 'blend', undefined, true),
   coffee('cafe-blend-arabica-80', '۸۰٪ عربیکا', 'blend', undefined, true),
   coffee('cafe-blend-arabica-100', '۱۰۰٪ عربیکا', 'blend', undefined, true),
+  coffee('wholesale-robusta-100', '۱۰۰٪ روبوستا', 'wholesale'),
   coffee('turkish-coffee', 'قهوه ترک', 'traditional'),
   coffee('armenian-coffee', 'قهوه ارمنی', 'traditional'),
+  coffee('nescafe', 'نسکافه', 'nescafe'),
 ]
 export const products = catalog.filter(
   (product) => showTraditionalCoffee || product.category !== 'traditional',
@@ -97,7 +103,7 @@ export function variantKey(
 }
 export function productVariant(
   product: StoreProduct,
-  weightGrams = 250,
+  weightGrams = product.weights.includes(250) ? 250 : product.weights[0],
   roast?: Roast,
   grade: Grade = 'standard',
 ) {
@@ -121,13 +127,9 @@ export function productVariant(
     price:
       price !== null && Number.isSafeInteger(price) && price > 0 ? price : null,
     label: [
-      formatNumber(weightGrams) + ' گرم',
+      formatWeight(weightGrams),
       roastOptions.find((option) => option.value === roast)?.label,
-      grade === 'vip'
-        ? 'VIP'
-        : product.grades.length > 1
-          ? 'معمولی'
-          : undefined,
+      product.grades.length > 1 ? gradeLabels[grade] : undefined,
     ]
       .filter(Boolean)
       .join(' · '),

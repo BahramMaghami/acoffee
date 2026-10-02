@@ -27,7 +27,7 @@ export function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) {
               >
                 {items.map((product) => <ProductCard key={product.id} product={product} />)}
               </CategorySlider>
-              {category.value === 'cafe' && <CafeOffer />}
+              {category.value === 'wholesale' && <CafeOffer />}
             </div>
           )
         })}

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { storefrontImage } from '@/lib/storefront'
 import Link from 'next/link'
 import { ArrowLeft, ArrowDownLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -40,10 +41,11 @@ export function HomeHero() {
       </div>
       <div className="hero-visual">
         <Image
-          src="/images/coffee-ritual.png"
-          alt="بستهٔ قهوه آ کنار فنجان اسپرسو در نور گرم آفتاب"
+          src={storefrontImage}
+            style={{ objectFit: 'contain', backgroundColor: '#151515' }}
+          alt="بستهٔ قهوه آ"
           fill
-          priority
+          preload
           sizes="(max-width: 760px) 100vw, 53vw"
         />
         <div className="hero-photo-caption">

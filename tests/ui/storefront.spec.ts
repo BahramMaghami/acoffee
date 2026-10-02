@@ -8,12 +8,14 @@ test('home keeps the hero and shows every category in a separate slider', async 
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
   await expect(page.locator('main > section.hero + #coffee-selection')).toBeVisible()
-  await expect(page.locator('.category-slider')).toHaveCount(3)
-  await expect(page.locator('.category-slider-heading h2')).toHaveText(['قهوه‌های بلند', 'قهوه‌های مخصوص کافه‌ها', 'قهوه‌های سنتی'])
+  await expect(page.locator('.category-slider')).toHaveCount(5)
+  await expect(page.locator('.category-slider-heading h2')).toHaveText(['قهوه ترکیبی', 'قهوه تک دان', 'قهوه کافه/شرکت‌ها', 'قهوه سنتی', 'نسکافه'])
   await expect(page.locator('.filter-tabs')).toHaveCount(0)
-  await expect(page.locator('.product-card')).toHaveCount(17)
-  await expect(page.locator('.product-card img')).toHaveCount(0)
-  await expect(page.locator('.product-placeholder')).toHaveCount(17)
+  await expect(page.locator('.product-card')).toHaveCount(18)
+  await expect(page.locator('.product-card img')).toHaveCount(18)
+  await expect(page.locator('.product-placeholder')).toHaveCount(0)
+  await expect(page.locator('.hero-visual img')).toHaveAttribute('src', /acoffee/)
+  await expect(page.locator('.product-card img').first()).toHaveAttribute('src', /acoffee/)
   await expect(page.locator('.cafe-offer')).toContainText('۵ کیلوگرم و بیشتر')
   await expect(page.locator('.cafe-offer')).not.toContainText('تومان')
   await expect(page.locator('.cafe-offer a')).toHaveCount(0)
@@ -31,11 +33,11 @@ test('home keeps the hero and shows every category in a separate slider', async 
 test('RTL sliders move independently with buttons, keyboard and native scrolling', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/shop')
-  const blend = page.getByRole('region', { name: 'قهوه‌های بلند', exact: true })
-  const cafe = page.getByRole('region', { name: 'قهوه‌های مخصوص کافه‌ها', exact: true })
-  const traditional = page.getByRole('region', { name: 'قهوه‌های سنتی', exact: true })
-  await expect(blend.locator('.product-card')).toHaveCount(8)
-  await expect(cafe.locator('.product-card')).toHaveCount(7)
+  const blend = page.getByRole('region', { name: 'قهوه ترکیبی', exact: true })
+  const cafe = page.getByRole('region', { name: 'قهوه تک دان', exact: true })
+  const traditional = page.getByRole('region', { name: 'قهوه سنتی', exact: true })
+  await expect(blend.locator('.product-card')).toHaveCount(6)
+  await expect(cafe.locator('.product-card')).toHaveCount(8)
   await expect(traditional.locator('.product-card')).toHaveCount(2)
   const track = blend.locator('.category-slider-track')
   const previous = blend.getByRole('button', { name: 'محصولات قبلی' })
@@ -68,7 +70,7 @@ test('sliders advance every three seconds, loop and pause during keyboard intera
   await page.goto('/shop')
   await page.mouse.move(0, 0)
   const track = page.locator('#shop-blend-track')
-  await expect(page.getByRole('region', { name: 'قهوه‌های بلند', exact: true }).getByRole('button', { name: 'محصولات بعدی' })).toBeEnabled()
+  await expect(page.getByRole('region', { name: 'قهوه ترکیبی', exact: true }).getByRole('button', { name: 'محصولات بعدی' })).toBeEnabled()
   await expect.poll(() => track.evaluate((element) => element.scrollLeft), { timeout: 5000 }).toBeLessThan(-100)
   await track.focus()
   await track.evaluate((element) => element.scrollTo({ left: -element.scrollWidth, behavior: 'instant' }))
@@ -82,9 +84,11 @@ test('sliders advance every three seconds, loop and pause during keyboard intera
 
 test('view all opens the complete matching category and supports direct navigation', async ({ page }) => {
   for (const [category, label, count] of [
-    ['blend', 'قهوه‌های بلند', 8],
-    ['cafe', 'قهوه‌های مخصوص کافه‌ها', 7],
-    ['traditional', 'قهوه‌های سنتی', 2],
+    ['blend', 'قهوه ترکیبی', 6],
+    ['cafe', 'قهوه تک دان', 8],
+    ['wholesale', 'قهوه کافه/شرکت‌ها', 1],
+    ['nescafe', 'نسکافه', 1],
+    ['traditional', 'قهوه سنتی', 2],
   ] as const) {
     await page.goto('/shop')
     const section = page.getByRole('region', { name: label, exact: true })
@@ -102,25 +106,25 @@ test('view all opens the complete matching category and supports direct navigati
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('این صفحه را پیدا نکردیم.')
 })
 
-test('weight, roast and VIP selections remain separate and survive cart reload', async ({ page }, testInfo) => {
+test('weight, roast and Premium Blend selections remain separate and survive cart reload', async ({ page }, testInfo) => {
   await page.goto('/shop/cafe-blend-robusta-80')
-  await expect(page.locator('.detail-copy > .eyebrow')).toHaveText('قهوه‌های بلند')
+  await expect(page.locator('.detail-copy > .eyebrow')).toHaveText('قهوه ترکیبی')
   await expect(page.locator('.detail-copy')).not.toContainText('خاستگاه')
   await page.getByRole('button', { name: '۵۰۰ گرم', exact: true }).click()
-  await page.getByRole('button', { name: 'دارک رست', exact: true }).click()
-  await page.getByRole('button', { name: 'VIP', exact: true }).click()
+  await page.getByRole('button', { name: 'مدیوم-دارک', exact: true }).click()
+  await page.getByRole('button', { name: 'Premium Blend', exact: true }).click()
   await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
   const toast = page.locator('[data-sonner-toast]').filter({ hasText: 'به سبدت اضافه شد.' })
-  await expect(toast).toContainText('۵۰۰ گرم · دارک رست · VIP')
+  await expect(toast).toContainText('۵۰۰ گرم · مدیوم-دارک · Premium Blend')
   await page.getByRole('button', { name: '۲۵۰ گرم', exact: true }).click()
-  await page.getByRole('button', { name: 'مدیوم رست', exact: true }).click()
-  await page.getByRole('button', { name: 'معمولی', exact: true }).click()
+  await page.getByRole('button', { name: 'مدیوم', exact: true }).click()
+  await page.getByRole('button', { name: 'Commercial Blend', exact: true }).click()
   await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
   await page.screenshot({ path: 'artifacts/ui/product-options-' + testInfo.project.name + '.png', fullPage: true })
   await page.goto('/cart')
   await expect(page.locator('.cart-row')).toHaveCount(2)
-  await expect(page.locator('.cart-row').first()).toContainText('۵۰۰ گرم · دارک رست · VIP')
-  await expect(page.locator('.cart-row').last()).toContainText('۲۵۰ گرم · مدیوم رست · معمولی')
+  await expect(page.locator('.cart-row').first()).toContainText('۵۰۰ گرم · مدیوم-دارک · Premium Blend')
+  await expect(page.locator('.cart-row').last()).toContainText('۲۵۰ گرم · مدیوم · Commercial Blend')
   await page.reload()
   await expect(page.locator('.cart-row')).toHaveCount(2)
   await page.locator('.cart-row').first().getByRole('button', { name: /^افزایش تعداد/ }).click()
@@ -159,4 +163,19 @@ test('traditional products expose only requested weights and supporting pages st
   }
   await page.goto('/shop/does-not-exist')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('این صفحه را پیدا نکردیم.')
+})
+
+test('wholesale cards show five kilograms and order selection keeps the correct variant', async ({ page }) => {
+  await page.goto('/shop/category/wholesale')
+  await expect(page.locator('.product-card-weights')).toHaveText('۵ کیلوگرم')
+  await expect(page.locator('.product-card button')).toHaveCount(0)
+  await page.getByRole('link', { name: 'انتخاب قهوه', exact: true }).click()
+  await expect(page.locator('.purchase-options fieldset').first().getByRole('button')).toHaveText('۵ کیلوگرم')
+  await expect(page.getByRole('button', { name: '۵ کیلوگرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'مدیوم-دارک', exact: true }).click()
+  await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
+  await page.goto('/cart')
+  await expect(page.locator('.cart-row')).toHaveCount(1)
+  await expect(page.locator('.cart-row')).toContainText('۵ کیلوگرم · مدیوم-دارک')
+  await expect(page.locator('.cart-row img')).toHaveAttribute('src', /acoffee/)
 })
