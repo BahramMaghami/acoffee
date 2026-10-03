@@ -7,6 +7,7 @@ import './globals.css'
 import './auth.css'
 import './brand-theme.css'
 import { auth } from '@/auth'
+import { defaultTheme, themeScript } from './theme'
 
 export const metadata: Metadata = {
   title: { default: 'آ | قهوه، به وقت خودت', template: '%s | آ' },
@@ -18,7 +19,10 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const session = await auth()
   const headerUser = session?.user ? { name: session.user.name, email: session.user.email } : null
   return (
-    <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="h-full antialiased">
+    <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="h-full antialiased" data-theme={defaultTheme} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <a className="skip-link" href="#main-content">
           رفتن به محتوای صفحه

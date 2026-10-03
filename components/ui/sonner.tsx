@@ -2,11 +2,13 @@
 
 import type { CSSProperties } from 'react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
+import { useTheme } from '@/app/use-theme'
 
 export function Toaster(props: ToasterProps) {
+  const theme = useTheme()
   return (
     <Sonner
-      theme="light"
+      theme={theme}
       dir="rtl"
       position="top-center"
       offset={104}

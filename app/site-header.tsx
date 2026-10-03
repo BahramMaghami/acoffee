@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useCart } from './cart/cart-store'
 import { formatNumber } from '@/lib/storefront'
 import { UserMenu, type HeaderUser } from './user-menu'
+import { ThemeToggle } from './theme-toggle'
 
 const links = [
   { href: '/shop', label: 'قهوه‌های ما' },
@@ -49,6 +50,7 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
             ))}
           </nav>
           <div className="header-actions">
+            <ThemeToggle />
             <UserMenu user={user} />
             <Button asChild variant="ghost" size="icon" className="search-link">
               <Link href="/shop" aria-label="مرور قهوه‌ها">

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
-import { storefrontImage } from '@/lib/storefront'
+import { StorefrontImage } from '../storefront-image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -37,12 +36,9 @@ export default function AboutPage() {
           </Button>
         </div>
         <div className="about-photo">
-          <Image
-            src={storefrontImage}
-            style={{ objectFit: 'contain', backgroundColor: '#151515' }}
+          <StorefrontImage
             alt="بستهٔ قهوه آ"
-            fill
-            preload
+            priority
             sizes="(max-width: 760px) 95vw, 45vw"
           />
         </div>
