@@ -1,12 +1,18 @@
 export const formatNumber = (value: number) =>
   new Intl.NumberFormat('fa-IR').format(value)
 export const formatPrice = (value: number) => `${formatNumber(value)} تومان`
-export const formatWeight = (grams: number) => grams >= 1000 ? `${formatNumber(grams / 1000)} کیلوگرم` : `${formatNumber(grams)} گرم`
+export const formatWeight = (grams: number) =>
+  grams >= 1000
+    ? `${formatNumber(grams / 1000)} کیلوگرم`
+    : `${formatNumber(grams)} گرم`
 export const storefrontImages = {
   light: '/images/acoffee.jpg',
   dark: '/images/acoffee-cinematic.png',
 } as const
-export const gradeLabels = { standard: 'Commercial Blend', vip: 'Premium Blend' } as const
+export const gradeLabels = {
+  standard: 'Commercial Blend',
+  vip: 'Premium Blend',
+} as const
 
 export const categories = [
   { value: 'blend', label: 'قهوه ترکیبی' },
@@ -19,7 +25,7 @@ export const cafeGroups = [
   { value: 'robusta', label: 'قهوه‌های روبوستا' },
   { value: 'arabica', label: 'قهوه‌های عربیکا' },
 ] as const
-export const weightOptions = [100, 250, 500] as const
+export const weightOptions = [250, 500, 1000] as const
 export const roastOptions = [
   { value: 'medium', label: 'مدیوم' },
   { value: 'medium-dark', label: 'مدیوم-دارک' },
@@ -65,7 +71,9 @@ function coffee(
     origin: '',
     weights: category === 'wholesale' ? [5000] : weightOptions,
     roasts:
-      category === 'cafe' || category === 'blend' || category === 'wholesale' ? ['medium', 'medium-dark'] : [],
+      category === 'cafe' || category === 'blend' || category === 'wholesale'
+        ? ['medium', 'medium-dark']
+        : [],
     grades: vip ? ['standard', 'vip'] : ['standard'],
     prices: {},
   }
