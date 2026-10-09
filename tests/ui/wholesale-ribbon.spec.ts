@@ -1,0 +1,28 @@
+import { expect, test } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
+
+test('home wholesale cards show the ten kilogram ribbon in both themes without changing prices', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  const section = page.locator('#home-wholesale')
+  await section.scrollIntoViewIfNeeded()
+  await expect(section.locator('.wholesale-ribbon')).toHaveCount(6)
+  await expect(page.locator('.wholesale-ribbon')).toHaveCount(6)
+  const card = section.locator('.product-card').first()
+  await expect(card.locator('.wholesale-ribbon')).toHaveText('۳٪ تخفیفبستهٔ ۱۰ کیلویی')
+  await expect(card.locator('.product-card-price')).toContainText('۱۱٬۵۰۰٬۰۰۰ تومان')
+  const frame = await card.locator('.product-image-link').boundingBox()
+  const ribbon = await card.locator('.wholesale-ribbon').boundingBox()
+  expect(frame).not.toBeNull()
+  expect(ribbon).not.toBeNull()
+  expect(Math.abs(ribbon!.y - frame!.y)).toBeLessThan(3)
+  expect(frame!.x + frame!.width - ribbon!.x - ribbon!.width).toBeLessThan(18)
+  await mkdir('artifacts/ui', { recursive: true })
+  await section.screenshot({ path: `artifacts/ui/wholesale-ribbon-dark-${testInfo.project.name}.png` })
+  await page.getByRole('button', { name: 'تغییر به تم روشن' }).click()
+  await expect(card.locator('.wholesale-ribbon')).toBeVisible()
+  await section.screenshot({ path: `artifacts/ui/wholesale-ribbon-light-${testInfo.project.name}.png` })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.goto('/shop/category/wholesale')
+  await expect(page.locator('.wholesale-ribbon')).toHaveCount(0)
+})

@@ -93,7 +93,7 @@ test('retail prices scale from the supplied 500 g amounts for both roasts', () =
 test('wholesale uses the exact package prices without applying another discount', () => {
   const prices: [string, number, number, number, number][] = [
     ['wholesale-robusta-100', 11_500_000, 13_000_000, 22_310_000, 25_220_000],
-    ['wholesale-robusta-80', 11_750_000, 12_500_000, 29_100_000, 24_250_000],
+    ['wholesale-robusta-80', 11_750_000, 12_500_000, 22_795_000, 24_250_000],
     ['wholesale-robusta-70', 12_250_000, 13_000_000, 23_765_000, 25_220_000],
     ['wholesale-robusta-50', 12_750_000, 13_750_000, 24_735_000, 26_675_000],
     ['wholesale-arabica-80', 15_000_000, 16_500_000, 29_100_000, 32_000_000],

@@ -11,6 +11,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:ui": "playwright test",
     "test:unit": "node --import tsx --test tests/unit/*.test.ts",
+    "prices:compare": "tsx scripts/compare-blend-prices.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",

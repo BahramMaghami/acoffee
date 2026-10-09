@@ -3,13 +3,15 @@ import Link from 'next/link'
 import { ArrowUpLeft } from 'lucide-react'
 import { categories, cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, type StoreProduct } from '@/lib/storefront'
 
-export function ProductCard({ product }: { product: StoreProduct }) {
+export function ProductCard({ product, showWholesaleRibbon = false }: { product: StoreProduct; showWholesaleRibbon?: boolean }) {
   const price = startingPrice(product)
   const category = categories.find((category) => category.value === product.category)!.label
+  const ribbon = showWholesaleRibbon && product.category === 'wholesale' && product.weights.includes(10000)
   return <article className="product-card">
     <Link href={'/shop/' + product.slug} className="product-image-link" aria-label={'مشاهدهٔ ' + product.name}>
       <ProductVisual name={product.name} />
-      <span className="product-badge">{product.cafeGroup ? cafeGroups.find((group) => group.value === product.cafeGroup)!.label : category}</span>
+      {ribbon ? <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
+        : <span className="product-badge">{product.cafeGroup ? cafeGroups.find((group) => group.value === product.cafeGroup)!.label : category}</span>}
       <span className="product-arrow"><ArrowUpLeft size={20} /></span>
     </Link>
     <div className="product-card-meta"><span>{category}</span><span>انتخاب وزن در سفارش</span></div>

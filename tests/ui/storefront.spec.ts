@@ -176,7 +176,7 @@ test('wholesale prices follow weight and grade without a discount badge', async 
   await expect(page.getByRole('button', { name: '۵ کیلوگرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.purchase-price strong')).toHaveText('۱۱٬۷۵۰٬۰۰۰ تومان')
   await page.getByRole('button', { name: '۱۰ کیلوگرم', exact: true }).click()
-  await expect(page.locator('.purchase-price strong')).toHaveText('۲۹٬۱۰۰٬۰۰۰ تومان')
+  await expect(page.locator('.purchase-price strong')).toHaveText('۲۲٬۷۹۵٬۰۰۰ تومان')
   await expect(page.getByText(/تخفیف/)).toHaveCount(0)
   await page.getByRole('button', { name: 'Premium Blend', exact: true }).click()
   await expect(page.locator('.purchase-price strong')).toHaveText('۲۴٬۲۵۰٬۰۰۰ تومان')
