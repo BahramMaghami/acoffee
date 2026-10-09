@@ -54,6 +54,59 @@ export type StoreProduct = {
   // Whole toman for each exact weight/roast/grade, filled when prices are supplied.
   prices: Record<string, number | null>
 }
+
+// Retail amounts are whole toman per 500 g. Roasts share the same price.
+const retailPricesPer500Grams: Record<
+  string,
+  Partial<Record<Grade, number>>
+> = {
+  'cafe-blend-robusta-100': { standard: 2_800_000, vip: 3_100_000 },
+  'cafe-blend-robusta-80': { standard: 2_850_000, vip: 2_950_000 },
+  'cafe-blend-robusta-70': { standard: 2_950_000, vip: 3_100_000 },
+  'cafe-blend-robusta-50': { standard: 3_300_000, vip: 3_800_000 },
+  'cafe-blend-arabica-80': { standard: 3_450_000, vip: 4_100_000 },
+  'cafe-blend-arabica-100': { standard: 4_100_000, vip: 5_140_000 },
+  'cafe-vietnam-cherry-aa': { standard: 2_600_000 },
+  'cafe-peaberry': { standard: 2_800_000 },
+  'cafe-indonesia-ek': { standard: 3_250_000 },
+  'cafe-colombia': { standard: 5_500_000 },
+  'cafe-ethiopia-lekempti': { standard: 3_700_000 },
+  'cafe-brazil-rio': { standard: 3_600_000 },
+  'turkish-coffee': { standard: 2_750_000 },
+  'armenian-coffee': { standard: 2_950_000 },
+}
+
+// Exact package prices, independent of retail rates; no additional discount.
+const wholesalePackagePrices: Record<
+  string,
+  Record<number, Record<Grade, number>>
+> = {
+  'wholesale-robusta-100': {
+    5000: { standard: 11_500_000, vip: 13_000_000 },
+    10000: { standard: 22_310_000, vip: 25_220_000 },
+  },
+  'wholesale-robusta-80': {
+    5000: { standard: 11_750_000, vip: 12_500_000 },
+    10000: { standard: 22_795_000, vip: 24_250_000 },
+  },
+  'wholesale-robusta-70': {
+    5000: { standard: 12_250_000, vip: 13_000_000 },
+    10000: { standard: 23_765_000, vip: 25_220_000 },
+  },
+  'wholesale-robusta-50': {
+    5000: { standard: 12_750_000, vip: 13_750_000 },
+    10000: { standard: 24_735_000, vip: 26_675_000 },
+  },
+  'wholesale-arabica-80': {
+    5000: { standard: 15_000_000, vip: 16_500_000 },
+    10000: { standard: 29_100_000, vip: 32_000_000 },
+  },
+  'wholesale-arabica-100': {
+    5000: { standard: 17_500_000, vip: 24_500_000 },
+    10000: { standard: 33_950_000, vip: 47_530_000 },
+  },
+}
+
 function coffee(
   id: string,
   name: string,
@@ -61,7 +114,7 @@ function coffee(
   cafeGroup?: CafeGroup,
   vip = false,
 ): StoreProduct {
-  return {
+  const product: StoreProduct = {
     id,
     slug: id,
     name,
@@ -69,7 +122,7 @@ function coffee(
     cafeGroup,
     description,
     origin: '',
-    weights: category === 'wholesale' ? [5000] : weightOptions,
+    weights: category === 'wholesale' ? [5000, 10000] : weightOptions,
     roasts:
       category === 'cafe' || category === 'blend' || category === 'wholesale'
         ? ['medium', 'medium-dark']
@@ -77,24 +130,55 @@ function coffee(
     grades: vip ? ['standard', 'vip'] : ['standard'],
     prices: {},
   }
+  for (const weight of product.weights) {
+    for (const roast of product.roasts.length ? product.roasts : [undefined]) {
+      for (const grade of product.grades) {
+        const retailBase = retailPricesPer500Grams[id]?.[grade]
+        product.prices[variantKey(weight, roast, grade)] =
+          category === 'wholesale'
+            ? (wholesalePackagePrices[id]?.[weight]?.[grade] ?? null)
+            : retailBase === undefined
+              ? null
+              : (retailBase * weight) / 500
+      }
+    }
+  }
+  return product
 }
 const catalog: StoreProduct[] = [
-  coffee('cafe-vietnam-cherry-aa', 'ویتنام چری AA', 'cafe', 'robusta'),
-  coffee('cafe-peaberry', 'پی بی', 'cafe', 'robusta'),
+  coffee('cafe-vietnam-cherry-aa', 'ویتنام', 'cafe', 'robusta'),
+  coffee('cafe-peaberry', 'پی بی هند', 'cafe', 'robusta'),
   coffee('cafe-indonesia-ap1', 'اندونزی AP1', 'cafe', 'robusta'),
   coffee('cafe-indonesia-ek', 'اندونزی EK', 'cafe', 'robusta'),
   coffee('cafe-uganda', 'اوگاندا', 'cafe', 'robusta'),
-  coffee('cafe-colombia', 'کلمبیا', 'cafe', 'arabica'),
-  coffee('cafe-ethiopia-lekempti', 'اتیوپی لمکپتی', 'cafe', 'arabica'),
+  coffee('cafe-colombia', 'کلمبیا سوپریمو', 'cafe', 'arabica'),
+  coffee('cafe-ethiopia-lekempti', 'اتیوپی لکمپتی', 'cafe', 'arabica'),
   coffee('cafe-brazil-rio', 'برزیل ریو', 'cafe', 'arabica'),
   // Preserve existing slugs and SKUs when moving products between categories.
   coffee('cafe-blend-robusta-100', '۱۰۰٪ روبوستا', 'blend', undefined, true),
   coffee('cafe-blend-robusta-80', '۸۰٪ روبوستا', 'blend', undefined, true),
   coffee('cafe-blend-robusta-70', '۷۰٪ روبوستا', 'blend', undefined, true),
-  coffee('cafe-blend-robusta-50', '۵۰٪ روبوستا', 'blend', undefined, true),
+  coffee(
+    'cafe-blend-robusta-50',
+    '۵۰٪ روبوستا-۵۰٪ عربیکا',
+    'blend',
+    undefined,
+    true,
+  ),
   coffee('cafe-blend-arabica-80', '۸۰٪ عربیکا', 'blend', undefined, true),
   coffee('cafe-blend-arabica-100', '۱۰۰٪ عربیکا', 'blend', undefined, true),
-  coffee('wholesale-robusta-100', '۱۰۰٪ روبوستا', 'wholesale'),
+  coffee('wholesale-robusta-100', '۱۰۰٪ روبوستا', 'wholesale', undefined, true),
+  coffee('wholesale-robusta-80', '۸۰٪ روبوستا', 'wholesale', undefined, true),
+  coffee('wholesale-robusta-70', '۷۰٪ روبوستا', 'wholesale', undefined, true),
+  coffee(
+    'wholesale-robusta-50',
+    '۵۰٪ روبوستا-۵۰٪ عربیکا',
+    'wholesale',
+    undefined,
+    true,
+  ),
+  coffee('wholesale-arabica-80', '۸۰٪ عربیکا', 'wholesale', undefined, true),
+  coffee('wholesale-arabica-100', '۱۰۰٪ عربیکا', 'wholesale', undefined, true),
   coffee('turkish-coffee', 'قهوه ترک', 'traditional'),
   coffee('armenian-coffee', 'قهوه ارمنی', 'traditional'),
   coffee('nescafe', 'نسکافه', 'nescafe'),

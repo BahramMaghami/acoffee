@@ -11,8 +11,8 @@ test('home keeps the hero and shows every category in a separate slider', async 
   await expect(page.locator('.category-slider')).toHaveCount(5)
   await expect(page.locator('.category-slider-heading h2')).toHaveText(['قهوه ترکیبی', 'قهوه تک دان', 'قهوه کافه/شرکت‌ها', 'قهوه سنتی', 'نسکافه'])
   await expect(page.locator('.filter-tabs')).toHaveCount(0)
-  await expect(page.locator('.product-card')).toHaveCount(18)
-  await expect(page.locator('.product-card img:visible')).toHaveCount(18)
+  await expect(page.locator('.product-card')).toHaveCount(23)
+  await expect(page.locator('.product-card img:visible')).toHaveCount(23)
   await expect(page.locator('.product-placeholder')).toHaveCount(0)
   await expect(page.locator('.hero-visual img:visible')).toHaveAttribute('src', /acoffee/)
   await expect(page.locator('.product-card img:visible').first()).toHaveAttribute('src', /acoffee/)
@@ -86,7 +86,7 @@ test('view all opens the complete matching category and supports direct navigati
   for (const [category, label, count] of [
     ['blend', 'قهوه ترکیبی', 6],
     ['cafe', 'قهوه تک دان', 8],
-    ['wholesale', 'قهوه کافه/شرکت‌ها', 1],
+    ['wholesale', 'قهوه کافه/شرکت‌ها', 6],
     ['nescafe', 'نسکافه', 1],
     ['traditional', 'قهوه سنتی', 2],
   ] as const) {
@@ -130,8 +130,8 @@ test('weight, roast and Premium Blend selections remain separate and survive car
   await page.locator('.cart-row').first().getByRole('button', { name: /^افزایش تعداد/ }).click()
   await expect(page.locator('.cart-row').first().locator('output')).toHaveText('۲')
   await expect(page.locator('.cart-row').last().locator('output')).toHaveText('۱')
-  await expect(page.locator('.summary-total dd')).toHaveText('پس از اعلام قیمت')
-  await expect(page.getByRole('button', { name: 'در انتظار اعلام قیمت' })).toBeDisabled()
+  await expect(page.locator('.summary-total dd')).toHaveText('۷٬۳۲۵٬۰۰۰ تومان')
+  await expect(page.getByRole('link', { name: 'ادامهٔ خرید' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.locator('.cart-row').first().getByRole('button', { name: /^حذف/ }).click()
   await expect(page.locator('.cart-row')).toHaveCount(1)
@@ -156,7 +156,7 @@ test('cart rejects unsupported variants and caps quantities without inventing st
 test('traditional products expose only requested weights and supporting pages still work', async ({ page }) => {
   await page.goto('/shop/turkish-coffee')
   await expect(page.locator('.purchase-options legend')).toHaveText('وزن بسته')
-  await expect(page.locator('.option-buttons button')).toHaveText(['۱۰۰ گرم', '۲۵۰ گرم', '۵۰۰ گرم'])
+  await expect(page.locator('.option-buttons button')).toHaveText(['۲۵۰ گرم', '۵۰۰ گرم', '۱ کیلوگرم'])
   for (const [path, heading] of [['/about', 'برای یک مکث'], ['/guide', 'خوب دم کن']]) {
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1 })).toContainText(heading)
@@ -165,17 +165,30 @@ test('traditional products expose only requested weights and supporting pages st
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('این صفحه را پیدا نکردیم.')
 })
 
-test('wholesale cards show five kilograms and order selection keeps the correct variant', async ({ page }) => {
+test('wholesale prices follow weight and grade without a discount badge', async ({ page }, testInfo) => {
   await page.goto('/shop/category/wholesale')
-  await expect(page.locator('.product-card-weights')).toHaveText('۵ کیلوگرم')
+  await expect(page.locator('.product-card')).toHaveCount(6)
+  await expect(page.locator('.product-card-weights')).toHaveText(Array(6).fill('۵ کیلوگرم · ۱۰ کیلوگرم'))
+  await expect(page.getByText(/تخفیف/)).toHaveCount(0)
   await expect(page.locator('.product-card button')).toHaveCount(0)
-  await page.getByRole('link', { name: 'انتخاب قهوه', exact: true }).click()
-  await expect(page.locator('.purchase-options fieldset').first().getByRole('button')).toHaveText('۵ کیلوگرم')
+  await page.locator('.product-card').filter({ has: page.getByRole('heading', { name: '۸۰٪ روبوستا', exact: true }) }).getByRole('link', { name: 'انتخاب قهوه', exact: true }).click()
+  await expect(page.locator('.purchase-options fieldset').first().getByRole('button')).toHaveText(['۵ کیلوگرم', '۱۰ کیلوگرم'])
   await expect(page.getByRole('button', { name: '۵ کیلوگرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.purchase-price strong')).toHaveText('۱۱٬۷۵۰٬۰۰۰ تومان')
+  await page.getByRole('button', { name: '۱۰ کیلوگرم', exact: true }).click()
+  await expect(page.locator('.purchase-price strong')).toHaveText('۲۹٬۱۰۰٬۰۰۰ تومان')
+  await expect(page.getByText(/تخفیف/)).toHaveCount(0)
+  await page.getByRole('button', { name: 'Premium Blend', exact: true }).click()
+  await expect(page.locator('.purchase-price strong')).toHaveText('۲۴٬۲۵۰٬۰۰۰ تومان')
   await page.getByRole('button', { name: 'مدیوم-دارک', exact: true }).click()
+  await mkdir('artifacts/ui', { recursive: true })
+  await page.screenshot({ path: `artifacts/ui/wholesale-prices-${testInfo.project.name}.png`, fullPage: true })
   await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
+  await page.getByRole('button', { name: '۵ کیلوگرم', exact: true }).click()
+  await expect(page.locator('.purchase-price strong')).toHaveText('۱۲٬۵۰۰٬۰۰۰ تومان')
   await page.goto('/cart')
   await expect(page.locator('.cart-row')).toHaveCount(1)
-  await expect(page.locator('.cart-row')).toContainText('۵ کیلوگرم · مدیوم-دارک')
+  await expect(page.locator('.cart-row')).toContainText('۱۰ کیلوگرم · مدیوم-دارک · Premium Blend')
+  await expect(page.locator('.summary-total dd')).toHaveText('۲۴٬۲۵۰٬۰۰۰ تومان')
   await expect(page.locator('.cart-row img:visible')).toHaveAttribute('src', /acoffee/)
 })
