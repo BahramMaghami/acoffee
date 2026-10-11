@@ -16,10 +16,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const product = products.find((item) => item.slug === slug)
   return { title: product?.name ?? 'قهوه پیدا نشد', description: product?.description }
 }
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProductPage({ params, searchParams }: PageProps<'/shop/[slug]'>) {
   const { slug } = await params
   const product = products.find((item) => item.slug === slug)
   if (!product) notFound()
+  const query = await searchParams
+  const initialWeight = product.weights.find(weight => String(weight) === query.weight)
+    ?? (product.weights.includes(250) ? 250 : product.weights[0])
   const category = categories.find((category) => category.value === product.category)!.label
   return <div className="shell page-space">
     <nav className="breadcrumbs" aria-label="مسیر صفحه">
@@ -28,6 +31,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <div className="product-detail">
       <div className="detail-image">
         <ProductVisual name={product.name} sizes="(max-width: 760px) 100vw, 50vw" />
+        {product.category === 'wholesale' && product.weights.includes(10000) && (
+          <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
+        )}
         <span className="detail-image-caption" dir="ltr">ACOFFEE</span>
       </div>
       <div className="detail-copy">
@@ -35,7 +41,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <h1>{product.name}</h1>
         <p className="detail-description">{product.description}</p>
         {product.origin && <dl className="product-facts"><div><dt>خاستگاه</dt><dd>{product.origin}</dd></div></dl>}
-        <ProductPurchase product={product} />
+        <ProductPurchase key={`${product.id}:${initialWeight}`} product={product} initialWeight={initialWeight} />
       </div>
     </div>
     {product.category === 'wholesale' && <CafeOffer />}

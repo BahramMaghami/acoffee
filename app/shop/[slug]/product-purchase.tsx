@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button'
 import { useCart } from '@/app/cart/cart-store'
 import { formatNumber, formatWeight, formatPrice, productVariant, roastOptions, gradeLabels, maxCartQuantity, type StoreProduct, type Roast, type Grade } from '@/lib/storefront'
 
-export function ProductPurchase({ product }: { product: StoreProduct }) {
+export function ProductPurchase({ product, initialWeight }: { product: StoreProduct; initialWeight: number }) {
   const [quantity, setQuantity] = useState(1)
-  const [weight, setWeight] = useState(product.weights.includes(250) ? 250 : product.weights[0])
+  const [weight, setWeight] = useState(initialWeight)
   const [roast, setRoast] = useState<Roast | undefined>(product.roasts[0])
   const [grade, setGrade] = useState<Grade>('standard')
   const router = useRouter()
@@ -19,7 +19,7 @@ export function ProductPurchase({ product }: { product: StoreProduct }) {
   const inCart = items.find((item) => item.productId === variant.id)?.quantity ?? 0
   const remaining = maxCartQuantity - inCart
   const selected = Math.min(quantity, Math.max(remaining, 1))
-  return <div className="product-purchase">
+  return <div className="product-purchase" data-weight={weight}>
     <div className="purchase-options">
       <fieldset><legend>وزن بسته</legend><div className="option-buttons">{product.weights.map((value) =>
         <button key={value} type="button" aria-pressed={weight === value} onClick={() => setWeight(value)}>{formatWeight(value)}</button>)}</div></fieldset>

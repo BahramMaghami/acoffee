@@ -130,7 +130,7 @@ test('weight, roast and Premium Blend selections remain separate and survive car
   await page.locator('.cart-row').first().getByRole('button', { name: /^افزایش تعداد/ }).click()
   await expect(page.locator('.cart-row').first().locator('output')).toHaveText('۲')
   await expect(page.locator('.cart-row').last().locator('output')).toHaveText('۱')
-  await expect(page.locator('.summary-total dd')).toHaveText('۷٬۳۲۵٬۰۰۰ تومان')
+  await expect(page.locator('.summary-total dd')).toHaveText('۳٬۶۶۲٬۵۰۰ تومان')
   await expect(page.getByRole('link', { name: 'ادامهٔ خرید' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.locator('.cart-row').first().getByRole('button', { name: /^حذف/ }).click()
@@ -165,7 +165,7 @@ test('traditional products expose only requested weights and supporting pages st
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('این صفحه را پیدا نکردیم.')
 })
 
-test('wholesale prices follow weight and grade without a discount badge', async ({ page }, testInfo) => {
+test('wholesale prices and the detail ribbon follow the selected weight and grade', async ({ page }, testInfo) => {
   await page.goto('/shop/category/wholesale')
   await expect(page.locator('.product-card')).toHaveCount(6)
   await expect(page.locator('.product-card-weights')).toHaveText(Array(6).fill('۵ کیلوگرم · ۱۰ کیلوگرم'))
@@ -175,9 +175,10 @@ test('wholesale prices follow weight and grade without a discount badge', async 
   await expect(page.locator('.purchase-options fieldset').first().getByRole('button')).toHaveText(['۵ کیلوگرم', '۱۰ کیلوگرم'])
   await expect(page.getByRole('button', { name: '۵ کیلوگرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.purchase-price strong')).toHaveText('۱۱٬۷۵۰٬۰۰۰ تومان')
+  await expect(page.locator('.detail-image .wholesale-ribbon')).toBeHidden()
   await page.getByRole('button', { name: '۱۰ کیلوگرم', exact: true }).click()
   await expect(page.locator('.purchase-price strong')).toHaveText('۲۲٬۷۹۵٬۰۰۰ تومان')
-  await expect(page.getByText(/تخفیف/)).toHaveCount(0)
+  await expect(page.locator('.detail-image .wholesale-ribbon')).toBeVisible()
   await page.getByRole('button', { name: 'Premium Blend', exact: true }).click()
   await expect(page.locator('.purchase-price strong')).toHaveText('۲۴٬۲۵۰٬۰۰۰ تومان')
   await page.getByRole('button', { name: 'مدیوم-دارک', exact: true }).click()
@@ -186,6 +187,7 @@ test('wholesale prices follow weight and grade without a discount badge', async 
   await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
   await page.getByRole('button', { name: '۵ کیلوگرم', exact: true }).click()
   await expect(page.locator('.purchase-price strong')).toHaveText('۱۲٬۵۰۰٬۰۰۰ تومان')
+  await expect(page.locator('.detail-image .wholesale-ribbon')).toBeHidden()
   await page.goto('/cart')
   await expect(page.locator('.cart-row')).toHaveCount(1)
   await expect(page.locator('.cart-row')).toContainText('۱۰ کیلوگرم · مدیوم-دارک · Premium Blend')

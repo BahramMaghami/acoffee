@@ -59,7 +59,7 @@ test('missing prices stay unknown rather than becoming free products', () => {
   assert.equal(productVariant(priced, 500)!.price, null)
 })
 
-test('retail prices scale from the supplied 500 g amounts for both roasts', () => {
+test('retail prices scale from the supplied 1 kg amounts for both roasts', () => {
   const prices: [string, number, number?][] = [
     ['cafe-blend-robusta-100', 2_800_000, 3_100_000],
     ['cafe-blend-robusta-80', 2_850_000, 2_950_000],
@@ -81,12 +81,12 @@ test('retail prices scale from the supplied 500 g amounts for both roasts', () =
     for (const roast of product.roasts.length ? product.roasts : [undefined]) {
       for (const grade of product.grades) {
         const base = grade === 'vip' ? vip! : standard
-        assert.equal(productVariant(product, 250, roast, grade)!.price, base / 2, id)
-        assert.equal(productVariant(product, 500, roast, grade)!.price, base, id)
-        assert.equal(productVariant(product, 1000, roast, grade)!.price, base * 2, id)
+        assert.equal(productVariant(product, 250, roast, grade)!.price, base / 4, id)
+        assert.equal(productVariant(product, 500, roast, grade)!.price, base / 2, id)
+        assert.equal(productVariant(product, 1000, roast, grade)!.price, base, id)
       }
     }
-    assert.equal(startingPrice(product), standard / 2)
+    assert.equal(startingPrice(product), standard / 4)
   }
 })
 

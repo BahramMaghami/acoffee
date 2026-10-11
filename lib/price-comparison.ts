@@ -10,7 +10,7 @@ const blendRatios = [
 export function compareBlendPrices() {
   const comparisons = blendRatios.flatMap(([blend, arabicaPercent]) =>
     (['cafe-blend', 'wholesale'] as const).flatMap(prefix => {
-      const baseWeight = prefix === 'wholesale' ? 5000 : 500
+      const baseWeight = prefix === 'wholesale' ? 5000 : 1000
       return variants.filter(variant => variant.product.id === `${prefix}-${blend}`).map(variant => {
         const suffix = `--${baseWeight}-${variant.roast}-${variant.grade}`
         const arabicaPrice = findVariant(`${prefix}-arabica-100${suffix}`)?.price

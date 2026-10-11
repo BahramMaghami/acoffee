@@ -55,8 +55,8 @@ export type StoreProduct = {
   prices: Record<string, number | null>
 }
 
-// Retail amounts are whole toman per 500 g. Roasts share the same price.
-const retailPricesPer500Grams: Record<
+// Supplied retail amounts are whole toman per 1 kg. Roasts share the same price.
+const retailPricesPerKilogram: Record<
   string,
   Partial<Record<Grade, number>>
 > = {
@@ -133,13 +133,13 @@ function coffee(
   for (const weight of product.weights) {
     for (const roast of product.roasts.length ? product.roasts : [undefined]) {
       for (const grade of product.grades) {
-        const retailBase = retailPricesPer500Grams[id]?.[grade]
+        const retailBase = retailPricesPerKilogram[id]?.[grade]
         product.prices[variantKey(weight, roast, grade)] =
           category === 'wholesale'
             ? (wholesalePackagePrices[id]?.[weight]?.[grade] ?? null)
             : retailBase === undefined
               ? null
-              : (retailBase * weight) / 500
+              : (retailBase * weight) / 1000
       }
     }
   }

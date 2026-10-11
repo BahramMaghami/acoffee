@@ -7,17 +7,18 @@ export function ProductCard({ product, showWholesaleRibbon = false }: { product:
   const price = startingPrice(product)
   const category = categories.find((category) => category.value === product.category)!.label
   const ribbon = showWholesaleRibbon && product.category === 'wholesale' && product.weights.includes(10000)
+  const href = '/shop/' + product.slug + (ribbon ? '?weight=10000' : '')
   return <article className="product-card">
-    <Link href={'/shop/' + product.slug} className="product-image-link" aria-label={'مشاهدهٔ ' + product.name}>
+    <Link href={href} className="product-image-link" aria-label={'مشاهدهٔ ' + product.name}>
       <ProductVisual name={product.name} />
       {ribbon ? <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
         : <span className="product-badge">{product.cafeGroup ? cafeGroups.find((group) => group.value === product.cafeGroup)!.label : category}</span>}
       <span className="product-arrow"><ArrowUpLeft size={20} /></span>
     </Link>
     <div className="product-card-meta"><span>{category}</span><span>انتخاب وزن در سفارش</span></div>
-    <h3><Link href={'/shop/' + product.slug}>{product.name}</Link></h3>
+    <h3><Link href={href}>{product.name}</Link></h3>
     <p className="product-card-weights">{product.weights.map(formatWeight).join(' · ')}</p>
     {product.grades.length > 1 && <p className="tasting-notes" dir="ltr">{product.grades.map((grade) => gradeLabels[grade]).join(' / ')}</p>}
-    <div className="product-card-price"><span>{price === null ? 'قیمت به‌زودی' : 'از ' + formatPrice(price)}</span><Link href={'/shop/' + product.slug}>انتخاب قهوه</Link></div>
+    <div className="product-card-price"><span>{price === null ? 'قیمت به‌زودی' : 'از ' + formatPrice(price)}</span><Link href={href}>انتخاب قهوه</Link></div>
   </article>
 }

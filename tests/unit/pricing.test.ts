@@ -40,8 +40,8 @@ test('comparison detects differences without replacing any catalog price', () =>
   assert.equal(result.allMatch, false)
   assert.equal(result.comparisons.filter(row => !row.matches).length, 80)
   const sample = result.comparisons.find(row => row.id === 'cafe-blend-arabica-80--500-medium-standard')!
-  assert.equal(sample.currentPrice, 3_450_000)
-  assert.equal(sample.calculatedPrice, 3_840_000)
-  assert.equal(sample.difference, 390_000)
+  assert.equal(sample.currentPrice, 1_725_000)
+  assert.equal(sample.calculatedPrice, 1_920_000)
+  assert.equal(sample.difference, 195_000)
   assert.equal(JSON.stringify(variants), before)
 })
