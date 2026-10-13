@@ -37,7 +37,6 @@ export function LoginForm({ destination }: { destination: string }) {
         }
         toast.success('به آ خوش برگشتی.')
         router.replace(result.redirectTo)
-        router.refresh()
       } catch {
         setError('root', { message: 'ارتباط برقرار نشد. دوباره تلاش کن.' })
       }

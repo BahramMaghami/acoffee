@@ -26,7 +26,6 @@ export function RegisterForm({ destination }: { destination: string }) {
         if (!result.success) { setError('root', { message: result.message }); return }
         toast.success('حسابت در آ ساخته شد.')
         router.replace(result.redirectTo)
-        router.refresh()
       } catch {
         setError('root', { message: 'ارتباط برقرار نشد. دوباره تلاش کن.' })
       }

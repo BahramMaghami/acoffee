@@ -19,7 +19,7 @@ test('checkout requires login and preserves the destination', async ({ page }) =
 
 test.describe('Neon checkout', () => {
   test.skip(process.env.CHECKOUT_E2E !== '1', 'Set CHECKOUT_E2E=1 to test real checkout writes.')
-  test.skip(!pricedVariant, 'New catalog prices are intentionally empty; configure a priced 250g SKU and seed it before live checkout tests.')
+  test.skip(!pricedVariant, 'Configure a priced 250g SKU and seed it before live checkout tests.')
   test.setTimeout(180_000)
   const identities: string[] = []
   let db: PrismaClient
@@ -44,7 +44,7 @@ test.describe('Neon checkout', () => {
     const user = await db.user.create({ data: { name: 'خریدار آزمایشی آ', email, passwordHash } })
     const other = await db.user.create({ data: { name: 'حساب دوم آزمایشی', email: otherEmail, passwordHash } })
     const product = await db.product.findUniqueOrThrow({ where: { slug: pricedVariant!.id } })
-    expect(product.stock).toBeGreaterThanOrEqual(2)
+    expect(product.isActive).toBe(true)
     await page.goto('/shop/' + pricedVariant!.product.slug)
     await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
     await page.goto('/cart')
@@ -66,15 +66,12 @@ test.describe('Neon checkout', () => {
     expect(address.phone).toBe('09121234567')
     expect(await db.order.count({ where: { userId: user.id } })).toBe(0)
 
-    // A stale review cannot create an order after stock requirements change.
+    // A stale review cannot create an order after cart quantities change.
     const cart = await db.cart.findUniqueOrThrow({ where: { userId: user.id } })
-    await db.cartItem.updateMany({ where: { cartId: cart.id }, data: { quantity: product.stock + 1 } })
-    await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
-    await expect(page.locator('.form-error')).toContainText('موجودی', { timeout: 30_000 })
-    expect(await db.order.count({ where: { userId: user.id } })).toBe(0)
     await db.cartItem.updateMany({ where: { cartId: cart.id }, data: { quantity: 2 } })
     await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
     await expect(page.locator('.form-error')).toContainText('تغییر کرده', { timeout: 30_000 })
+    expect(await db.order.count({ where: { userId: user.id } })).toBe(0)
     await page.reload()
     await page.screenshot({ path: `artifacts/ui/place-order-${testInfo.project.name}.png`, fullPage: true })
     const requestPromise = page.waitForRequest((request) => request.method() === 'POST' && request.url().endsWith('/checkout/place-order'))
@@ -88,7 +85,7 @@ test.describe('Neon checkout', () => {
     expect(Number(order.total)).toBe(Number(product.price) * 2)
     expect(order.items[0].quantity).toBe(2)
     expect(order.addressLine).toBe(address.addressLine)
-    expect((await db.product.findUniqueOrThrow({ where: { id: product.id } })).stock).toBe(product.stock)
+    expect(await db.product.findUniqueOrThrow({ where: { id: product.id } })).toEqual(product)
     await expect(page.getByRole('button', { name: 'پرداخت آنلاین به‌زودی' })).toBeDisabled()
 
     const headers = { 'next-action': request.headers()['next-action'], 'content-type': request.headers()['content-type'], origin: 'http://127.0.0.1:3000' }

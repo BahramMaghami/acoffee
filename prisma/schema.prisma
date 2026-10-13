@@ -71,7 +71,6 @@ model Product {
   name        String      @db.VarChar(150)
   slug        String      @unique @db.VarChar(200)
   description String      @db.Text
-  stock       Int         @default(0)
   /// All money fields store whole toman; never use floating-point arithmetic.
   price       Decimal     @db.Decimal(14, 0)
   weightGrams Int

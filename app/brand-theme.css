@@ -146,7 +146,6 @@
   .form-field input[aria-invalid=true] { border-color: #db7783; }
   .form-error { background: #3b2226; color: #ffc2c9; border: 1px solid #79434c; }
   .auth-notice { background: #283126; color: #c6d8b7; border: 1px solid #526348; }
-  .stock-status { color: #bdcca6; }
   .auth-photo { background: var(--charcoal); }
 }
 

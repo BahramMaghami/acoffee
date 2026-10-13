@@ -12,7 +12,7 @@
 4. محصولات و سبد مهمان عمومی؛ ورود برای نهایی‌کردن خرید و حساب کاربری. مدیریت و عملیات حساس نیز کنترل دسترسی سمت سرور دارند.
 5. util مشترک نمایش شمسی و تبدیل ورودی شمسی به زمان میلادی؛ منطقهٔ زمانی نمایش `Asia/Tehran`، ذخیره‌سازی میلادی.
 
-Server Actionهای مدل‌های اصلی در `actions/user.actions.ts`، `actions/product.actions.ts`، `actions/cart.actions.ts` و `actions/order.actions.ts` قرار می‌گیرند. ورودی‌ها با Zod اعتبارسنجی می‌شوند؛ شناسهٔ کاربر، نقش، قیمت و موجودی از سمت سرور بررسی می‌شوند. هر مرحلهٔ مهم پس از بررسی commit می‌شود.
+Server Actionهای فعلی در `actions/user.actions.ts`، `actions/address.actions.ts`، `actions/cart.actions.ts` و `actions/order.actions.ts` قرار دارند. ورودی‌ها با Zod اعتبارسنجی می‌شوند؛ کاربر، مالکیت داده، قیمت و فعال‌بودن محصول از سمت سرور بررسی می‌شوند. مدیریت موجودی فعلاً کنار گذاشته شده و مدل Product فیلد `stock` ندارد. طبق درخواست فعلی، تغییرات خودکار commit نمی‌شوند.
 
 ## Getting Started
 

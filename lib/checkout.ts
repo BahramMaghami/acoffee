@@ -27,9 +27,9 @@ export async function checkoutQuote(
     const variant = findVariant(product.slug)
     if (!variant || variant.weightGrams !== product.weightGrams || Number(product.price) <= 0)
       throw new CheckoutError('این انتخاب در فهرست فعلی آمادهٔ سفارش نیست. سبد را دوباره بررسی کن.')
-    if (!product.isActive || product.stock < quantity)
+    if (!product.isActive)
       throw new CheckoutError(
-        `موجودی «${product.name}» کافی نیست. سبدت را ویرایش کن.`,
+        `سفارش «${product.name}» غیرفعال است. سبدت را ویرایش کن.`,
       )
     return {
       productId: product.id,
@@ -69,7 +69,7 @@ export async function checkoutQuote(
 }
 
 // Both writers and order placement lock the same account row, serializing changes
-// to its cart/address. Prices and stock are re-read in the order transaction.
+// to its cart/address. Prices and availability are re-read in the order transaction.
 export async function lockCheckout(
   db: Pick<Prisma.TransactionClient, '$queryRaw'>,
   userId: string,

@@ -831,19 +831,6 @@ p {
   font-size: 22px;
   font-weight: 650;
 }
-.stock-status {
-  font-size: 10px;
-  color: #666d51;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.stock-status > span {
-  width: 5px;
-  height: 5px;
-  background: #737b5a;
-  border-radius: 50%;
-}
 .purchase-actions {
   display: flex;
   gap: 15px;

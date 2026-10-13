@@ -15,10 +15,10 @@ try {
     }
     return db.product.upsert({
       where: { slug: variant.id },
-      create: { ...data, slug: variant.id, stock: 0, isActive: false, imageUrl: storefrontImages.dark },
-      // Preserve inventory, availability, custom photos and historical order snapshots.
+      create: { ...data, slug: variant.id, isActive: false, imageUrl: storefrontImages.dark },
+      // Preserve availability, custom photos and historical order snapshots.
       update: data,
     })
   }), { maxWait: 30_000, timeout: 90_000 })
-  console.log(`Synced prices for ${pricedVariants.length} SKUs. Existing stock and availability preserved; new SKUs are inactive with zero stock.`)
+  console.log(`Synced prices for ${pricedVariants.length} SKUs. Existing availability preserved; new SKUs are inactive.`)
 } finally { await db.$disconnect() }

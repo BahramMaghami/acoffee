@@ -137,7 +137,7 @@ test('weight, roast and Premium Blend selections remain separate and survive car
   await expect(page.locator('.cart-row')).toHaveCount(1)
 })
 
-test('cart rejects unsupported variants and caps quantities without inventing stock', async ({ page }) => {
+test('cart rejects unsupported variants and caps quantities per SKU', async ({ page }) => {
   await page.goto('/cart')
   await page.evaluate(() => localStorage.setItem('acoffee:preview-cart:v1', 'not json'))
   await page.reload()
