@@ -18,7 +18,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return <div className="shell admin-page">
     <header className="admin-heading">
       <div><span className="eyebrow">مدیریت آ</span><h1>داشبورد فروش</h1><p>نمایی از درآمد و سفارش‌های فروشگاهت.</p></div>
-      <Button asChild variant="outline" size="sm"><Link href="/shop">مشاهدهٔ فروشگاه <ArrowUpLeft /></Link></Button>
+      <div className="admin-periods">
+        <Button asChild variant="outline" size="sm"><Link href="/admin/users">مدیریت کاربران</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link href="/shop">مشاهدهٔ فروشگاه <ArrowUpLeft /></Link></Button>
+      </div>
     </header>
     <div className="admin-period-bar">
       <p>{data.days[0].label} <span>تا</span> {data.days.at(-1)!.label}</p>

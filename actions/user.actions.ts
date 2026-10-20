@@ -9,6 +9,44 @@ import { loginSchema, registerSchema } from '@/lib/validators/auth'
 import { safeAuthRedirect } from '@/lib/auth-redirect'
 import { consumeAuthAttempt } from '@/lib/auth-rate-limit'
 import { logAuthError } from '@/lib/auth-error'
+import { requireAdmin } from '@/lib/current-user'
+import { adminUserMutationSchema } from '@/lib/validators/admin-users'
+
+export async function manageUserAction(input: unknown): Promise<{ success: boolean; message: string }> {
+  const actor = await requireAdmin()
+  const parsed = adminUserMutationSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'درخواست معتبر نیست.' }
+  const data = parsed.data
+  if (data.userId === actor.id)
+    return { success: false, message: 'حذف یا تغییر نقش حساب خودت امکان‌پذیر نیست.' }
+  try {
+    const result = await getDb().$transaction(async (tx) => {
+      // Recheck authorization inside the serializable transaction, including
+      // concurrent attempts by two admins to remove each other's access.
+      const current = await tx.user.findUnique({ where: { id: actor.id }, select: { role: true } })
+      if (current?.role !== 'ADMIN') return { success: false, message: 'دسترسی مدیریت نداری.' }
+      const target = await tx.user.findUnique({
+        where: { id: data.userId }, select: { id: true, _count: { select: { orders: true } } },
+      })
+      if (!target) return { success: false, message: 'این کاربر دیگر وجود ندارد.' }
+      if (data.operation === 'delete') {
+        if (target._count.orders) return { success: false, message: 'این کاربر سفارش دارد؛ برای حفظ سوابق سفارش، حذف حساب ممکن نیست.' }
+        await tx.user.delete({ where: { id: target.id } })
+        return { success: true, message: 'کاربر حذف شد.' }
+      }
+      await tx.user.update({ where: { id: target.id }, data: { role: data.role } })
+      return { success: true, message: 'نقش کاربر تغییر کرد.' }
+    }, { isolationLevel: 'Serializable' })
+    if (result.success) revalidatePath('/admin/users')
+    return result
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+    if (code === 'P2003') return { success: false, message: 'کاربر سفارش دارد و قابل حذف نیست.' }
+    if (code === 'P2034') return { success: false, message: 'اطلاعات هم‌زمان تغییر کرده است؛ دوباره تلاش کن.' }
+    logAuthError('manage-user', error)
+    return { success: false, message: 'تغییر کاربر انجام نشد. دوباره تلاش کن.' }
+  }
+}
 
 type AuthResult =
   | { success: true; redirectTo: string }

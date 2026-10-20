@@ -110,6 +110,7 @@ acoffee/
 | `/register` | [صفحهٔ ثبت‌نام](<app/(auth)/register/page.tsx>) | ایجاد حساب؛ رفتار مشابه ورود برای کاربر واردشده |
 | `/account` | [حساب کاربری](app/account/page.tsx) | نیازمند ورود؛ اطلاعات حساب و آخرین ۲۰ سفارش |
 | `/admin` | [داشبورد مدیریت](app/admin/page.tsx) | فقط ADMIN؛ درآمد پرداخت‌شده، تعداد سفارش و بسته، میانگین مبلغ و نمودار Recharts در بازه‌های ۷، ۳۰ و ۹۰ روز |
+| `/admin/users` | [مدیریت کاربران](app/admin/users/page.tsx) | فقط ADMIN؛ صفحه‌بندی ۲۰تایی، تغییر نقش و حذف حساب بدون سفارش |
 | `/checkout/address` | [آدرس ارسال](app/checkout/address/page.tsx) | نیازمند ورود؛ دریافت و ویرایش آدرس قبلی |
 | `/checkout/place-order` | [بررسی سفارش](app/checkout/place-order/page.tsx) | نیازمند ورود؛ قیمت‌های سرور، آدرس و دکمهٔ ثبت سفارش |
 | `/orders/[id]` | [جزئیات سفارش](app/orders/[id]/page.tsx) | نیازمند ورود و مالکیت سفارش؛ سفارش دیگران ۴۰۴ |
@@ -347,7 +348,7 @@ tenKg = fiveKg × 2 × 0.97
 
 | فایل | تابع‌های قابل فراخوانی | کار اصلی |
 | --- | --- | --- |
-| [user.actions.ts](actions/user.actions.ts) | `loginAction`، `registerAction`، `logoutAction` | مدیریت ورود، ایجاد حساب و خروج |
+| [user.actions.ts](actions/user.actions.ts) | `loginAction`، `registerAction`، `logoutAction`، `manageUserAction` | ورود، ایجاد حساب، خروج و مدیریت نقش/حذف کاربر با کنترل ADMIN |
 | [address.actions.ts](actions/address.actions.ts) | `saveAddressAction` | ایجاد اولین آدرس یا به‌روزرسانی آخرین آدرس کاربر |
 | [cart.actions.ts](actions/cart.actions.ts) | `saveCheckoutCartAction` | تبدیل SKUهای مرورگر به شناسهٔ محصول DB و جایگزینی سبد checkout |
 | [order.actions.ts](actions/order.actions.ts) | `placeOrderAction` | بررسی مجدد quote و ایجاد سفارش همراه با اقلام و آدرس ثابت |
@@ -570,7 +571,8 @@ total = subtotal + shippingFee - discount
 | هزینهٔ ارسال | نهایی نشده؛ صفر موقت و flag جدا دارد |
 | اتصال درگاه و تأیید پرداخت | پیاده نشده |
 | داشبورد مدیریت | مسیر محافظت‌شدهٔ `/admin`، نمودار Recharts، آمار PAID، بازه‌های زمانی و دکمهٔ هدر پیاده شده‌اند |
-| مدیریت محصول، سفارش و نقش‌ها | مدل‌های پایه موجودند؛ بخش‌ها و actionهای ویرایش مدیریتی نداریم |
+| مدیریت کاربران و نقش‌ها | `/admin/users`؛ تغییر نقش، حذف حساب بدون سفارش و جلوگیری از تغییر حساب خود مدیر |
+| مدیریت محصول و سفارش | مدل‌های پایه موجودند؛ بخش‌ها و actionهای ویرایش مدیریتی نداریم |
 | مدیریت موجودی | فعلاً حذف شده؛ برای افزودن مجدد به مدل و قواعد تازه نیاز داریم |
 | تخفیف واقعی/کد تخفیف | پیاده نشده؛ روبان فعلی نمایش است |
 | قیمت‌گذاری خودکار ترکیب‌ها | تابع و گزارش مقایسه دارد؛ به قیمت فعال وصل نیست |
