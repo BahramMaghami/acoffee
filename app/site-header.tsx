@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { ArrowUpLeft, Menu, Coffee, ShoppingBag, X } from 'lucide-react'
+import { ArrowUpLeft, Menu, Coffee, ShoppingBag, X, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCart } from './cart/cart-store'
 import { formatNumber } from '@/lib/storefront'
@@ -50,6 +50,13 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
             ))}
           </nav>
           <div className="header-actions">
+            {user?.role === 'ADMIN' && (
+              <Button asChild variant="outline" size="sm" className="admin-header-link">
+                <Link href="/admin" aria-label="پنل مدیریت" aria-current={pathname === '/admin' ? 'page' : undefined} onClick={() => setOpen(false)}>
+                  <LayoutDashboard /><span>پنل مدیریت</span>
+                </Link>
+              </Button>
+            )}
             <ThemeToggle />
             <UserMenu user={user} />
             <Button asChild variant="ghost" size="icon" className="search-link">

@@ -35,3 +35,9 @@ export async function requireUser(destination = '/account') {
     redirect(`/login?next=${encodeURIComponent(safeAuthRedirect(destination))}`)
   return user
 }
+
+export async function requireAdmin() {
+  const user = await requireUser('/admin')
+  if (user.role !== 'ADMIN') redirect('/account')
+  return user
+}

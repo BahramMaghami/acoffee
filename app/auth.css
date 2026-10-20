@@ -106,3 +106,8 @@
   .auth-form-panel { padding: 28px 20px; }
   .auth-form { gap: 18px; }
 }
+.admin-header-link { flex-shrink: 0; }
+@media (max-width: 1100px) {
+  .admin-header-link span { display: none; }
+  .header-actions .admin-header-link { width: 34px; padding-inline: 0; }
+}

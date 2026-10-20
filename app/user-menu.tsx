@@ -6,7 +6,7 @@ import { LogOut, UserRound, LoaderCircle, ChevronDown } from 'lucide-react'
 import { logoutAction } from '@/actions/user.actions'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
-export type HeaderUser = { name?: string | null; email?: string | null }
+export type HeaderUser = { name?: string | null; email?: string | null; role?: 'ADMIN' | 'CUSTOMER' }
 
 export function UserMenu({ user }: { user: HeaderUser | null }) {
   const [pending, startTransition] = useTransition()

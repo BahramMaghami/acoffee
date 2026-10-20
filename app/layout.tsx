@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const session = await auth()
-  const headerUser = session?.user ? { name: session.user.name, email: session.user.email } : null
+  const headerUser = session?.user ? { name: session.user.name, email: session.user.email, role: session.user.role } : null
   return (
     <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="h-full antialiased" data-theme={defaultTheme} suppressHydrationWarning>
       <head>

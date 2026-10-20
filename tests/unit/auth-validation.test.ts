@@ -27,6 +27,8 @@ test('post-auth redirects reject external, encoded and protocol-relative destina
     assert.equal(safeAuthRedirect(destination), '/account')
   }
   assert.equal(safeAuthRedirect('/cart'), '/cart')
+  assert.equal(safeAuthRedirect('/admin'), '/admin')
+  assert.equal(safeAuthRedirect('/admin/unknown'), '/account')
   assert.equal(safeAuthRedirect('/shop/daily-blend'), '/shop/daily-blend')
 })
 
