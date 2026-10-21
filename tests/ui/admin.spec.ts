@@ -89,6 +89,8 @@ test.describe('Neon admin dashboard', () => {
 
     await login(page, adminEmail)
     await expect(page).toHaveURL(/\/admin$/, { timeout: 40000 })
+    // Start dashboard assertions with a fresh session in the shared header too.
+    await page.reload()
     await expect(page.getByRole('heading', { name: 'داشبورد فروش' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'پنل مدیریت', exact: true })).toBeVisible()
     await expect(page.getByTestId('admin-revenue')).toHaveText(formatPrice(revenue))
@@ -110,12 +112,46 @@ test.describe('Neon admin dashboard', () => {
     await expect(page.getByRole('link', { name: '۳۰ روز اخیر' })).toHaveAttribute('aria-current', 'page')
     await expect(page.getByTestId('admin-revenue')).toHaveText(formatPrice(revenue))
     await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10000 })
+    // Exercise exact Tehran boundaries, including the leap year's last day.
+    const boundaryDates = ['2025-02-18T20:29:59.999Z', '2025-02-18T20:30:00.000Z', '2025-03-20T20:29:59.999Z', '2025-03-20T20:30:00.000Z']
+    for (const paidAt of boundaryDates) {
+      await db.order.create({ data: {
+        userId: admin.id, paymentStatus: 'PAID', paidAt: new Date(paidAt), subtotal: 1000, total: 1000,
+        recipientName: 'آزمایشی', phone: '09121234567', province: 'تهران', city: 'تهران', addressLine: 'نشانی موقت تست ماه', postalCode: '1234567890',
+        items: { create: { productName: 'قهوهٔ آزمایشی ماه', productSlug: 'admin-month-test', weightGrams: 250, unitPrice: 1000, quantity: 1, lineTotal: 1000 } },
+      } })
+    }
+    const monthOrders = await db.order.findMany({ where: { paymentStatus: 'PAID', OR: [
+      { paidAt: { gte: new Date('2025-02-18T20:30:00Z'), lt: new Date('2025-03-20T20:30:00Z') } },
+      { paidAt: null, createdAt: { gte: new Date('2025-02-18T20:30:00Z'), lt: new Date('2025-03-20T20:30:00Z') } },
+    ] }, select: { total: true, items: { select: { quantity: true } } } })
+    await page.getByLabel('ماه شمسی', { exact: true }).selectOption('12')
+    await page.getByLabel('سال شمسی', { exact: true }).fill('۱۴۰۳')
+    await page.getByRole('button', { name: 'نمایش ماه', exact: true }).click()
+    await expect(page).toHaveURL(/year=1403&month=12$/)
+    const monthRevenue = monthOrders.reduce((sum, order) => sum + Number(order.total), 0)
+    await expect(page.getByTestId('admin-revenue')).toHaveText(formatPrice(monthRevenue))
+    await expect(page.getByTestId('admin-orders')).toHaveText(formatNumber(monthOrders.length))
+    await expect(page.getByTestId('admin-average')).toHaveText(formatPrice(Math.round(monthRevenue / monthOrders.length)))
+    await expect(page.getByTestId('admin-units')).toHaveText(formatNumber(monthOrders.reduce((sum, order) => sum + order.items.reduce((sum, item) => sum + item.quantity, 0), 0)))
+    await page.locator('.admin-chart-data summary').click()
+    await expect(page.locator('.admin-chart-data tbody tr')).toHaveCount(30)
+    await page.reload()
+    await expect(page.getByLabel('سال شمسی', { exact: true })).toHaveValue('1403')
+    await expect(page.getByLabel('ماه شمسی', { exact: true })).toHaveValue('12')
+    await expect(page.getByTestId('admin-revenue')).toHaveText(formatPrice(monthRevenue))
     await mkdir('artifacts/ui', { recursive: true })
     for (const theme of ['light', 'dark']) {
       await page.evaluate(theme => { localStorage.setItem('acoffee:theme', theme); document.documentElement.dataset.theme = theme }, theme)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-      await page.screenshot({ path: `artifacts/ui/admin-${theme}-${testInfo.project.name}.png`, fullPage: true })
+      await page.screenshot({ path: `artifacts/ui/admin-${theme}-${testInfo.project.name}.png`, fullPage: true, animations: 'disabled' })
     }
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: 'artifacts/ui/admin-month-mobile.png', fullPage: true, animations: 'disabled' })
+    await page.getByRole('link', { name: '۳۰ روز اخیر' }).click()
+    await expect(page).toHaveURL(/\/admin\?days=30$/)
+    await expect(page.getByTestId('admin-revenue')).toHaveText(formatPrice(revenue))
     await db.user.update({ where: { id: admin.id }, data: { role: 'CUSTOMER' } })
     await page.goto('/admin')
     await expect(page).toHaveURL(/\/account$/, { timeout: 40000 })

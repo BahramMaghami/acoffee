@@ -2,12 +2,13 @@ import 'server-only'
 import { requireAdmin } from './current-user'
 import { getDb } from './db'
 import { logAuthError } from './auth-error'
-import { dashboardWindow, summarizeSales, type DashboardPeriod, type DailySalesRow } from './admin-metrics'
+import { dashboardWindow, summarizeSales, type DashboardSelection, type DailySalesRow } from './admin-metrics'
+import { persianMonthWindow } from './persian-month'
 
-export async function getAdminDashboard(period: DashboardPeriod) {
+export async function getAdminDashboard(selection: DashboardSelection) {
   // Guard the data boundary as well as the route; never trust a client role.
   await requireAdmin()
-  const window = dashboardWindow(period)
+  const window = selection.type === 'month' ? persianMonthWindow(selection.year, selection.month) : dashboardWindow(selection.days)
   const rows = await getDb().$queryRaw<DailySalesRow[]>`
     WITH sales AS (
       SELECT "id", "total", COALESCE("paidAt", "createdAt") AS paid_on
@@ -31,5 +32,5 @@ export async function getAdminDashboard(period: DashboardPeriod) {
     logAuthError('admin-dashboard', error)
     throw new Error('گزارش فروش دریافت نشد. دوباره تلاش کن.')
   })
-  return { ...summarizeSales(rows, window), period }
+  return { ...summarizeSales(rows, window), selection }
 }

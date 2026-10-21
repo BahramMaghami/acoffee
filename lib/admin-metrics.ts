@@ -1,7 +1,15 @@
 import { formatPersianDate } from './date'
+import { dashboardMonthSchema } from './validators/dashboard'
 
 export const dashboardPeriods = [7, 30, 90] as const
 export type DashboardPeriod = (typeof dashboardPeriods)[number]
+export type DashboardSelection = { type: 'days'; days: DashboardPeriod } | { type: 'month'; year: number; month: number }
+
+export function dashboardSelection(query: { days?: unknown; year?: unknown; month?: unknown }): DashboardSelection {
+  const parsed = dashboardMonthSchema.safeParse(query)
+  if (parsed.success) return { type: 'month', ...parsed.data }
+  return { type: 'days', days: dashboardPeriod(query.days) }
+}
 
 export function dashboardPeriod(value: unknown): DashboardPeriod {
   return dashboardPeriods.find((days) => String(days) === value) ?? 30
@@ -35,7 +43,7 @@ function safeAmount(value: string | number) {
   return number
 }
 
-export function summarizeSales(rows: DailySalesRow[], window: ReturnType<typeof dashboardWindow>) {
+export function summarizeSales(rows: DailySalesRow[], window: { dates: string[]; start: string; endExclusive: string }) {
   const byDay = new Map(rows.map((row) => [row.day, row]))
   const days: DailySales[] = window.dates.map((date) => {
     const row = byDay.get(date)
