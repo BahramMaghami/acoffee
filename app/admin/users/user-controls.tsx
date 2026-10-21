@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { manageUserAction } from '@/actions/user.actions'
-import { ConfirmationDialog } from './confirmation-dialog'
+import { ConfirmationDialog } from '../confirmation-dialog'
 
 export function UserControls({ id, name, role, self, hasOrders }: {
   id: string; name: string; role: 'ADMIN' | 'CUSTOMER'; self: boolean; hasOrders: boolean

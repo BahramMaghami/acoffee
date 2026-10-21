@@ -137,6 +137,7 @@ model Order {
   postalCode    String        @db.VarChar(10)
   items         OrderItem[]
   paidAt        DateTime?     @db.Timestamptz(3)
+  deliveredAt   DateTime?     @db.Timestamptz(3)
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 

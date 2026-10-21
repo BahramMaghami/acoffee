@@ -1,4 +1,15 @@
 .admin-page { --admin-chart-color: var(--primary); padding-block: 48px 64px; }
+.admin-nav { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-block: 18px; border-bottom: 1px solid var(--border); }
+.admin-nav > a, .admin-nav > span { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; white-space: nowrap; border-radius: 6px; font-size: 13px; }
+.admin-nav > a[aria-current='page'] { background: var(--primary); color: var(--primary-foreground); }
+.admin-nav > span { color: var(--muted-foreground); }
+.admin-nav small { font-size: 10px; }
+.admin-confirm-dialog { width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; margin: auto; padding: 28px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); box-shadow: 0 24px 80px #0004; white-space: normal; text-align: right; }
+.admin-confirm-dialog::backdrop { background: #0009; backdrop-filter: blur(3px); }
+.admin-confirm-dialog h2 { font-size: 19px; font-weight: 600; margin-bottom: 14px; }
+.admin-confirm-dialog p { color: var(--muted-foreground); font-size: 14px; line-height: 2; overflow-wrap: anywhere; }
+.admin-confirm-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.admin-confirm-dialog .admin-confirm-error { color: var(--primary); margin-top: 16px; }
 [data-theme='dark'] .admin-page { --admin-chart-color: #db8b91; }
 .admin-heading, .admin-period-bar, .admin-chart-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .admin-heading h1 { font-size: clamp(26px, 3vw, 38px); font-weight: 650; margin-block: 10px; }
