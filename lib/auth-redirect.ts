@@ -5,6 +5,7 @@ export function safeAuthRedirect(value: unknown): string {
     [
       '/',
       '/account',
+      '/orders',
       '/admin',
       '/cart',
       '/shop',

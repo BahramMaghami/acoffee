@@ -1,10 +1,11 @@
 import 'server-only'
-import NextAuth, { AuthError, CredentialsSignin } from 'next-auth'
+import NextAuth, { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { getDb } from '@/lib/db'
 import { loginSchema } from '@/lib/validators/auth'
 import { consumeAuthAttempt } from '@/lib/auth-rate-limit'
+import { logAuthError } from '@/lib/auth-error'
 
 const SESSION_MAX_AGE = 14 * 24 * 60 * 60
 // A non-user hash keeps nonexistent-account checks comparable to password checks.
@@ -59,7 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   logger: {
     error(error) {
       if (!(error instanceof CredentialsSignin)) {
-        console.error(`[auth] ${error instanceof AuthError ? error.type : error.name}`)
+        logAuthError('provider', error)
       }
     },
   },

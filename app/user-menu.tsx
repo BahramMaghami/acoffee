@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { LogOut, UserRound, LoaderCircle, ChevronDown } from 'lucide-react'
+import { LogOut, UserRound, LoaderCircle, ChevronDown, ShoppingBag } from 'lucide-react'
 import { logoutAction } from '@/actions/user.actions'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
@@ -24,6 +24,7 @@ export function UserMenu({ user }: { user: HeaderUser | null }) {
         <DropdownMenuLabel><p className="user-menu-name">{user.name}</p><p className="user-menu-email" dir="ltr">{user.email}</p></DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild><Link href="/account"><UserRound />حساب من</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href="/orders"><ShoppingBag />سفارش‌های من</Link></DropdownMenuItem>
         <DropdownMenuItem onSelect={() => startTransition(async () => { await logoutAction() })} disabled={pending}>
           <LogOut />خروج از حساب
         </DropdownMenuItem>

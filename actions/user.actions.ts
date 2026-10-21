@@ -11,6 +11,7 @@ import { consumeAuthAttempt } from '@/lib/auth-rate-limit'
 import { logAuthError } from '@/lib/auth-error'
 import { requireAdmin } from '@/lib/current-user'
 import { adminUserMutationSchema } from '@/lib/validators/admin-users'
+import { assertSignInRedirect } from '@/lib/auth-result'
 
 export async function manageUserAction(input: unknown): Promise<{ success: boolean; message: string }> {
   const actor = await requireAdmin()
@@ -61,7 +62,8 @@ export async function loginAction(
     return { success: false, message: parsed.error.issues[0].message }
   const redirectTo = safeAuthRedirect(destination)
   try {
-    await signIn('credentials', { ...parsed.data, redirect: false, redirectTo })
+    const result = await signIn('credentials', { ...parsed.data, redirect: false, redirectTo })
+    assertSignInRedirect(result, redirectTo)
   } catch (error) {
     if (error instanceof CredentialsSignin && error.code === 'rate_limited') {
       return {
@@ -126,13 +128,15 @@ export async function registerAction(
   }
 
   try {
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email,
       password,
       redirect: false,
       redirectTo,
     })
-  } catch {
+    assertSignInRedirect(result, redirectTo)
+  } catch (error) {
+    logAuthError('register-signin', error)
     // Account creation succeeded; do not ask the user to register again.
     return {
       success: true,

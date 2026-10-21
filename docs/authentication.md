@@ -33,7 +33,15 @@ npm run dev
 
 Migration `20260908000000_auth_rate_limit` جدول محدودکننده را اضافه می‌کند. رمز کاربران seed در فایل محلی و نادیده‌گرفته‌شدهٔ `.seed-users.local.json` است؛ هیچ رمز ثابتی در کد تعریف نشده است. ثبت آرگومان‌های Server Function در `next.config.ts` غیرفعال است تا رمز فرم‌ها در لاگ توسعه نوشته نشود.
 
-## تست
+## عیب‌یابی production
+
+مقادیر `.env` محلی به‌صورت خودکار به هاست منتقل نمی‌شوند. در محیط اجرای production، `AUTH_SECRET` باید موجود و بین نمونه‌های سرور ثابت باشد. `AUTH_URL` در صورت تنظیم باید origin واقعی سایت باشد (مثلاً `https://your-domain.example`)، نه localhost یا مسیر صفحهٔ ورود. در self-hosting پشت reverse proxy مورد اعتماد، `AUTH_TRUST_HOST=true` و headerهای صحیح `Host`، `X-Forwarded-Host` و `X-Forwarded-Proto` لازم‌اند. بعد از تغییر env، سرویس را دوباره مستقر یا restart کنید. [راهنمای استقرار Auth.js](https://authjs.dev/getting-started/deployment).
+
+در نسخهٔ نصب‌شده، خطای تنظیمات مانند `MissingSecret` یا `UntrustedHost` ممکن است از `signIn(..., redirect: false)` بدون throw و بدون کوکی برگردد. `lib/auth-result.ts` مقصد بازگشتی را بررسی می‌کند تا این حالت پیام موفقیت اشتباه ندهد. ثبت‌نام موفق همراه با ورود ناموفق نیز به صفحهٔ ورود هدایت می‌شود. logger تنها نام/کد خطا و علت‌های داخلی را ثبت می‌کند؛ رمزها و مقدار کوکی در خروجی نمی‌آیند.
+
+در DevTools درخواست POST ورود را بررسی کنید: اگر `Set-Cookie` نیست، لاگ سرور را برای `MissingSecret`، `UntrustedHost` یا خطای اتصال دیتابیس بررسی کنید. اگر `Set-Cookie` هست ولی مرورگر ذخیره نمی‌کند، علت blocked cookie و سازگاری HTTPS را بررسی کنید. در HTTPS نام معمول کوکی `__Secure-authjs.session-token` است. چون HttpOnly است، در `document.cookie` دیده نمی‌شود؛ محل بررسی Application → Cookies است.
+
+## تست‌های احراز هویت
 
 ```bash
 npm run test:unit

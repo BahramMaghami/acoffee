@@ -52,6 +52,7 @@ export async function placeOrderAction(input: unknown) {
       { maxWait: 10_000, timeout: 30_000 },
     )
     revalidatePath('/account')
+    revalidatePath('/orders')
     return { success: true as const, orderId: order.id }
   } catch (error) {
     logAuthError('place-order', error)

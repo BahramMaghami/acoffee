@@ -75,6 +75,7 @@ export default async function AccountPage() {
         </section>
       </div>
       <section className="checkout-panel account-orders"><h2>سفارش‌های اخیر</h2>
+        <Link href="/orders" className="quiet-link">مشاهدهٔ همهٔ سفارش‌ها <ArrowLeft size={14} /></Link>
         {orders.length ? orders.map((order) => <Link className="account-order-link" key={order.id} href={`/orders/${order.id}`}>
           <strong>سفارش {formatNumber(order.number)}</strong><span>{formatPersianDate(order.createdAt)}</span>
           <span>{order.paymentStatus === 'PAID' ? 'پرداخت‌شده' : 'در انتظار پرداخت'}</span><span>{formatNumber(Number(order.total))} تومان</span>
