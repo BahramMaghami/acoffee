@@ -4,7 +4,7 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto'
 import { hash } from 'bcryptjs'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { PrismaClient } from '../../generated/prisma/client'
-import { variants } from '../../lib/storefront'
+import { variants } from '../../lib/catalog-fixture'
 
 const pricedVariant = variants.find((variant) => variant.price !== null && !variant.roast && variant.weightGrams === 250)
 

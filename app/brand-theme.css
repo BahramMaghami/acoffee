@@ -158,7 +158,7 @@
 .wholesale-ribbon strong { font-size: 13px; font-weight: 650; }
 .wholesale-ribbon > span { font-size: 10px; }
 .detail-image .wholesale-ribbon { display: none; }
-.product-detail:has(.product-purchase[data-weight='10000']) .detail-image .wholesale-ribbon { display: grid; }
+.product-detail:has(.product-purchase[data-weight='10000'][data-discount='3']) .detail-image .wholesale-ribbon { display: grid; }
 .theme-toggle .theme-sun, [data-theme='dark'] .theme-toggle .theme-moon { display: none; }
 [data-theme='dark'] .theme-toggle .theme-sun { display: block; }
 @media (max-width: 1100px) { .header-actions .search-link { display: none; } }

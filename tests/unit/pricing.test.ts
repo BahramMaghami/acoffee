@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { calculateBlendPrice, calculateTenKilogramPrice, calculateWeightPrice } from '../../lib/pricing'
 import { compareBlendPrices } from '../../lib/price-comparison'
-import { variants } from '../../lib/storefront'
+import { variants } from '../../lib/catalog-fixture'
 
 test('blend prices use the matching pure-coffee prices and preserve the endpoints', () => {
   const prices = { arabicaPrice: 4_100_000, robustaPrice: 2_800_000 }

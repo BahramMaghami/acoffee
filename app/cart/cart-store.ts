@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useSyncExternalStore } from 'react'
-import { findVariant, maxCartQuantity } from '@/lib/storefront'
+import { maxCartQuantity } from '@/lib/storefront'
 
 const key = 'acoffee:preview-cart:v1'
 const event = 'acoffee:cart-change'
@@ -26,24 +26,20 @@ function parseCart(raw: string): CartItem[] {
         !item ||
         typeof item !== 'object' ||
         typeof item.productId !== 'string' ||
+        !/^[a-zA-Z0-9-]{1,200}$/.test(item.productId) ||
         !Number.isSafeInteger(item.quantity) ||
         item.quantity <= 0
       )
         continue
-      const product = findVariant(item.productId)
-      if (product)
-        quantities.set(
-          product.id,
-          Math.min(
-            (quantities.get(product.id) ?? 0) + item.quantity,
-            maxCartQuantity,
-          ),
-        )
+      quantities.set(
+        item.productId,
+        Math.min((quantities.get(item.productId) ?? 0) + item.quantity, maxCartQuantity),
+      )
     }
     return Array.from(quantities, ([productId, quantity]) => ({
       productId,
       quantity,
-    }))
+    })).slice(0, 50)
   } catch {
     return []
   }
@@ -75,8 +71,7 @@ export function useCart() {
   const count = items.reduce((total, item) => total + item.quantity, 0)
 
   function setQuantity(productId: string, quantity: number) {
-    const product = findVariant(productId)
-    if (!product || !Number.isSafeInteger(quantity)) return
+    if (!/^[a-zA-Z0-9-]{1,200}$/.test(productId) || !Number.isSafeInteger(quantity)) return
     const current = parseCart(getSnapshot())
     if (quantity <= 0) {
       save(current.filter((item) => item.productId !== productId))

@@ -3,35 +3,35 @@ import { ProductVisual } from '../product-visual'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronLeft, ArrowLeft } from 'lucide-react'
-import { products, categories, cafeGroups } from '@/lib/storefront'
+import { cafeGroups, hasWholesaleDiscount } from '@/lib/storefront'
+import { getStoreCatalog } from '@/lib/catalog'
 import { ProductPurchase } from './product-purchase'
 import { ProductCard } from '../product-card'
 import { CafeOffer } from '../cafe-offer'
 
-export function generateStaticParams() {
-  return products.map(({ slug }) => ({ slug }))
-}
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { products } = await getStoreCatalog()
   const { slug } = await params
   const product = products.find((item) => item.slug === slug)
   return { title: product?.name ?? 'قهوه پیدا نشد', description: product?.description }
 }
 export default async function ProductPage({ params, searchParams }: PageProps<'/shop/[slug]'>) {
+  const { products } = await getStoreCatalog()
   const { slug } = await params
   const product = products.find((item) => item.slug === slug)
   if (!product) notFound()
   const query = await searchParams
   const initialWeight = product.weights.find(weight => String(weight) === query.weight)
     ?? (product.weights.includes(250) ? 250 : product.weights[0])
-  const category = categories.find((category) => category.value === product.category)!.label
+  const category = product.categoryLabel
   return <div className="shell page-space">
     <nav className="breadcrumbs" aria-label="مسیر صفحه">
       <Link href="/">خانه</Link><ChevronLeft /><Link href="/shop">قهوه‌های ما</Link><ChevronLeft /><span>{product.name}</span>
     </nav>
     <div className="product-detail">
       <div className="detail-image">
-        <ProductVisual name={product.name} sizes="(max-width: 760px) 100vw, 50vw" />
-        {product.category === 'wholesale' && product.weights.includes(10000) && (
+        <ProductVisual name={product.name} imageUrl={product.imageUrl} sizes="(max-width: 760px) 100vw, 50vw" />
+        {hasWholesaleDiscount(product) && (
           <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
         )}
         <span className="detail-image-caption" dir="ltr">ACOFFEE</span>

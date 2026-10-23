@@ -2,17 +2,15 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
-import { products, visibleCategories, formatNumber } from '@/lib/storefront'
+import { formatNumber } from '@/lib/storefront'
+import { getStoreCatalog } from '@/lib/catalog'
 import { ProductCard } from '../../product-card'
 import { CafeOffer } from '../../cafe-offer'
 
 type CategoryPageProps = { params: Promise<{ category: string }> }
 
-export function generateStaticParams() {
-  return visibleCategories.map(({ value }) => ({ category: value }))
-}
-
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { categories: visibleCategories } = await getStoreCatalog()
   const { category } = await params
   const selected = visibleCategories.find((item) => item.value === category)
   if (!selected) notFound()
@@ -20,6 +18,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
+  const { products, categories: visibleCategories } = await getStoreCatalog()
   const { category } = await params
   const selected = visibleCategories.find((item) => item.value === category)
   if (!selected) notFound()

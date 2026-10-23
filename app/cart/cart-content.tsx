@@ -4,21 +4,23 @@ import { ProductVisual } from '@/app/shop/product-visual'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { findVariant, maxCartQuantity, formatPrice, formatNumber } from '@/lib/storefront'
+import { productVariants, maxCartQuantity, formatPrice, formatNumber, type StoreProduct } from '@/lib/storefront'
 import { useCart } from './cart-store'
 
-export function CartContent() {
+export function CartContent({ products }: { products: StoreProduct[] }) {
   const { items, count, setQuantity } = useCart()
+  const variants = new Map(products.flatMap(productVariants).map(v => [v.id, v]))
+  const missing = items.filter(item => !variants.has(item.productId))
   const lines = items.flatMap((item) => {
-    const variant = findVariant(item.productId)
+    const variant = variants.get(item.productId)
     return variant ? [{ product: variant.product, variant, quantity: item.quantity }] : []
   })
   const subtotal = lines.reduce(
     (total, { variant, quantity }) => total + (variant.price ?? 0) * quantity,
     0,
   )
-  const awaitingPrices = lines.some(({ variant }) => variant.price === null)
-  if (!lines.length)
+  const awaitingPrices = missing.length > 0 || lines.some(({ variant }) => variant.price === null || !variant.isActive)
+  if (!items.length)
     return (
       <div className="empty-state cart-empty">
         <span className="empty-icon">
@@ -36,6 +38,7 @@ export function CartContent() {
   return (
     <div className="cart-layout">
       <div>
+        {missing.map(item => <div className="form-error" key={item.productId}><p>یکی از انتخاب‌های سبد حذف یا غیرفعال شده است. برای ادامه آن را حذف کن.</p><Button variant="outline" onClick={() => setQuantity(item.productId, 0)}>حذف انتخاب ناموجود</Button></div>)}
         <div className="cart-table-heading">
           <span>قهوه‌های انتخابی</span>
           <span>{formatNumber(count)} بسته</span>
@@ -43,13 +46,14 @@ export function CartContent() {
         {lines.map(({ product, variant, quantity }) => (
           <article className="cart-row" key={variant.id}>
             <Link href={`/shop/${product.slug}`} className="cart-product-image">
-              <ProductVisual name={product.name} sizes="100px" />
+              <ProductVisual name={product.name} imageUrl={product.imageUrl} sizes="100px" />
             </Link>
             <div className="cart-product-copy">
               <Link href={`/shop/${product.slug}`}>
                 <h2>{product.name}</h2>
               </Link>
               <p>{variant.label}</p>
+              {!variant.isActive && <p className="field-error">این انتخاب فعلاً قابل سفارش نیست؛ آن را از سبد حذف کن.</p>}
               <span>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price)}</span>
               <div className="quantity-control">
                 <button

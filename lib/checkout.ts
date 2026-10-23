@@ -2,7 +2,6 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import type { Prisma } from '@/generated/prisma/client'
 import { getDb } from './db'
-import { findVariant } from './storefront'
 
 export class CheckoutError extends Error {}
 
@@ -13,7 +12,7 @@ export async function checkoutQuote(
   const cart = await db.cart.findUnique({
     where: { userId },
     include: {
-      items: { include: { product: true }, orderBy: { productId: 'asc' } },
+      items: { include: { product: { include: { catalogProduct: { select: { isActive: true } } } } }, orderBy: { productId: 'asc' } },
     },
   })
   const address = await db.address.findFirst({
@@ -24,10 +23,9 @@ export async function checkoutQuote(
     throw new CheckoutError('سبد خرید خالی است. دوباره قهوه‌هایت را انتخاب کن.')
   if (!address) throw new CheckoutError('ابتدا آدرس ارسال را ذخیره کن.')
   const items = cart.items.map(({ product, quantity }) => {
-    const variant = findVariant(product.slug)
-    if (!variant || variant.weightGrams !== product.weightGrams || Number(product.price) <= 0)
+    if (!product.catalogProduct || Number(product.price) <= 0)
       throw new CheckoutError('این انتخاب در فهرست فعلی آمادهٔ سفارش نیست. سبد را دوباره بررسی کن.')
-    if (!product.isActive)
+    if (!product.isActive || !product.catalogProduct.isActive)
       throw new CheckoutError(
         `سفارش «${product.name}» غیرفعال است. سبدت را ویرایش کن.`,
       )

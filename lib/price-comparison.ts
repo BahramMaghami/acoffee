@@ -1,5 +1,5 @@
 import { calculateBlendPrice, calculateTenKilogramPrice, calculateWeightPrice } from './pricing'
-import { findVariant, variants } from './storefront'
+import { findVariant, variants } from './catalog-fixture'
 
 const blendRatios = [
   ['robusta-100', 0], ['robusta-80', 20], ['robusta-70', 30],

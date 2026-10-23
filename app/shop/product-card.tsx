@@ -1,16 +1,16 @@
 import { ProductVisual } from './product-visual'
 import Link from 'next/link'
 import { ArrowUpLeft } from 'lucide-react'
-import { categories, cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, type StoreProduct } from '@/lib/storefront'
+import { cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, hasWholesaleDiscount, type StoreProduct } from '@/lib/storefront'
 
 export function ProductCard({ product, showWholesaleRibbon = false }: { product: StoreProduct; showWholesaleRibbon?: boolean }) {
   const price = startingPrice(product)
-  const category = categories.find((category) => category.value === product.category)!.label
-  const ribbon = showWholesaleRibbon && product.category === 'wholesale' && product.weights.includes(10000)
+  const category = product.categoryLabel
+  const ribbon = showWholesaleRibbon && hasWholesaleDiscount(product)
   const href = '/shop/' + product.slug + (ribbon ? '?weight=10000' : '')
   return <article className="product-card">
     <Link href={href} className="product-image-link" aria-label={'مشاهدهٔ ' + product.name}>
-      <ProductVisual name={product.name} />
+      <ProductVisual name={product.name} imageUrl={product.imageUrl} />
       {ribbon ? <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
         : <span className="product-badge">{product.cafeGroup ? cafeGroups.find((group) => group.value === product.cafeGroup)!.label : category}</span>}
       <span className="product-arrow"><ArrowUpLeft size={20} /></span>

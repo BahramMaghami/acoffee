@@ -1,10 +1,11 @@
-import { products, visibleCategories } from '@/lib/storefront'
+import { getStoreCatalog } from '@/lib/catalog'
 import { ProductCard } from './product-card'
 import { CategorySlider } from './category-slider'
 import { CafeOffer } from './cafe-offer'
 import { Button } from '@/components/ui/button'
 
-export function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) {
+export async function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) {
+  const { products, categories: visibleCategories } = await getStoreCatalog()
   return (
     <div className="category-catalog">
       <nav className="category-jump-links" aria-label="رفتن به دستهٔ قهوه">

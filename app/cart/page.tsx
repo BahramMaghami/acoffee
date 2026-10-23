@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { CartContent } from './cart-content'
+import { getStoreCatalog } from '@/lib/catalog'
 
 export const metadata: Metadata = { title: 'سبد خرید' }
-export default function CartPage() {
+export default async function CartPage() {
+  const { products } = await getStoreCatalog()
   return (
     <div className="shell page-space">
       <div className="page-heading">
@@ -13,7 +15,7 @@ export default function CartPage() {
         </div>
         <span className="heading-index">YOUR NEXT CUP</span>
       </div>
-      <CartContent />
+      <CartContent products={products} />
     </div>
   )
 }

@@ -1,0 +1,33 @@
+.admin-products-table, .admin-price-table { overflow-x: auto; margin-top: 28px; border: 1px solid var(--border); border-radius: 8px; }
+.admin-products-table table, .admin-price-table table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
+.admin-products-table th, .admin-products-table td, .admin-price-table th, .admin-price-table td { padding: 14px; border-bottom: 1px solid var(--border); font-weight: 400; }
+.admin-products-table thead, .admin-price-table thead { color: var(--muted-foreground); background: var(--muted); }
+.admin-product-thumbnail { width: 64px; height: 72px; position: relative; }
+.admin-product-controls, .admin-products-pagination, .admin-inline-fields, .admin-product-save { display: flex; align-items: center; gap: 12px; }
+.admin-products-pagination { justify-content: space-between; margin-top: 24px; font-size: 13px; }
+.admin-products-empty { padding: 30px; }
+.admin-product-form { max-width: 1000px; margin-top: 36px; }
+.admin-product-fields { display: grid; gap: 28px; min-width: 0; }
+.admin-product-form label { display: block; font-size: 13px; margin-bottom: 8px; }
+.admin-product-form select { width: 100%; min-width: 0; height: 44px; padding: 8px 12px; background: var(--background); border: 1px solid var(--border); border-radius: 6px; }
+.admin-inline-fields > input { max-width: 260px; }
+.admin-inline-fields > button { flex-shrink: 0; }
+.admin-new-category { margin-top: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 6px; }
+.admin-option-field { padding: 22px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.admin-option-field legend { font-size: 16px; padding-inline: 8px; }
+.admin-option-field p, .admin-product-form small { color: var(--muted-foreground); font-size: 12px; line-height: 2; }
+.admin-option-list { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-block: 16px; }
+.admin-option-list label, .admin-product-save label { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+.admin-product-form input[type='checkbox'] { accent-color: var(--primary); width: 17px; height: 17px; }
+.admin-base-prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-block: 18px; }
+.admin-price-table { margin-top: 16px; }
+.admin-price-table th { min-width: 180px; }
+.admin-price-table td { min-width: 140px; }
+.admin-price-table td small { display: block; }
+.admin-price-table input:not([type='checkbox']) { min-width: 140px; }
+.admin-price-table .quiet-link { font-size: 11px; margin-top: 6px; }
+.admin-image-preview { position: relative; height: 190px; width: 180px; margin-bottom: 18px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.admin-product-save { flex-wrap: wrap; padding-block: 18px; border-top: 1px solid var(--border); }
+.admin-product-save > label { margin-inline-end: auto; }
+.admin-product-form .field-error { color: var(--primary); }
+@media(max-width:600px) { .admin-option-field { padding: 16px 12px; } .admin-inline-fields { flex-wrap: wrap; } .admin-product-save > label { width: 100%; margin-bottom: 8px; } }

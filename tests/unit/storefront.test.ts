@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { products, variants, productVariant, findVariant, startingPrice, cafeGroups, categories } from '../../lib/storefront'
+import { products, variants, productVariant, findVariant, startingPrice, cafeGroups, categories } from '../../lib/catalog-fixture'
 
 test('catalog matches the requested groups and has no invented tasting information', () => {
   assert.deepEqual(categories.map((category) => category.value), ['blend', 'cafe', 'wholesale', 'traditional', 'nescafe'])

@@ -6,7 +6,6 @@ import { getDb } from '@/lib/db'
 import { cartInputSchema } from '@/lib/validators/checkout'
 import { CheckoutError, lockCheckout } from '@/lib/checkout'
 import { logAuthError } from '@/lib/auth-error'
-import { findVariant } from '@/lib/storefront'
 
 export async function saveCheckoutCartAction(input: unknown) {
   const user = await getCurrentUser()
@@ -27,24 +26,15 @@ export async function saveCheckoutCartAction(input: unknown) {
           where: {
             slug: { in: parsed.data.map((item) => item.productId) },
             isActive: true,
+            catalogProduct: { isActive: true },
           },
         })
         const items = parsed.data.map((item) => {
           const product = products.find(
             (product) => product.slug === item.productId,
           )
-          const variant = findVariant(item.productId)
-          console.log(
-            'variant: ' + variant,
-            'product: ' + product,
-            'product weightGrams: ' + product?.weightGrams,
-            'product price: ' + product?.price,
-          )
-
           if (
-            !variant ||
             !product ||
-            product.weightGrams !== variant.weightGrams ||
             Number(product.price) <= 0
           )
             throw new CheckoutError(

@@ -12,14 +12,14 @@ export function ProductPurchase({ product, initialWeight }: { product: StoreProd
   const [quantity, setQuantity] = useState(1)
   const [weight, setWeight] = useState(initialWeight)
   const [roast, setRoast] = useState<Roast | undefined>(product.roasts[0])
-  const [grade, setGrade] = useState<Grade>('standard')
+  const [grade, setGrade] = useState<Grade>(product.grades[0])
   const router = useRouter()
   const { items, add } = useCart()
   const variant = productVariant(product, weight, roast, grade)!
   const inCart = items.find((item) => item.productId === variant.id)?.quantity ?? 0
   const remaining = maxCartQuantity - inCart
   const selected = Math.min(quantity, Math.max(remaining, 1))
-  return <div className="product-purchase" data-weight={weight}>
+  return <div className="product-purchase" data-weight={weight} data-discount={variant.isActive ? variant.discountPercent : 0}>
     <div className="purchase-options">
       <fieldset><legend>وزن بسته</legend><div className="option-buttons">{product.weights.map((value) =>
         <button key={value} type="button" aria-pressed={weight === value} onClick={() => setWeight(value)}>{formatWeight(value)}</button>)}</div></fieldset>
@@ -35,7 +35,7 @@ export function ProductPurchase({ product, initialWeight }: { product: StoreProd
         <output aria-label="تعداد انتخاب‌شده">{formatNumber(selected)}</output>
         <button aria-label="کاهش تعداد" disabled={selected <= 1} onClick={() => setQuantity(selected - 1)}><Minus size={16} /></button>
       </div>
-      <Button size="lg" disabled={remaining <= 0} onClick={() => {
+      <Button size="lg" disabled={remaining <= 0 || !variant.isActive} onClick={() => {
         add(variant.id, selected)
         toast.success('به سبدت اضافه شد.', {
           id: 'cart-' + variant.id, description: product.name + ' · ' + variant.label,
@@ -43,6 +43,7 @@ export function ProductPurchase({ product, initialWeight }: { product: StoreProd
         })
       }}><ShoppingBag />افزودن به سبد خرید</Button>
     </div>
+    {!variant.isActive && <p className="product-reassurance">این انتخاب فعلاً قابل سفارش نیست.</p>}
     {variant.price === null && <p className="product-reassurance">می‌توانی انتخابت را در سبد نگه داری؛ ثبت سفارش پس از اعلام قیمت فعال می‌شود.</p>}
   </div>
 }

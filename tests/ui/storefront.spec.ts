@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
-import { products, variants, maxCartQuantity } from '../../lib/storefront'
+import { products, variants, maxCartQuantity } from '../../lib/catalog-fixture'
 
 test('home keeps the hero and shows every category in a separate slider', async ({ page }, testInfo) => {
   const errors: string[] = []
@@ -137,7 +137,7 @@ test('weight, roast and Premium Blend selections remain separate and survive car
   await expect(page.locator('.cart-row')).toHaveCount(1)
 })
 
-test('cart rejects unsupported variants and caps quantities per SKU', async ({ page }) => {
+test('cart marks removed variants, blocks checkout and caps quantities per SKU', async ({ page }) => {
   await page.goto('/cart')
   await page.evaluate(() => localStorage.setItem('acoffee:preview-cart:v1', 'not json'))
   await page.reload()
@@ -151,6 +151,8 @@ test('cart rejects unsupported variants and caps quantities per SKU', async ({ p
   await expect(page.locator('.cart-row')).toHaveCount(1)
   await expect(page.locator('.cart-row output')).toHaveText(new Intl.NumberFormat('fa-IR').format(maxCartQuantity))
   await expect(page.getByRole('button', { name: /^افزایش تعداد/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'حذف انتخاب ناموجود' })).toHaveCount(2)
+  await expect(page.getByRole('link', { name: 'ادامهٔ خرید', exact: true })).toHaveCount(0)
 })
 
 test('traditional products expose only requested weights and supporting pages still work', async ({ page }) => {
