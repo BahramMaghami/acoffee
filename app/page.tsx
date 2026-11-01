@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, Coffee, PackageCheck, Bean } from 'lucide-react'
 import { HomeHero } from './home-hero'
 import { ShopCatalog } from './shop/shop-catalog'
 import { Button } from '@/components/ui/button'
+
+// Temporary title verification code; restore the inherited title after approval.
+export const metadata: Metadata = {
+  title: { absolute: 'آ | قهوه، به وقت خودت | 18624060' },
+  other: { enamad: '18624060' },
+}
 
 export default function HomePage() {
   return (
