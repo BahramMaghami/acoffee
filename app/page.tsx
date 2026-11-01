@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 // Temporary title verification code; restore the inherited title after approval.
 export const metadata: Metadata = {
-  title: { absolute: 'آ | قهوه، به وقت خودت | 18624060' },
+  title: { absolute: '18624060' },
   other: { enamad: '18624060' },
 }
 
@@ -16,7 +16,12 @@ export default function HomePage() {
     <>
       <HomeHero />
       <section className="shell collection-section" id="coffee-selection">
-        <div className="section-heading"><div><span className="eyebrow">قهوه‌های آ</span><h2>قهوه‌ات را انتخاب کن.</h2></div></div>
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">قهوه‌های آ</span>
+            <h2>قهوه‌ات را انتخاب کن.</h2>
+          </div>
+        </div>
         <ShopCatalog idPrefix="home" />
       </section>
       <div className="promise-strip shell">
@@ -51,9 +56,9 @@ export default function HomePage() {
           </div>
           <div>
             <p>
-              آ از علاقه به همین لحظه‌های ساده شروع شد؛ عطر قهوه در خانه،
-              فنجانی روی میز کار و گپی که کمی طولانی‌تر می‌شود. ما اینجاییم تا
-              سهم کوچکی در این لحظه‌ها داشته باشیم.
+              آ از علاقه به همین لحظه‌های ساده شروع شد؛ عطر قهوه در خانه، فنجانی
+              روی میز کار و گپی که کمی طولانی‌تر می‌شود. ما اینجاییم تا سهم
+              کوچکی در این لحظه‌ها داشته باشیم.
             </p>
             <Link className="quiet-link" href="/about">
               داستان آ <ArrowLeft size={18} />
