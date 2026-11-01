@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -13,12 +14,12 @@ test('guests cannot browse users', async ({ page }) => {
 })
 
 test.describe('live user management', () => {
-  test.skip(process.env.ADMIN_E2E !== '1', 'Requires Neon and temporary test users.')
+  test.skip(!hasTestDatabase || process.env.ADMIN_E2E !== '1', 'Requires Neon and temporary test users.')
   test.setTimeout(180_000)
   let db: PrismaClient
   const emails: string[] = []
   test.beforeAll(() => {
-    db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15000 }) })
+    db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15000 }) })
   })
   test.afterAll(async () => {
     try {

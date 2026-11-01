@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect, type Page } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -15,13 +16,13 @@ test('product management redirects guests before reading or mutating products', 
   }
 })
 test.describe('Neon product management', () => {
-  test.skip(process.env.ADMIN_PRODUCTS_E2E !== '1', 'Requires migrated Neon; creates and cleans up only isolated test users/products/orders.')
+  test.skip(!hasTestDatabase || process.env.ADMIN_PRODUCTS_E2E !== '1', 'Requires migrated Neon; creates and cleans up only isolated test users/products/orders.')
   test.setTimeout(300000)
   const token = randomUUID()
   const categoryName = `آزمایشی ${token}`
   const emails = [`products-admin-${token}@acoffee.test`, `products-customer-${token}@acoffee.test`]
   let db: PrismaClient
-  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15000 }) }) })
+  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15000 }) }) })
   test.afterAll(async () => {
     try {
       const owners = { user: { email: { in: emails } } }
@@ -39,7 +40,7 @@ test.describe('Neon product management', () => {
     const admin = await db.user.create({ data: { name: 'مدیر تست محصولات', email: emails[0], passwordHash, role: 'ADMIN' } })
     await db.user.create({ data: { name: 'مشتری تست محصولات', email: emails[1], passwordHash } })
     async function login(target: Page, email: string) {
-      await target.goto('http://127.0.0.1:3000/login?next=%2Fadmin')
+      await target.goto('http://127.0.0.1:3310/login?next=%2Fadmin')
       await target.getByLabel('ایمیل', { exact: true }).fill(email)
       await target.getByLabel('رمز عبور', { exact: true }).fill(password)
       await target.getByRole('button', { name: 'ورود به حساب', exact: true }).click()
@@ -49,7 +50,7 @@ test.describe('Neon product management', () => {
       const other = await outsider.newPage()
       await login(other, emails[1])
       await expect(other).toHaveURL(/\/account$/, { timeout: 40000 })
-      await other.goto('http://127.0.0.1:3000/admin/products/new')
+      await other.goto('http://127.0.0.1:3310/admin/products/new')
       await expect(other).toHaveURL(/\/account$/)
     } finally { await outsider.close() }
 

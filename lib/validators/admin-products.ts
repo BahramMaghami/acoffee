@@ -2,12 +2,12 @@ import { z } from 'zod'
 import { normalizeDigits } from './checkout'
 import { maxPrice } from '../product-pricing'
 
-const money = z.string().max(30).transform(value => normalizeDigits(value).replace(/[,٬\s]/g, ''))
+export const moneyInputSchema = z.string().max(30).transform(value => normalizeDigits(value).replace(/[,٬\s]/g, ''))
   .refine(value => value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) > 0 && Number(value) <= maxPrice), 'قیمت باید عدد صحیح مثبت به تومان باشد.')
   .transform(value => value === '' ? null : Number(value))
 export const priceInputSchema = z.object({
-  basePrices: z.object({ standard: money, vip: money }),
-  overrides: z.record(z.string().regex(/^\d+-(default|medium|medium-dark)-(standard|vip)$/), money)
+  basePrices: z.object({ standard: moneyInputSchema, vip: moneyInputSchema }),
+  overrides: z.record(z.string().regex(/^\d+-(default|medium|medium-dark)-(standard|vip)$/), moneyInputSchema)
     .refine(value => Object.keys(value).length <= 100, 'تعداد قیمت‌ها بیش از حد مجاز است.'),
 })
 export const productFormSchema = z.object({

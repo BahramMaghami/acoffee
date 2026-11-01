@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect, type Page } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -18,11 +19,11 @@ test('admin redirects guests to login with a safe admin destination', async ({ p
 })
 
 test.describe('Neon admin dashboard', () => {
-  test.skip(process.env.ADMIN_E2E !== '1', 'Set ADMIN_E2E=1 to test admin access with temporary users and orders.')
+  test.skip(!hasTestDatabase || process.env.ADMIN_E2E !== '1', 'Set ADMIN_E2E=1 to test admin access with temporary users and orders.')
   test.setTimeout(180_000)
   let db: PrismaClient
   const emails: string[] = []
-  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15_000 }) }) })
+  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15_000 }) }) })
   test.afterAll(async () => {
     try {
       if (!emails.length) return
@@ -71,7 +72,7 @@ test.describe('Neon admin dashboard', () => {
     const units = paid.reduce((sum, order) => sum + order.items.reduce((sum, item) => sum + item.quantity, 0), 0)
 
     async function login(target: Page, email: string) {
-      await target.goto('http://127.0.0.1:3000/admin')
+      await target.goto('http://127.0.0.1:3310/admin')
       await expect(target).toHaveURL(/\/login\?next=%2Fadmin$/)
       await target.getByLabel('ایمیل', { exact: true }).fill(email)
       await target.getByLabel('رمز عبور', { exact: true }).fill(password)

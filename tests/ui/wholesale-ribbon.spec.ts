@@ -1,3 +1,4 @@
+import { hasTestDatabase } from '../helpers/test-database'
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 
@@ -49,3 +50,5 @@ test('home wholesale cards show the ten kilogram ribbon in both themes without c
   await page.goto('/shop/category/wholesale')
   await expect(page.locator('.wholesale-ribbon')).toHaveCount(0)
 })
+
+test.skip(!hasTestDatabase, 'Requires a dedicated test database prepared with db:prepare:test.')

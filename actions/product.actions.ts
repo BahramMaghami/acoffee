@@ -90,7 +90,8 @@ export async function saveProductAction(input: unknown) {
     return { success: true as const, id: saved.id, message: 'محصول ذخیره شد.' }
   } catch (error) {
     logAuthError('save-product', error)
-    return { success: false as const, message: error instanceof ProductError || error instanceof RangeError ? error.message : 'محصول ذخیره نشد؛ صفحه را تازه کن و دوباره تلاش کن.' }
+    const conflict = error && typeof error === 'object' && 'code' in error && error.code === 'P2034'
+    return { success: false as const, message: conflict ? 'اطلاعات هم‌زمان تغییر کرده است؛ صفحه را تازه کن و تغییرات را بررسی کن.' : error instanceof ProductError || error instanceof RangeError ? error.message : 'محصول ذخیره نشد؛ اطلاعات فرم محفوظ است. دوباره تلاش کن.' }
   }
 }
 export async function deleteProductAction(input: unknown) {

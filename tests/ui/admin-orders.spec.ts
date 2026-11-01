@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -15,11 +16,11 @@ test('admin orders list and details require login', async ({ page }) => {
 })
 
 test.describe('admin order management', () => {
-  test.skip(process.env.ADMIN_ORDERS_E2E !== '1', 'Uses temporary users and orders in Neon.')
+  test.skip(!hasTestDatabase || process.env.ADMIN_ORDERS_E2E !== '1', 'Uses temporary users and orders in Neon.')
   test.setTimeout(240000)
   let db: PrismaClient
   const emails: string[] = []
-  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15000 }) }) })
+  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15000 }) }) })
   test.afterAll(async () => {
     try {
       const owners = { user: { email: { in: emails } } }
@@ -96,13 +97,13 @@ test.describe('admin order management', () => {
     const customer = await browser.newContext()
     try {
       const customerPage = await customer.newPage()
-      await customerPage.goto('http://127.0.0.1:3000/login')
+      await customerPage.goto('http://127.0.0.1:3310/login')
       await customerPage.getByLabel('ایمیل', { exact: true }).fill(emails[1])
       await customerPage.getByLabel('رمز عبور', { exact: true }).fill(password)
       await customerPage.getByRole('button', { name: 'ورود به حساب', exact: true }).click()
       await expect(customerPage).toHaveURL(/\/account$/, { timeout: 40000 })
       for (const url of ['/admin/orders', `/admin/orders/${order.id}`]) {
-        await customerPage.goto(`http://127.0.0.1:3000${url}`)
+        await customerPage.goto(`http://127.0.0.1:3310${url}`)
         await expect(customerPage).toHaveURL(/\/account$/)
       }
     } finally { await customer.close() }

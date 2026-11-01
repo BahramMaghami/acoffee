@@ -4,11 +4,12 @@ import { getDb } from './db'
 
 export async function consumeAuthAttempt(
   email: string,
-  operation: 'login' | 'register',
+  operation: 'login' | 'register' | 'password-reset' | 'password-change',
 ) {
   const key = createHash('sha256').update(`${operation}:${email}`).digest('hex')
-  const limit = operation === 'login' ? 8 : 3
-  const seconds = operation === 'login' ? 15 * 60 : 60 * 60
+  const shortWindow = operation === 'login' || operation === 'password-change'
+  const limit = shortWindow ? 8 : 3
+  const seconds = shortWindow ? 15 * 60 : 60 * 60
 
   // Atomic counters work across concurrent requests and multiple server instances.
   const [row] = await getDb().$queryRaw<{ attempts: number }[]>`

@@ -42,12 +42,25 @@ model User {
   /// Normalize email to lowercase and trim before every lookup/write.
   email        String    @unique @db.VarChar(254)
   passwordHash String    @db.VarChar(255)
+  sessionVersion Int     @default(0)
+  passwordResetTokens PasswordResetToken[]
   role         Role      @default(CUSTOMER)
   addresses    Address[]
   orders       Order[]
   cart         Cart?
   createdAt    DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+}
+
+model PasswordResetToken {
+  tokenHash String   @id @db.VarChar(64)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Address {

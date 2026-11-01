@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -18,12 +19,12 @@ test('checkout requires login and preserves the destination', async ({ page }) =
 })
 
 test.describe('Neon checkout', () => {
-  test.skip(process.env.CHECKOUT_E2E !== '1', 'Set CHECKOUT_E2E=1 to test real checkout writes.')
+  test.skip(!hasTestDatabase || process.env.CHECKOUT_E2E !== '1', 'Set CHECKOUT_E2E=1 to test real checkout writes.')
   test.skip(!pricedVariant, 'Configure a priced 250g SKU and seed it before live checkout tests.')
   test.setTimeout(180_000)
   const identities: string[] = []
   let db: PrismaClient
-  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15_000 }) }) })
+  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15_000 }) }) })
   test.afterAll(async () => {
     try {
       const users = await db.user.findMany({ where: { email: { in: identities } }, select: { id: true } })
@@ -88,7 +89,7 @@ test.describe('Neon checkout', () => {
     expect(await db.product.findUniqueOrThrow({ where: { id: product.id } })).toEqual(product)
     await expect(page.getByRole('button', { name: 'پرداخت آنلاین به‌زودی' })).toBeDisabled()
 
-    const headers = { 'next-action': request.headers()['next-action'], 'content-type': request.headers()['content-type'], origin: 'http://127.0.0.1:3000' }
+    const headers = { 'next-action': request.headers()['next-action'], 'content-type': request.headers()['content-type'], origin: 'http://127.0.0.1:3310' }
     const body = request.postData()!
     // Replay an identical POST twice; both must resolve to the existing order.
     const retries = await Promise.all([page.request.post(request.url(), { headers, data: body }), page.request.post(request.url(), { headers, data: body })])
@@ -118,12 +119,12 @@ test.describe('Neon checkout', () => {
     const outsider = await browser.newContext()
     try {
       const otherPage = await outsider.newPage()
-      await otherPage.goto('http://127.0.0.1:3000/login')
+      await otherPage.goto('http://127.0.0.1:3310/login')
       await otherPage.getByLabel('ایمیل', { exact: true }).fill(otherEmail)
       await otherPage.getByLabel('رمز عبور', { exact: true }).fill(password)
       await otherPage.getByRole('button', { name: 'ورود به حساب', exact: true }).click()
       await expect(otherPage).toHaveURL(/\/account$/, { timeout: 30_000 })
-      const response = await otherPage.goto(`http://127.0.0.1:3000/orders/${order.id}`)
+      const response = await otherPage.goto(`http://127.0.0.1:3310/orders/${order.id}`)
       // Streaming Next responses may have status 200; private content must never render.
       expect(response?.status()).toBeLessThan(500)
       await expect(otherPage.getByText(address.addressLine, { exact: false })).toHaveCount(0)

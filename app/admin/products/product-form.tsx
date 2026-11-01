@@ -10,8 +10,9 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ProductVisual } from '@/app/shop/product-visual'
-import { productFormSchema, priceInputSchema, type ProductFormInput } from '@/lib/validators/admin-products'
-import { categoryDefaults, calculateProductPrices, type ProductDefaults } from '@/lib/product-pricing'
+import { productFormSchema, type ProductFormInput } from '@/lib/validators/admin-products'
+import { categoryDefaults, type ProductDefaults } from '@/lib/product-pricing'
+import { productPricePreview } from '@/lib/product-price-preview'
 import { normalizeDigits } from '@/lib/validators/checkout'
 import { formatWeight, formatPrice, gradeLabels, roastOptions, type Grade, type Roast } from '@/lib/storefront'
 import { prepareProductImageAction, saveProductAction } from '@/actions/product.actions'
@@ -43,13 +44,7 @@ export function ProductForm({ categories, initial, imageUrl, uploadEnabled }: {
   const effective: ProductDefaults = { weights: value.weights.length ? value.weights : preset.weights,
     roasts: value.noRoast ? [] : value.roasts.length ? value.roasts : preset.roasts,
     grades: value.grades.length ? value.grades : preset.grades, wholesale: preset.wholesale }
-  const parsedPrices = priceInputSchema.safeParse(value)
-  let rows: ReturnType<typeof calculateProductPrices> = []
-  let priceError = ''
-  try {
-    if (parsedPrices.success) rows = calculateProductPrices({ ...effective, ...parsedPrices.data })
-    else priceError = parsedPrices.error.issues[0].message
-  } catch { priceError = 'مبلغ محاسبه‌شده بیش از حد مجاز است.' }
+  const { rows, errors: priceErrors } = productPricePreview(effective, value)
   const errors = form.formState.errors
   function submit(raw: ProductFormInput) {
     startTransition(async () => {
@@ -128,14 +123,14 @@ export function ProductForm({ categories, initial, imageUrl, uploadEnabled }: {
         </fieldset>
         <fieldset className="admin-option-field"><legend>۶. قیمت</legend>
           <p>قیمت یک کیلو به تومان؛ قیمت مستقل هر انتخاب بر محاسبات اولویت دارد.</p>
-          <div className="admin-base-prices">{effective.grades.map(grade => <div key={grade}><label htmlFor={`price-${grade}`}>{gradeLabels[grade]} · یک کیلو</label><Input id={`price-${grade}`} inputMode="numeric" {...form.register(`basePrices.${grade}`)} /></div>)}</div>
+          <div className="admin-base-prices">{effective.grades.map(grade => <div key={grade}><label htmlFor={`price-${grade}`}>{gradeLabels[grade]} · یک کیلو</label><Input id={`price-${grade}`} inputMode="numeric" aria-invalid={Boolean(priceErrors[`basePrices.${grade}`])} aria-describedby={`price-${grade}-error`} {...form.register(`basePrices.${grade}`)} /><p id={`price-${grade}-error`} className="field-error">{priceErrors[`basePrices.${grade}`]}</p></div>)}</div>
           {preset.wholesale && <p>۱۰ کیلو: دو برابر قیمت نهایی ۵ کیلو با ۳٪ تخفیف؛ مگر قیمت مستقل وارد کنی.</p>}
-          {priceError && <p className="field-error" role="alert">{priceError}</p>}
           <div className="admin-price-table"><table><caption className="sr-only">پیش‌نمایش قیمت انتخاب‌ها</caption><thead><tr><th>انتخاب</th><th>قیمت نهایی</th><th>قیمت مستقل (تومان)</th><th>قابل سفارش</th></tr></thead><tbody>
             {rows.map(row => {
               const label = [formatWeight(row.weightGrams), roastOptions.find(r => r.value === row.roast)?.label, gradeLabels[row.grade]].filter(Boolean).join(' · ')
-              return <tr key={row.key}><th scope="row">{label}</th><td>{row.price === null ? 'اعلام نشده' : formatPrice(row.price)}{row.discountPercent === 3 && <small>۳٪ تخفیف</small>}</td>
-                <td><Input aria-label={`قیمت مستقل ${label}`} inputMode="numeric" value={value.overrides[row.key] ?? ''} placeholder="محاسبهٔ خودکار" onChange={e => form.setValue('overrides', { ...value.overrides, [row.key]: e.target.value }, { shouldDirty: true })} />
+              return <tr key={row.key}><th scope="row">{label}</th><td>{row.invalid ? <span className="field-error">قابل محاسبه نیست؛ قیمت را اصلاح کن.</span> : row.price === null ? 'اعلام نشده' : formatPrice(row.price)}{!row.invalid && row.discountPercent === 3 && <small>۳٪ تخفیف</small>}</td>
+                <td><Input aria-label={`قیمت مستقل ${label}`} aria-invalid={Boolean(priceErrors[`overrides.${row.key}`])} aria-describedby={`override-${row.key}-error`} inputMode="numeric" value={value.overrides[row.key] ?? ''} placeholder="محاسبهٔ خودکار" onChange={e => form.setValue('overrides', { ...value.overrides, [row.key]: e.target.value }, { shouldDirty: true })} />
+                <p id={`override-${row.key}-error`} className="field-error">{priceErrors[`overrides.${row.key}`]}</p>
                 {Object.hasOwn(value.overrides, row.key) && <button type="button" className="quiet-link" onClick={() => { const next = { ...value.overrides }; delete next[row.key]; form.setValue('overrides', next, { shouldDirty: true }) }}>بازگشت به محاسبه</button>}</td>
                 <td><input type="checkbox" aria-label={`قابل سفارش ${label}`} checked={value.availability[row.key] ?? true} onChange={e => form.setValue('availability', { ...value.availability, [row.key]: e.target.checked }, { shouldDirty: true })} /></td></tr>
             })}

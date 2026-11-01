@@ -3,15 +3,102 @@
 import { AuthError, CredentialsSignin } from 'next-auth'
 import { hash } from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { signIn, signOut } from '@/auth'
 import { getDb } from '@/lib/db'
-import { loginSchema, registerSchema } from '@/lib/validators/auth'
+import { loginSchema, registerSchema, profileSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '@/lib/validators/auth'
 import { safeAuthRedirect } from '@/lib/auth-redirect'
 import { consumeAuthAttempt } from '@/lib/auth-rate-limit'
 import { logAuthError } from '@/lib/auth-error'
-import { requireAdmin } from '@/lib/current-user'
+import { requireAdmin, getCurrentUser } from '@/lib/current-user'
 import { adminUserMutationSchema } from '@/lib/validators/admin-users'
 import { assertSignInRedirect } from '@/lib/auth-result'
+import { lockCheckout } from '@/lib/checkout'
+import { changePassword, issuePasswordReset, resetPassword, PasswordError } from '@/lib/password-recovery'
+import { readMailConfig, sendRecoveryMail } from '@/lib/mail'
+
+type AccountResult = { success: boolean; message: string }
+
+export async function updateProfileAction(input: unknown): Promise<AccountResult> {
+  const parsed = profileSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: parsed.error.issues[0].message }
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { success: false, message: 'برای ویرایش حساب دوباره وارد شو.' }
+    await getDb().$transaction(async tx => {
+      await lockCheckout(tx, user.id)
+      const updated = await tx.user.updateMany({ where: { id: user.id, sessionVersion: user.sessionVersion }, data: { name: parsed.data.name } })
+      if (!updated.count) throw new PasswordError('نشستت معتبر نیست. دوباره وارد شو.')
+      const address = await tx.address.findFirst({ where: { userId: user.id }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }] })
+      if (address) await tx.address.update({ where: { id: address.id }, data: { recipientName: parsed.data.name } })
+    }, { maxWait: 10000, timeout: 30000 })
+    revalidatePath('/', 'layout')
+    return { success: true, message: 'نامت به‌روز شد.' }
+  } catch (error) {
+    logAuthError('profile', error)
+    return { success: false, message: error instanceof PasswordError ? error.message : 'ذخیرهٔ نام انجام نشد. دوباره تلاش کن.' }
+  }
+}
+
+export async function changePasswordAction(input: unknown): Promise<AccountResult> {
+  const parsed = changePasswordSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: parsed.error.issues[0].message }
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { success: false, message: 'برای تغییر رمز دوباره وارد شو.' }
+    if (!await consumeAuthAttempt(user.id, 'password-change')) return { success: false, message: 'تلاش‌های زیادی انجام شده؛ ۱۵ دقیقه بعد دوباره امتحان کن.' }
+    await changePassword(user.id, user.sessionVersion, parsed.data.currentPassword, parsed.data.password)
+  } catch (error) {
+    logAuthError('change-password', error)
+    return { success: false, message: error instanceof PasswordError ? error.message : 'تغییر رمز انجام نشد. دوباره تلاش کن.' }
+  }
+  // Revocation is already committed even if clearing this browser's cookie fails.
+  await signOut({ redirect: false }).catch(error => logAuthError('password-signout', error))
+  revalidatePath('/', 'layout')
+  return { success: true, message: 'رمز تغییر کرد. با رمز جدید وارد شو.' }
+}
+
+export async function requestPasswordResetAction(input: unknown): Promise<AccountResult> {
+  const parsed = forgotPasswordSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: parsed.error.issues[0].message }
+  if (!readMailConfig()) return { success: false, message: 'بازیابی رمز فعلاً در دسترس نیست. کمی بعد دوباره تلاش کن.' }
+  const accepted = { success: true, message: 'درخواستت دریافت شد. اگر با این ایمیل حسابی داشته باشی، لینک بازیابی را دریافت می‌کنی. پوشهٔ هرزنامه را هم بررسی کن.' }
+  try {
+    if (!await consumeAuthAttempt(parsed.data.email, 'password-reset')) return accepted
+    // Account lookup and SMTP run after the response. Existence, SMTP latency and
+    // delivery errors cannot reveal whether the requested account is registered.
+    after(async () => {
+      let tokenHash: string | undefined
+      try {
+        const issued = await issuePasswordReset(parsed.data.email)
+        if (!issued) return
+        tokenHash = issued.tokenHash
+        await sendRecoveryMail(parsed.data.email, issued.token)
+      } catch (error) {
+        logAuthError('recovery-delivery', error)
+        if (tokenHash) await getDb().passwordResetToken.deleteMany({ where: { tokenHash } }).catch(cleanup => logAuthError('recovery-cleanup', cleanup))
+      }
+    })
+    return accepted
+  } catch (error) {
+    logAuthError('recovery-request', error)
+    return { success: false, message: 'درخواست ثبت نشد. ارتباط را بررسی کن و دوباره تلاش کن.' }
+  }
+}
+
+export async function resetPasswordAction(input: unknown): Promise<AccountResult> {
+  const parsed = resetPasswordSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: parsed.error.issues[0].message }
+  try {
+    await resetPassword(parsed.data.token, parsed.data.password)
+  } catch (error) {
+    logAuthError('reset-password', error)
+    return { success: false, message: error instanceof PasswordError ? error.message : 'رمز تغییر نکرد. دوباره تلاش کن.' }
+  }
+  await signOut({ redirect: false }).catch(error => logAuthError('reset-signout', error))
+  revalidatePath('/', 'layout')
+  return { success: true, message: 'رمز جدید ذخیره شد. دوباره وارد حسابت شو.' }
+}
 
 export async function manageUserAction(input: unknown): Promise<{ success: boolean; message: string }> {
   const actor = await requireAdmin()

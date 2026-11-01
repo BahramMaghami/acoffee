@@ -33,12 +33,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await getDb().user.findUnique({
           where: { email },
-          select: { id: true, name: true, email: true, role: true, passwordHash: true },
+          select: { id: true, name: true, email: true, role: true, passwordHash: true, sessionVersion: true },
         })
         const valid = await compare(password, user?.passwordHash ?? DUMMY_HASH)
         if (!user || !valid) return null
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role }
+        return { id: user.id, name: user.name, email: user.email, role: user.role, sessionVersion: user.sessionVersion }
       },
     }),
   ],
@@ -47,6 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.sub = user.id
         token.role = user.role
+        token.sessionVersion = user.sessionVersion
       }
       // Ignore user-supplied session updates: identity and role come from the DB.
       return token
@@ -54,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, token }) {
       session.user.id = token.sub ?? ''
       session.user.role = token.role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER'
+      session.user.sessionVersion = token.sessionVersion === undefined ? undefined : typeof token.sessionVersion === 'number' ? token.sessionVersion : -1
       return session
     },
   },

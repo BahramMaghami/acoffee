@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { expect, test } from '@playwright/test'
 import { randomBytes, randomUUID, createHash } from 'node:crypto'
@@ -35,13 +36,13 @@ test('guest can open authentication pages and account requires login', async ({ 
 })
 
 test.describe('Neon authentication', () => {
-  test.skip(process.env.AUTH_E2E !== '1', 'Set AUTH_E2E=1 to test real Neon authentication.')
+  test.skip(!hasTestDatabase || process.env.AUTH_E2E !== '1', 'Set AUTH_E2E=1 to test real Neon authentication.')
   test.setTimeout(120_000)
 
   let db: PrismaClient
   const emails: string[] = []
   test.beforeAll(() => {
-    db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15_000 }) })
+    db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15_000 }) })
   })
   test.afterAll(async () => {
     if (!db) return
@@ -88,7 +89,7 @@ test.describe('Neon authentication', () => {
     const restored = await browser.newContext({ storageState: await page.context().storageState() })
     try {
       const returning = await restored.newPage()
-      await returning.goto('http://127.0.0.1:3000/account')
+      await returning.goto('http://127.0.0.1:3310/account')
       await expect(returning.getByRole('heading', { level: 1 })).toContainText('کاربر آزمایشی آ')
     } finally { await restored.close() }
 

@@ -7,11 +7,15 @@ import { formatNumber } from '@/lib/storefront'
 import { Button } from '@/components/ui/button'
 import { getDb } from '@/lib/db'
 import '../checkout/checkout.css'
+import './account.css'
+import { ProfileForm, AccountAddressForm, ChangePasswordForm } from './account-forms'
 
 export const metadata: Metadata = { title: 'حساب من' }
 
 export default async function AccountPage() {
   const user = await requireUser()
+  const address = await getDb().address.findFirst({ where: { userId: user.id }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+    select: { province: true, city: true, addressLine: true, postalCode: true, phone: true } })
   const orders = await getDb().order.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' }, take: 20,
     select: { id: true, number: true, total: true, paymentStatus: true, createdAt: true } }).catch(() => { throw new Error('سفارش‌های حساب دریافت نشد.') })
   const initial = Array.from(user.name.trim())[0]?.toLocaleUpperCase() || 'آ'
@@ -73,6 +77,10 @@ export default async function AccountPage() {
             </Link>
           </Button>
         </section>
+      </div>
+      <div className="account-settings">
+        <div><ProfileForm name={user.name} email={user.email} /><ChangePasswordForm /></div>
+        <AccountAddressForm initial={address ?? undefined} />
       </div>
       <section className="checkout-panel account-orders"><h2>سفارش‌های اخیر</h2>
         <Link href="/orders" className="quiet-link">مشاهدهٔ همهٔ سفارش‌ها <ArrowLeft size={14} /></Link>

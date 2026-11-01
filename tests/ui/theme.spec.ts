@@ -1,3 +1,4 @@
+import { hasTestDatabase } from '../helpers/test-database'
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 
@@ -57,3 +58,5 @@ test('theme toggle works with keyboard when storage is unavailable on narrow scr
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
+
+test.skip(!hasTestDatabase, 'Requires a dedicated test database prepared with db:prepare:test.')

@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 import './auth.css'
 import './brand-theme.css'
-import { auth } from '@/auth'
+import { getCurrentUser } from '@/lib/current-user'
 import { defaultTheme, themeScript } from './theme'
 
 export const metadata: Metadata = {
@@ -16,8 +16,9 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: LayoutProps<'/'>) {
-  const session = await auth()
-  const headerUser = session?.user ? { name: session.user.name, email: session.user.email, role: session.user.role } : null
+  // The public shell must survive a temporary DB error without deleting cookies.
+  const user = await getCurrentUser().catch(() => null)
+  const headerUser = user ? { name: user.name, email: user.email, role: user.role } : null
   return (
     <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="h-full antialiased" data-theme={defaultTheme} suppressHydrationWarning>
       <head>

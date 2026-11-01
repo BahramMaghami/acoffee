@@ -1,0 +1,8 @@
+.account-settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 32px; align-items: start; }
+.account-settings > div, .account-edit-form, .account-edit-form fieldset { min-width: 0; }
+.account-edit-form .form-field { margin-bottom: 20px; }
+.account-edit-form .account-form-note, .account-edit-form small { color: var(--muted-foreground); font-size: 12px; line-height: 2; }
+.account-edit-form .account-form-note { margin: -10px 0 22px; }
+.account-save-message { margin-top: 18px; color: var(--foreground); font-size: 13px; }
+.account-edit-form button[type=submit] { margin-top: 8px; }
+@media (max-width: 760px) { .account-settings { grid-template-columns: minmax(0, 1fr); gap: 0; } }

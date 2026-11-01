@@ -1,3 +1,4 @@
+import { testDatabaseUrls, hasTestDatabase } from '../helpers/test-database'
 import 'dotenv/config'
 import { test, expect } from '@playwright/test'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -14,11 +15,11 @@ test('history requires authentication and preserves its destination', async ({ p
 })
 
 test.describe('private order history', () => {
-  test.skip(process.env.ORDER_HISTORY_E2E !== '1', 'Requires Neon and temporary test users/orders.')
+  test.skip(!hasTestDatabase || process.env.ORDER_HISTORY_E2E !== '1', 'Requires Neon and temporary test users/orders.')
   test.setTimeout(180_000)
   let db: PrismaClient
   const emails: string[] = []
-  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15000 }) }) })
+  test.beforeAll(() => { db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: testDatabaseUrls().pooled, connectionTimeoutMillis: 15000 }) }) })
   test.afterAll(async () => {
     try {
       const owners = { user: { email: { in: emails } } }

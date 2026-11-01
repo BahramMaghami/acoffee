@@ -5,23 +5,26 @@ import { auth } from '@/auth'
 import { getDb } from './db'
 import { safeAuthRedirect } from './auth-redirect'
 import { logAuthError } from './auth-error'
+import { matchesSessionVersion } from './session-version'
 
 export const getCurrentUser = cache(async () => {
   const session = await auth()
   if (!session?.user.id) return null
   // Re-read authoritative data at the protected boundary (including role).
   try {
-    return await getDb().user.findUnique({
+    const user = await getDb().user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        sessionVersion: true,
         createdAt: true,
         _count: { select: { orders: true, addresses: true } },
       },
     })
+    return user && matchesSessionVersion(session.user.sessionVersion, user.sessionVersion) ? user : null
   } catch (error) {
     logAuthError('current-user', error)
     // Some Neon transport failures are ErrorEvents, which RSC cannot serialize.

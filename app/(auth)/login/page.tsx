@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'ورود به حساب' }
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; registered?: string; error?: string }>
+  searchParams: Promise<{ next?: string; registered?: string; error?: string; passwordChanged?: string }>
 }) {
   const params = await searchParams
   const destination = safeAuthRedirect(params.next)
@@ -31,6 +31,8 @@ export default async function LoginPage({
         </p>
       )}
       <LoginForm destination={destination} />
+      {params.passwordChanged === '1' && <p className="auth-notice" role="status">رمز جدید ذخیره شد. با رمز جدید وارد حسابت شو.</p>}
+      <p className="auth-switch"><Link href="/forgot-password">رمز عبور را فراموش کرده‌ام</Link></p>
       <p className="auth-switch">
         هنوز حساب نداری؟{' '}
         <Link href={`/register?next=${encodeURIComponent(destination)}`}>

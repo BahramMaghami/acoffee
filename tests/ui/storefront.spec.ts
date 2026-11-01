@@ -1,3 +1,4 @@
+import { hasTestDatabase } from '../helpers/test-database'
 import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { products, variants, maxCartQuantity } from '../../lib/catalog-fixture'
@@ -196,3 +197,5 @@ test('wholesale prices and the detail ribbon follow the selected weight and grad
   await expect(page.locator('.summary-total dd')).toHaveText('۲۴٬۲۵۰٬۰۰۰ تومان')
   await expect(page.locator('.cart-row img:visible')).toHaveAttribute('src', /acoffee/)
 })
+
+test.skip(!hasTestDatabase, 'Requires a dedicated test database prepared with db:prepare:test.')
