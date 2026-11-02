@@ -15,6 +15,7 @@
     "db:prepare:test": "tsx scripts/prepare-test-db.ts",
     "test:recovery": "node --conditions=react-server --import tsx --test tests/helpers/recovery.integration.ts",
     "test:mail": "node --conditions=react-server --import tsx --test tests/helpers/mail.server.ts",
+    "smtp:verify": "node --conditions=react-server --import tsx scripts/verify-smtp.ts",
     "prices:compare": "tsx scripts/compare-blend-prices.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",

@@ -551,6 +551,15 @@ p {
   line-height: 2.3;
   color: var(--muted-foreground);
 }
+.footer-enamad {
+  display: inline-block;
+  margin-top: 20px;
+}
+.footer-enamad img {
+  display: block;
+  width: 100px;
+  height: auto;
+}
 .footer-top nav {
   display: flex;
   flex-direction: column;

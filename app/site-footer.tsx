@@ -15,6 +15,23 @@ export function SiteFooter() {
               <br />
               قهوه‌های غیرمعمولی.
             </p>
+            <a
+              className="footer-enamad"
+              referrerPolicy="origin"
+              target="_blank"
+              rel="noopener"
+              href="https://trustseal.enamad.ir/?id=8423362&Code=2en90T52eUArSdjA31AO3kwMlzgHhpbU"
+            >
+              {/* The trust seal must load directly from Enamad, without image proxying. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                referrerPolicy="origin"
+                src="https://trustseal.enamad.ir/logo.aspx?id=8423362&Code=2en90T52eUArSdjA31AO3kwMlzgHhpbU"
+                alt="نماد اعتماد الکترونیکی آ — مشاهدهٔ اعتبار"
+                style={{ cursor: 'pointer' }}
+                {...{ code: '2en90T52eUArSdjA31AO3kwMlzgHhpbU' }}
+              />
+            </a>
           </div>
           <nav aria-label="پیوندهای پایین صفحه">
             <Link href="/shop">
