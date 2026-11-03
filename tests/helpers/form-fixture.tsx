@@ -3,6 +3,7 @@ import { ProductForm } from '../../app/admin/products/product-form'
 import { ProfileForm, AccountAddressForm, ChangePasswordForm } from '../../app/account/account-forms'
 import { ForgotPasswordForm } from '../../app/(auth)/forgot-password/forgot-password-form'
 import { ResetPasswordForm } from '../../app/(auth)/reset-password/reset-password-form'
+import { RegisterForm } from '../../app/(auth)/register/register-form'
 
 declare global {
   interface Window {
@@ -21,5 +22,6 @@ window.mountFormTest = kind => {
   }} />)
   else if (kind === 'account') root.render(<div className="account-settings"><div><ProfileForm name="بهرام" email="test@acoffee.test" /><ChangePasswordForm /></div><AccountAddressForm /></div>)
   else if (kind === 'forgot') root.render(<ForgotPasswordForm enabled />)
+  else if (kind === 'signup') root.render(<RegisterForm destination="/account" />)
   else root.render(<ResetPasswordForm token={'a'.repeat(43)} />)
 }

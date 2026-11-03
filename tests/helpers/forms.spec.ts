@@ -15,6 +15,8 @@ test.beforeAll(async () => {
         if (args.path === 'next/image') return { contents: 'import {createElement} from "react"; export default function Image({fill,priority,unoptimized,...props}) { return createElement("img",props) }', resolveDir: process.cwd() }
         return { contents: `async function run(input) { window.formTestPayload=input; if (window.formTestMode==='offline') throw new Error('offline'); if (window.formTestMode==='error') return {success:false,message:'ذخیره انجام نشد؛ دوباره تلاش کن.'}; return {success:true,message:'ذخیره شد.'} }
           export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, requestPasswordResetAction=run, resetPasswordAction=run;
+          export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date(Date.now()+60000).toISOString()}; }
+          export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
           export async function prepareProductImageAction() { throw new Error('آپلود انجام نشد؛ دوباره تلاش کن.') }` }
       })
     } }],
@@ -32,6 +34,47 @@ async function openForm(page: Page, kind: string) {
   await page.addScriptTag({ content: bundle })
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
+
+test('signup requires a phone and code, retains inputs on failure and supports changing details', async ({ page }, info) => {
+  await openForm(page, 'signup')
+  await page.getByLabel('نام و نام خانوادگی').fill('کاربر آزمایشی')
+  await page.getByLabel('ایمیل', { exact: true }).fill('signup@example.test')
+  await page.getByLabel('رمز عبور', { exact: true }).fill('test-password')
+  await page.getByLabel('تکرار رمز عبور', { exact: true }).fill('test-password')
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.locator('#register-phone-error')).not.toBeEmpty()
+  await page.getByLabel('شمارهٔ موبایل').fill('۰۹۱۲۱۲۳۴۵۶۷')
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.getByRole('alert')).toContainText('اطلاعاتت حفظ شده')
+  await expect(page.getByLabel('شمارهٔ موبایل')).toHaveValue('۰۹۱۲۱۲۳۴۵۶۷')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.getByLabel('کد تأیید پیامکی')).toBeVisible()
+  await expect(page.getByRole('button', { name: /ارسال مجدد/ })).toBeDisabled()
+  await expect(page.getByLabel('ایمیل', { exact: true })).toHaveAttribute('readonly', '')
+  await page.getByRole('button', { name: 'تأیید کد و ساخت حساب' }).click()
+  await expect(page.locator('#register-otp-error')).toContainText('۶ رقم')
+  await page.getByLabel('کد تأیید پیامکی').fill('۱۲۳۴۵۶')
+  await page.evaluate(() => { window.formTestMode = 'error' })
+  await page.getByRole('button', { name: 'تأیید کد و ساخت حساب' }).click()
+  await expect(page.getByRole('alert')).toContainText('دوباره تلاش کن')
+  await expect(page.getByLabel('کد تأیید پیامکی')).toHaveValue('۱۲۳۴۵۶')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await page.screenshot({ path: info.outputPath(`signup-otp-${theme}.png`), fullPage: true })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.getByRole('button', { name: 'ویرایش اطلاعات' }).click()
+  await expect(page.getByLabel('کد تأیید پیامکی')).toHaveCount(0)
+  await expect(page.getByLabel('ایمیل', { exact: true })).not.toHaveAttribute('readonly', '')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await page.getByLabel('کد تأیید پیامکی').fill('۱۲۳۴۵۶')
+  await page.getByRole('button', { name: 'تأیید کد و ساخت حساب' }).click()
+  await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/account')
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ phone: '09121234567', code: '123456' })
+})
 
 test('product price input stays editable, isolates dependencies and can return to automatic pricing', async ({ page }, info) => {
   await openForm(page, 'product')

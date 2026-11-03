@@ -3,7 +3,7 @@ import 'dotenv/config'
 import { expect, test } from '@playwright/test'
 import { randomBytes, randomUUID, createHash } from 'node:crypto'
 import { readFile, mkdir } from 'node:fs/promises'
-import { compare } from 'bcryptjs'
+import { compare, hash } from 'bcryptjs'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { PrismaClient } from '../../generated/prisma/client'
 
@@ -56,16 +56,17 @@ test.describe('Neon authentication', () => {
     } finally { await db.$disconnect() }
   })
 
-  test('registration, encrypted 14-day session, signout and credentials login work', async ({ page, browser }, testInfo) => {
+  test('credentials login, encrypted 14-day session and signout work', async ({ page, browser }, testInfo) => {
     const email = `auth-e2e-${randomUUID()}@acoffee.test`
     const password = randomBytes(20).toString('base64url')
     emails.push(email)
-    await page.goto('/register')
-    await page.getByLabel('نام و نام خانوادگی', { exact: true }).fill('کاربر آزمایشی آ')
+    // Signup OTP is covered by the isolated transaction and form suites. This
+    // credentials test must never send a real SMS to create its test identity.
+    await db.user.create({ data: { email, name: 'کاربر آزمایشی آ', passwordHash: await hash(password, 12) } })
+    await page.goto('/login')
     await page.getByLabel('ایمیل', { exact: true }).fill(email.toUpperCase())
     await page.getByLabel('رمز عبور', { exact: true }).fill(password)
-    await page.getByLabel('تکرار رمز عبور', { exact: true }).fill(password)
-    await page.getByRole('button', { name: 'ساخت حساب', exact: true }).click()
+    await page.getByRole('button', { name: 'ورود به حساب', exact: true }).click()
     await expect(page).toHaveURL(/\/account$/, { timeout: 50_000 })
     await expect(page.getByRole('heading', { level: 1 })).toContainText('کاربر آزمایشی آ')
     await expect(page.getByRole('button', { name: 'حساب کاربری کاربر آزمایشی آ' })).toBeVisible()
@@ -130,13 +131,12 @@ test.describe('Neon authentication', () => {
     }
   })
 
-  test('login and registration limits are enforced and expired windows reset', async ({ page }) => {
+  test('login limits are enforced and expired windows reset', async ({ page }) => {
     const email = `auth-e2e-${randomUUID()}@acoffee.test`
     emails.push(email)
     const key = (operation: string) => createHash('sha256').update(`${operation}:${email}`).digest('hex')
     await db.authRateLimit.createMany({ data: [
       { key: key('login'), attempts: 8, resetsAt: new Date(Date.now() + 900_000) },
-      { key: key('register'), attempts: 3, resetsAt: new Date(Date.now() + 3_600_000) },
     ] })
     await page.goto('/login')
     await page.getByLabel('ایمیل', { exact: true }).fill(email)
@@ -147,13 +147,6 @@ test.describe('Neon authentication', () => {
     await page.getByRole('button', { name: 'ورود به حساب', exact: true }).click()
     await expect(page.locator('.form-error')).toHaveText('ایمیل یا رمز عبور درست نیست.', { timeout: 30_000 })
     expect((await db.authRateLimit.findUniqueOrThrow({ where: { key: key('login') } })).attempts).toBe(1)
-    await page.goto('/register')
-    await page.getByLabel('نام و نام خانوادگی', { exact: true }).fill('کاربر آزمایشی')
-    await page.getByLabel('ایمیل', { exact: true }).fill(email)
-    await page.getByLabel('رمز عبور', { exact: true }).fill('test-password-limit')
-    await page.getByLabel('تکرار رمز عبور', { exact: true }).fill('test-password-limit')
-    await page.getByRole('button', { name: 'ساخت حساب', exact: true }).click()
-    await expect(page.locator('.form-error')).toContainText('یک ساعت بعد', { timeout: 30_000 })
     expect(await db.user.findUnique({ where: { email } })).toBeNull()
   })
 })

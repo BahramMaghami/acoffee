@@ -1,12 +1,13 @@
 'use server'
 
 import { AuthError, CredentialsSignin } from 'next-auth'
-import { hash } from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { signIn, signOut } from '@/auth'
 import { getDb } from '@/lib/db'
-import { loginSchema, registerSchema, profileSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '@/lib/validators/auth'
+import { loginSchema, profileSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '@/lib/validators/auth'
+import { verifiedSignupSchema } from '@/lib/validators/signup-otp'
+import { createUserWithSignupOtp, SignupOtpError } from '@/lib/signup-otp'
 import { safeAuthRedirect } from '@/lib/auth-redirect'
 import { consumeAuthAttempt } from '@/lib/auth-rate-limit'
 import { logAuthError } from '@/lib/auth-error'
@@ -175,26 +176,16 @@ export async function registerAction(
   input: unknown,
   destination?: string,
 ): Promise<AuthResult> {
-  const parsed = registerSchema.safeParse(input)
+  const parsed = verifiedSignupSchema.safeParse(input)
   if (!parsed.success)
     return { success: false, message: parsed.error.issues[0].message }
-  const { name, email, password } = parsed.data
+  const { email, password } = parsed.data
   const redirectTo = safeAuthRedirect(destination)
 
   try {
-    if (!(await consumeAuthAttempt(email, 'register'))) {
-      return {
-        success: false,
-        message:
-          'تلاش‌های زیادی برای این ایمیل انجام شده؛ یک ساعت بعد دوباره امتحان کن.',
-      }
-    }
-    const passwordHash = await hash(password, 12)
-    await getDb().user.create({
-      data: { name, email, passwordHash, role: 'CUSTOMER' },
-      select: { id: true },
-    })
+    await createUserWithSignupOtp(parsed.data)
   } catch (error) {
+    if (error instanceof SignupOtpError) return { success: false, message: error.message }
     if (
       error &&
       typeof error === 'object' &&

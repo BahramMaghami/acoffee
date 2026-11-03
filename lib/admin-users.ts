@@ -13,7 +13,7 @@ export async function getAdminUsers(requestedPage: unknown) {
     const users = await tx.user.findMany({
       skip: (page - 1) * 20, take: 20,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      select: { id: true, name: true, email: true, role: true, createdAt: true, _count: { select: { orders: true } } },
+      select: { id: true, name: true, email: true, phone: true, phoneVerifiedAt: true, role: true, createdAt: true, _count: { select: { orders: true } } },
     })
     return { users, page, pages, total }
   }, { isolationLevel: 'RepeatableRead' }).catch((error: unknown) => {

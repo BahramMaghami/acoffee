@@ -42,6 +42,8 @@ model User {
   /// Normalize email to lowercase and trim before every lookup/write.
   email        String    @unique @db.VarChar(254)
   passwordHash String    @db.VarChar(255)
+  phone        String?   @db.VarChar(11)
+  phoneVerifiedAt DateTime? @db.Timestamptz(3)
   sessionVersion Int     @default(0)
   passwordResetTokens PasswordResetToken[]
   role         Role      @default(CUSTOMER)
@@ -50,6 +52,23 @@ model User {
   cart         Cart?
   createdAt    DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([phone])
+}
+
+/// One pending signup per email; a phone can belong to multiple users.
+model SignupOtp {
+  id        String @id
+  email     String @unique @db.VarChar(254)
+  phone     String @db.VarChar(11)
+  codeHash  String @db.VarChar(64)
+  attempts  Int @default(0)
+  sentAt    DateTime? @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
 }
 
 model PasswordResetToken {
