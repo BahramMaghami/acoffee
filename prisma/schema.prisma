@@ -46,6 +46,7 @@ model User {
   phoneVerifiedAt DateTime? @db.Timestamptz(3)
   sessionVersion Int     @default(0)
   passwordResetTokens PasswordResetToken[]
+  accountPhoneOtp AccountPhoneOtp?
   role         Role      @default(CUSTOMER)
   addresses    Address[]
   orders       Order[]
@@ -64,6 +65,23 @@ model SignupOtp {
   codeHash  String @db.VarChar(64)
   attempts  Int @default(0)
   sentAt    DateTime? @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
+}
+
+/// First verified phone only. Challenges are bound to the authenticated session version.
+model AccountPhoneOtp {
+  id String @id
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone String @db.VarChar(11)
+  sessionVersion Int
+  codeHash String @db.VarChar(64)
+  attempts Int @default(0)
+  sentAt DateTime? @db.Timestamptz(3)
   expiresAt DateTime @db.Timestamptz(3)
   consumedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)

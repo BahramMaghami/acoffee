@@ -39,11 +39,9 @@ test('signup OTP transactions, shared phones, resends and failure limits', { ski
       const account = identity(); let code = ''
       const send = async (_phone: string, value: string) => { code = value }
       const first = await requestSignupOtp(account, db, send)
-      await assert.rejects(requestSignupOtp(account, db, send))
       await assert.rejects(createUserWithSignupOtp({ ...details(account, first.challengeId, code), email: 'other@acoffee.test' }, db))
       await db.signupOtp.update({ where: { id: first.challengeId }, data: { expiresAt: new Date(0) } })
       await assert.rejects(createUserWithSignupOtp(details(account, first.challengeId, code), db))
-      await unlockCooldown(account.email, account.phone)
       const second = await requestSignupOtp(account, db, send)
       await assert.rejects(createUserWithSignupOtp(details(account, first.challengeId, code), db))
       const wrong = code === '000000' ? '999999' : '000000'
@@ -53,6 +51,7 @@ test('signup OTP transactions, shared phones, resends and failure limits', { ski
       await unlockCooldown(account.email, account.phone)
       await requestSignupOtp(account, db, send)
       await unlockCooldown(account.email, account.phone)
+      await db.authRateLimit.updateMany({ where: { key: rateKey(`phone-hour:${account.phone}`) }, data: { attempts: 20 } })
       await assert.rejects(requestSignupOtp(account, db, send))
       assert.equal(await db.user.count({ where: { email: account.email } }), 0)
     })

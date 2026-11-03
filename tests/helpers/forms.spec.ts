@@ -15,8 +15,10 @@ test.beforeAll(async () => {
         if (args.path === 'next/image') return { contents: 'import {createElement} from "react"; export default function Image({fill,priority,unoptimized,...props}) { return createElement("img",props) }', resolveDir: process.cwd() }
         return { contents: `async function run(input) { window.formTestPayload=input; if (window.formTestMode==='offline') throw new Error('offline'); if (window.formTestMode==='error') return {success:false,message:'ذخیره انجام نشد؛ دوباره تلاش کن.'}; return {success:true,message:'ذخیره شد.'} }
           export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, requestPasswordResetAction=run, resetPasswordAction=run;
-          export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date(Date.now()+60000).toISOString()}; }
+          export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date().toISOString()}; }
           export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
+          export const requestAccountPhoneOtpAction = requestSignupOtpAction;
+          export async function verifyAccountPhoneOtpAction(input) { return {...await run(input),phone:'09121234567',verifiedAt:'2026-11-03T10:00:00Z'}; }
           export async function prepareProductImageAction() { throw new Error('آپلود انجام نشد؛ دوباره تلاش کن.') }` }
       })
     } }],
@@ -35,6 +37,45 @@ async function openForm(page: Page, kind: string) {
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
 
+test('account phone verifies, preserves failed inputs, allows immediate resend and readonly verified state', async ({ page }, info) => {
+  await openForm(page, 'phone')
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.locator('#account-contact-phone-error')).not.toBeEmpty()
+  await expect(page.locator('#phone-password-error')).not.toBeEmpty()
+  await page.getByRole('textbox', { name: 'شمارهٔ موبایل حساب', exact: true }).fill('۰۹۱۲۱۲۳۴۵۶۷')
+  await page.getByLabel('رمز فعلی حساب', { exact: true }).fill('test-password')
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.getByRole('alert')).toContainText('حفظ شده')
+  await expect(page.getByLabel('رمز فعلی حساب', { exact: true })).toHaveValue('test-password')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
+  await expect(page.getByRole('button', { name: /ارسال مجدد/ })).toBeEnabled()
+  await page.getByRole('button', { name: /ارسال مجدد/ }).click()
+  await expect(page.locator('#account-contact-phone')).toHaveAttribute('readonly', '')
+  await page.getByRole('button', { name: 'تأیید و ثبت شماره' }).click()
+  await expect(page.locator('#account-phone-code-error')).toContainText('۶ رقم')
+  await page.getByLabel('کد تأیید پیامکی').fill('۱۲۳۴۵۶')
+  await page.evaluate(() => { window.formTestMode = 'error' })
+  await page.getByRole('button', { name: 'تأیید و ثبت شماره' }).click()
+  await expect(page.getByRole('alert')).toContainText('دوباره تلاش کن')
+  await expect(page.getByLabel('کد تأیید پیامکی')).toHaveValue('۱۲۳۴۵۶')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await expect(page.locator('#account-phone-code')).toHaveCSS('background-color', theme === 'dark' ? 'rgb(27, 25, 23)' : 'rgb(255, 250, 243)')
+    await page.screenshot({ path: info.outputPath(`account-phone-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'تأیید و ثبت شماره' }).click()
+  await expect(page.getByRole('status')).toContainText('تأییدشده')
+  await expect(page.locator('input')).toHaveCount(0)
+  expect(await page.evaluate(() => window.formTestPayload)).toEqual({ challengeId: 'b9ec07be-a73b-47d8-b230-7247827c0d28', code: '123456' })
+  await openForm(page, 'verified-phone')
+  await expect(page.getByRole('status')).toContainText('09121234567')
+  await expect(page.getByRole('button')).toHaveCount(0)
+})
+
 test('signup requires a phone and code, retains inputs on failure and supports changing details', async ({ page }, info) => {
   await openForm(page, 'signup')
   await page.getByLabel('نام و نام خانوادگی').fill('کاربر آزمایشی')
@@ -51,7 +92,8 @@ test('signup requires a phone and code, retains inputs on failure and supports c
   await page.evaluate(() => { window.formTestMode = 'success' })
   await page.getByRole('button', { name: 'دریافت کد تأیید' }).click()
   await expect(page.getByLabel('کد تأیید پیامکی')).toBeVisible()
-  await expect(page.getByRole('button', { name: /ارسال مجدد/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /ارسال مجدد/ })).toBeEnabled()
+  await page.getByRole('button', { name: /ارسال مجدد/ }).click()
   await expect(page.getByLabel('ایمیل', { exact: true })).toHaveAttribute('readonly', '')
   await page.getByRole('button', { name: 'تأیید کد و ساخت حساب' }).click()
   await expect(page.locator('#register-otp-error')).toContainText('۶ رقم')

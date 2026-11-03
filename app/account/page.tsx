@@ -9,11 +9,13 @@ import { getDb } from '@/lib/db'
 import '../checkout/checkout.css'
 import './account.css'
 import { ProfileForm, AccountAddressForm, ChangePasswordForm } from './account-forms'
+import { AccountPhoneForm } from './account-phone-form'
 
 export const metadata: Metadata = { title: 'حساب من' }
 
 export default async function AccountPage() {
   const user = await requireUser()
+  const contact = await getDb().user.findUniqueOrThrow({ where: { id: user.id }, select: { phone: true, phoneVerifiedAt: true } })
   const address = await getDb().address.findFirst({ where: { userId: user.id }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
     select: { province: true, city: true, addressLine: true, postalCode: true, phone: true } })
   const orders = await getDb().order.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' }, take: 20,
@@ -79,7 +81,7 @@ export default async function AccountPage() {
         </section>
       </div>
       <div className="account-settings">
-        <div><ProfileForm name={user.name} email={user.email} /><ChangePasswordForm /></div>
+        <div><ProfileForm name={user.name} email={user.email} /><AccountPhoneForm phone={contact.phone} verifiedAt={contact.phoneVerifiedAt?.toISOString() ?? null} /><ChangePasswordForm /></div>
         <AccountAddressForm initial={address ?? undefined} />
       </div>
       <section className="checkout-panel account-orders"><h2>سفارش‌های اخیر</h2>

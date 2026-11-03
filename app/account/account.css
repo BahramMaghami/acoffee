@@ -6,3 +6,8 @@
 .account-save-message { margin-top: 18px; color: var(--foreground); font-size: 13px; }
 .account-edit-form button[type=submit] { margin-top: 8px; }
 @media (max-width: 760px) { .account-settings { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.account-phone-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.account-phone-buttons button[type=submit] { margin-top: 0; }
+.account-phone-verified { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.account-phone-verified strong { font-size: 18px; }
+.account-phone-verified span { color: var(--muted-foreground); font-size: 13px; line-height: 2; }

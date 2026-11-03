@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual, randomInt } from 'node:crypto'
 
 export const signupOtpLifetimeMs = 120_000
-export const signupOtpCooldownMs = 60_000
+export const signupOtpCooldownMs = 0
 export const signupOtpMaxAttempts = 5
 export function newSignupCode() { return String(randomInt(0, 1_000_000)).padStart(6, '0') }
 export function signupCodeHash(secret: string, id: string, email: string, phone: string, code: string) {

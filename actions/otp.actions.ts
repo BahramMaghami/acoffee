@@ -3,6 +3,7 @@
 import { signupOtpRequestSchema } from '@/lib/validators/signup-otp'
 import { requestSignupOtp, SignupOtpError } from '@/lib/signup-otp'
 import { logAuthError } from '@/lib/auth-error'
+import { SmsRateLimitError } from '@/lib/sms-rate-limit'
 
 export async function requestSignupOtpAction(input: unknown) {
   const parsed = signupOtpRequestSchema.safeParse(input)
@@ -15,7 +16,7 @@ export async function requestSignupOtpAction(input: unknown) {
     return {
       success: false as const,
       message:
-        error instanceof SignupOtpError
+        error instanceof SignupOtpError || error instanceof SmsRateLimitError
           ? error.message
           : 'ارسال کد انجام نشد. کمی بعد دوباره تلاش کن.',
     }
