@@ -5,6 +5,15 @@ import { getDb } from './db'
 
 export class CheckoutError extends Error {}
 
+export async function lastShippingMethod(userId: string, db: Pick<ReturnType<typeof getDb>, 'order'> = getDb()) {
+  const order = await db.order.findFirst({
+    where: { userId, shippingMethod: { not: null } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { shippingMethod: true },
+  })
+  return order?.shippingMethod ?? null
+}
+
 export async function checkoutQuote(
   userId: string,
   db: Pick<ReturnType<typeof getDb>, 'cart' | 'address'> = getDb(),
@@ -12,7 +21,7 @@ export async function checkoutQuote(
   const cart = await db.cart.findUnique({
     where: { userId },
     include: {
-      items: { include: { product: { include: { catalogProduct: { select: { isActive: true } } } } }, orderBy: { productId: 'asc' } },
+      items: { include: { product: { include: { catalogProduct: { select: { isActive: true } } } } }, orderBy: [{ productId: 'asc' }, { grind: 'asc' }, { id: 'asc' }] },
     },
   })
   const address = await db.address.findFirst({
@@ -22,7 +31,9 @@ export async function checkoutQuote(
   if (!cart?.items.length)
     throw new CheckoutError('سبد خرید خالی است. دوباره قهوه‌هایت را انتخاب کن.')
   if (!address) throw new CheckoutError('ابتدا آدرس ارسال را ذخیره کن.')
-  const items = cart.items.map(({ product, quantity }) => {
+  const items = cart.items.map(({ product, quantity, grind }) => {
+    if (!grind || !product.grindOptions.includes(grind))
+      throw new CheckoutError('نوع آسیاب یکی از قهوه‌ها مشخص نیست یا قابل سفارش نیست. در سبد خرید آن را انتخاب کن.')
     if (!product.catalogProduct || Number(product.price) <= 0)
       throw new CheckoutError('این انتخاب در فهرست فعلی آمادهٔ سفارش نیست. سبد را دوباره بررسی کن.')
     if (!product.isActive || !product.catalogProduct.isActive)
@@ -34,6 +45,7 @@ export async function checkoutQuote(
       productName: product.name,
       productSlug: product.slug,
       weightGrams: product.weightGrams,
+      grind,
       quantity,
       unitPrice: Number(product.price),
       lineTotal: Number(product.price) * quantity,

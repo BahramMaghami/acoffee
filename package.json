@@ -17,6 +17,7 @@
     "test:mail": "node --conditions=react-server --import tsx --test tests/helpers/mail.server.ts",
     "test:signup": "node --conditions=react-server --import tsx --test tests/server/signup-sms.test.ts tests/helpers/signup.integration.ts",
     "test:account-phone": "node --conditions=react-server --import tsx --test tests/helpers/account-phone.integration.ts tests/server/account-phone-actions.test.ts",
+    "test:order-options": "node --conditions=react-server --import tsx --test tests/server/order-options.test.ts",
     "smtp:verify": "node --conditions=react-server --import tsx scripts/verify-smtp.ts",
     "prices:compare": "tsx scripts/compare-blend-prices.ts",
     "postinstall": "prisma generate",

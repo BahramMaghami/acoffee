@@ -5,6 +5,15 @@ import { ForgotPasswordForm } from '../../app/(auth)/forgot-password/forgot-pass
 import { ResetPasswordForm } from '../../app/(auth)/reset-password/reset-password-form'
 import { RegisterForm } from '../../app/(auth)/register/register-form'
 import { AccountPhoneForm } from '../../app/account/account-phone-form'
+import { ProductPurchase } from '../../app/shop/[slug]/product-purchase'
+import { CartContent } from '../../app/cart/cart-content'
+import { PlaceOrderButton } from '../../app/checkout/place-order/place-order-button'
+import { SiteHeader } from '../../app/site-header'
+import type { StoreProduct } from '../../lib/storefront'
+
+const coffee: StoreProduct = { id: 'test-coffee', slug: 'test-coffee', name: 'قهوهٔ آزمون', category: 'blend', categoryLabel: 'ترکیبی', wholesale: false,
+  imageUrl: null, description: '', origin: '', weights: [500], roasts: ['medium'], grades: ['standard'], prices: { '500-medium-standard': 150000 },
+  skuIds: { '500-medium-standard': 'test-coffee-500' }, availability: { '500-medium-standard': true }, discounts: {}, grindOptions: { '500-medium-standard': ['WHOLE_BEAN', 'GROUND'] } }
 
 declare global {
   interface Window {
@@ -26,5 +35,7 @@ window.mountFormTest = kind => {
   else if (kind === 'signup') root.render(<RegisterForm destination="/account" />)
   else if (kind === 'phone') root.render(<AccountPhoneForm phone={null} verifiedAt={null} />)
   else if (kind === 'verified-phone') root.render(<AccountPhoneForm phone="09121234567" verifiedAt="2026-11-03T10:00:00Z" />)
+  else if (kind === 'grind') root.render(<><SiteHeader user={null} /><ProductPurchase product={coffee} initialWeight={500} /><CartContent products={[coffee]} /></>)
+  else if (kind === 'delivery' || kind === 'return-delivery') root.render(<aside className="order-summary"><PlaceOrderButton checkoutKey="b9ec07be-a73b-47d8-b230-7247827c0d28" quoteHash={'a'.repeat(64)} initialShippingMethod={kind === 'return-delivery' ? 'TIPAX' : null} /></aside>)
   else root.render(<ResetPasswordForm token={'a'.repeat(43)} />)
 }

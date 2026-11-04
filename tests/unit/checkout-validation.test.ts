@@ -18,7 +18,7 @@ test('checkout rejects empty, duplicate, fractional and oversized carts', () => 
   for (const input of [[], [{ productId: 'daily-blend', quantity: 0 }], [{ productId: 'daily-blend', quantity: 1.5 }],
     [{ productId: 'daily-blend', quantity: 101 }], [{ productId: 'daily-blend', quantity: 1 }, { productId: 'daily-blend', quantity: 2 }]])
     assert.equal(cartInputSchema.safeParse(input).success, false)
-  assert.deepEqual(cartInputSchema.parse([{ productId: 'daily-blend', quantity: 2, price: 1 }]), [{ productId: 'daily-blend', quantity: 2 }])
+  assert.deepEqual(cartInputSchema.parse([{ productId: 'daily-blend', quantity: 2, grind: 'GROUND', price: 1 }]), [{ productId: 'daily-blend', quantity: 2, grind: 'GROUND' }])
   assert.equal(placeOrderSchema.safeParse({ checkoutKey: 'invalid', quoteHash: 'fake' }).success, false)
 })
 test('login preserves only recognized checkout and order destinations', () => {

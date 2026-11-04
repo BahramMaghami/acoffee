@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { requireUser } from '@/lib/current-user'
-import { checkoutQuote, CheckoutError } from '@/lib/checkout'
+import { checkoutQuote, CheckoutError, lastShippingMethod } from '@/lib/checkout'
+import { cartLineKey, grindLabel } from '@/lib/order-options'
 import { getDb } from '@/lib/db'
 import { formatNumber, formatPrice } from '@/lib/storefront'
 import { PlaceOrderButton } from './place-order-button'
@@ -46,6 +47,7 @@ export default async function PlaceOrderPage() {
       </div>
     )
   }
+  const initialShippingMethod = await lastShippingMethod(user.id)
   return (
     <>
       <nav className="checkout-steps" aria-label="مراحل خرید">
@@ -65,12 +67,13 @@ export default async function PlaceOrderPage() {
           <section className="checkout-panel">
             <h2>قهوه‌های انتخابی</h2>
             {quote.items.map((item) => (
-              <div className="checkout-line" key={item.productId}>
+              <div className="checkout-line" key={cartLineKey(item.productId, item.grind)}>
                 <div>
                   <strong>{item.productName}</strong>
                   <p>
                     {formatNumber(item.quantity)} بسته ·{' '}
                     {formatNumber(item.weightGrams)} گرم
+                    {' · '}{grindLabel(item.grind)}
                   </p>
                 </div>
                 <span>{formatPrice(item.lineTotal)}</span>
@@ -120,6 +123,7 @@ export default async function PlaceOrderPage() {
           <PlaceOrderButton
             checkoutKey={quote.checkoutKey}
             quoteHash={quote.quoteHash}
+            initialShippingMethod={initialShippingMethod}
           />
           <p>
             سفارش با وضعیت «در انتظار پرداخت» ثبت می‌شود. هزینهٔ ارسال و پرداخت

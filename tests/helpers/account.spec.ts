@@ -79,7 +79,7 @@ test.describe('isolated account lifecycle', () => {
     expect(address.postalCode).toBe('1234567890')
     expect((await db.order.findUniqueOrThrow({ where: { id: oldOrder.id } })).addressLine).toBe('نشانی قبلی سفارش')
     const sku = await db.product.findFirstOrThrow({ where: { catalogProductId: 'fixture-turkish-coffee', weightGrams: 250 } })
-    await page.evaluate(sku => localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: sku, quantity: 1 }])), sku.slug)
+    await page.evaluate(sku => localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: sku, quantity: 1, grind: 'GROUND' }])), sku.slug)
     await page.goto('/checkout/address')
     await expect(page.getByLabel('نشانی کامل')).toHaveValue(address.addressLine)
     await page.goto('/account')

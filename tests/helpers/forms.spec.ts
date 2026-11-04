@@ -10,13 +10,14 @@ test.beforeAll(async () => {
     plugins: [{ name: 'form-server-boundaries', setup(builder) {
       builder.onResolve({ filter: /^(@\/actions\/|next\/navigation$|next\/link$|next\/image$)/ }, args => ({ path: args.path, namespace: 'form-stubs' }))
       builder.onLoad({ filter: /.*/, namespace: 'form-stubs' }, args => {
-        if (args.path === 'next/navigation') return { contents: 'export const useRouter = () => ({push: p => window.formTestRoute=p, replace: p => window.formTestRoute=p, refresh: () => {}});' }
+        if (args.path === 'next/navigation') return { contents: 'export const usePathname = () => "/shop/test"; export const useRouter = () => ({push: p => window.formTestRoute=p, replace: p => window.formTestRoute=p, refresh: () => {}});' }
         if (args.path === 'next/link') return { contents: 'import {createElement} from "react"; export default function Link({children,...props}) { return createElement("a",props,children) }', resolveDir: process.cwd() }
         if (args.path === 'next/image') return { contents: 'import {createElement} from "react"; export default function Image({fill,priority,unoptimized,...props}) { return createElement("img",props) }', resolveDir: process.cwd() }
         return { contents: `async function run(input) { window.formTestPayload=input; if (window.formTestMode==='offline') throw new Error('offline'); if (window.formTestMode==='error') return {success:false,message:'ذخیره انجام نشد؛ دوباره تلاش کن.'}; return {success:true,message:'ذخیره شد.'} }
-          export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, requestPasswordResetAction=run, resetPasswordAction=run;
+          export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, requestPasswordResetAction=run, resetPasswordAction=run, logoutAction=run;
           export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date().toISOString()}; }
           export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
+          export async function placeOrderAction(input) { return {...await run(input),orderId:'test-order'}; }
           export const requestAccountPhoneOtpAction = requestSignupOtpAction;
           export async function verifyAccountPhoneOtpAction(input) { return {...await run(input),phone:'09121234567',verifiedAt:'2026-11-03T10:00:00Z'}; }
           export async function prepareProductImageAction() { throw new Error('آپلود انجام نشد؛ دوباره تلاش کن.') }` }
@@ -36,6 +37,62 @@ async function openForm(page: Page, kind: string) {
   await page.addScriptTag({ content: bundle })
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
+
+test('grind choices remain separate in cart, legacy cart requires selection, and Persian header fits both themes', async ({ page }, info) => {
+  await openForm(page, 'grind')
+  await expect(page.locator('.site-header .wordmark')).toHaveText(/رستری\s*آ/)
+  const add = page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true })
+  await expect(add).toBeDisabled()
+  await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+  await add.click()
+  await page.getByRole('button', { name: 'دانهٔ کامل (آسیاب‌نشده)', exact: true }).click()
+  await add.click()
+  await expect(page.locator('.cart-row')).toHaveCount(2)
+  await page.getByRole('button', { name: /افزایش تعداد قهوهٔ آزمون.*آسیاب‌شده$/ }).click()
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('acoffee:preview-cart:v1')!))
+  expect(saved).toEqual([{ productId: 'test-coffee-500', quantity: 2, grind: 'GROUND' }, { productId: 'test-coffee-500', quantity: 1, grind: 'WHOLE_BEAN' }])
+  await openForm(page, 'grind')
+  await expect(page.locator('.cart-row')).toHaveCount(2)
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await page.screenshot({ path: info.outputPath(`grind-cart-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.evaluate(() => {
+    localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: 'test-coffee-500', quantity: 1 }]))
+    window.dispatchEvent(new Event('storage'))
+  })
+  await expect(page.getByRole('button', { name: 'ابتدا نوع آسیاب را انتخاب کن' })).toBeDisabled()
+  await page.getByRole('combobox').selectOption('GROUND')
+  await expect(page.getByRole('link', { name: 'ادامهٔ خرید', exact: true })).toBeVisible()
+})
+
+test('delivery requires first choice, preserves it on failure and prefills previous method', async ({ page }, info) => {
+  await openForm(page, 'delivery')
+  const method = page.getByLabel('روش دریافت سفارش')
+  await expect(method).toHaveValue('')
+  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await expect(page.locator('#shipping-method-error')).toContainText('انتخاب کن')
+  await expect(method.locator('option')).toHaveText(['روش دریافت را انتخاب کن', 'پست', 'تیپاکس', 'پیک', 'تحویل حضوری'])
+  await method.selectOption('PICKUP')
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await expect(page.getByRole('alert')).toContainText('ارتباط برقرار نشد')
+  await expect(method).toHaveValue('PICKUP')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await page.screenshot({ path: info.outputPath(`delivery-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ shippingMethod: 'PICKUP' })
+  await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/orders/test-order')
+  await openForm(page, 'return-delivery')
+  await expect(page.getByLabel('روش دریافت سفارش')).toHaveValue('TIPAX')
+  await page.getByLabel('روش دریافت سفارش').selectOption('POST')
+  await expect(page.getByLabel('روش دریافت سفارش')).toHaveValue('POST')
+})
 
 test('account phone verifies, preserves failed inputs, allows immediate resend and readonly verified state', async ({ page }, info) => {
   await openForm(page, 'phone')

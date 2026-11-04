@@ -36,6 +36,18 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum GrindOption {
+  WHOLE_BEAN
+  GROUND
+}
+
+enum ShippingMethod {
+  POST
+  TIPAX
+  COURIER
+  PICKUP
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String    @db.VarChar(100)
@@ -172,6 +184,8 @@ model Product {
   manualPrice Boolean @default(false)
   discountPercent Int @default(0)
   weightGrams Int
+  /// Available preparations; these do not change SKU identity or price.
+  grindOptions GrindOption[] @default([WHOLE_BEAN, GROUND])
   imageUrl    String?     @db.Text
   isActive    Boolean     @default(true)
   cartItems   CartItem[]
@@ -206,10 +220,12 @@ model CartItem {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int      @default(1)
+  /// Null for pre-feature carts: the customer must explicitly choose before checkout.
+  grind     GrindOption?
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, grind])
   @@index([productId])
 }
 
@@ -225,6 +241,8 @@ model Order {
   subtotal      Decimal       @db.Decimal(14, 0)
   shippingFee   Decimal       @default(0) @db.Decimal(14, 0)
   shippingFeeFinalized Boolean @default(false)
+  /// Null only for historical orders; new orders require an explicit choice.
+  shippingMethod ShippingMethod?
   discount      Decimal       @default(0) @db.Decimal(14, 0)
   total         Decimal       @db.Decimal(14, 0)
   /// Shipping snapshot, independent of the user's editable address book.
@@ -254,6 +272,8 @@ model OrderItem {
   productName String   @db.VarChar(150)
   productSlug String   @db.VarChar(200)
   weightGrams Int
+  /// Immutable preparation snapshot; null for historical orders.
+  grind       GrindOption?
   unitPrice   Decimal  @db.Decimal(14, 0)
   quantity    Int
   lineTotal   Decimal  @db.Decimal(14, 0)

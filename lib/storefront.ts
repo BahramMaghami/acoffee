@@ -1,4 +1,5 @@
 // Browser-safe presentation helpers. Live catalog data comes from lib/catalog.ts.
+import type { GrindOption } from './order-options'
 export const formatNumber = (value: number) => new Intl.NumberFormat('fa-IR').format(value)
 export const formatPrice = (value: number) => formatNumber(value) + ' تومان'
 export const formatWeight = (grams: number) => grams >= 1000 ? formatNumber(grams / 1000) + ' کیلوگرم' : formatNumber(grams) + ' گرم'
@@ -19,6 +20,7 @@ export type StoreProduct = {
   weights: readonly number[]; roasts: readonly Roast[]; grades: readonly Grade[]
   prices: Record<string, number | null>; skuIds: Record<string, string>
   availability: Record<string, boolean>; discounts: Record<string, number>
+  grindOptions: Record<string, readonly GrindOption[]>
 }
 export const variantKey = (weight: number, roast?: Roast, grade: Grade = 'standard') => weight + '-' + (roast ?? 'default') + '-' + grade
 export function productVariant(product: StoreProduct, weight = product.weights.includes(250) ? 250 : product.weights[0], roast?: Roast, grade: Grade = product.grades[0]) {
@@ -26,7 +28,7 @@ export function productVariant(product: StoreProduct, weight = product.weights.i
   const key = variantKey(weight, roast, grade)
   if (!product.skuIds[key]) return null
   return { id: product.skuIds[key], product, weightGrams: weight, roast, grade, price: product.prices[key] ?? null,
-    isActive: product.availability[key] === true, discountPercent: product.discounts[key] ?? 0,
+    isActive: product.availability[key] === true, discountPercent: product.discounts[key] ?? 0, grindOptions: product.grindOptions[key] ?? [],
     label: [formatWeight(weight), roastOptions.find(option => option.value === roast)?.label, product.grades.length > 1 ? gradeLabels[grade] : undefined].filter(Boolean).join(' · '),
   }
 }

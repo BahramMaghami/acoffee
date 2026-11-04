@@ -40,7 +40,9 @@ export async function saveCheckoutCartAction(input: unknown) {
             throw new CheckoutError(
               'این انتخاب هنوز آمادهٔ سفارش نیست. سبد را بررسی کن.',
             )
-          return { productId: product.id, quantity: item.quantity }
+          if (!product.grindOptions.includes(item.grind))
+            throw new CheckoutError('نوع آسیاب انتخاب‌شده برای این محصول قابل سفارش نیست. سبد را بررسی کن.')
+          return { productId: product.id, quantity: item.quantity, grind: item.grind }
         })
         const cart = await tx.cart.upsert({
           where: { userId: user.id },

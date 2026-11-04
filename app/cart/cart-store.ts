@@ -2,12 +2,12 @@
 
 import { useMemo, useSyncExternalStore } from 'react'
 import { maxCartQuantity } from '@/lib/storefront'
+import { cartLineKey, type GrindOption } from '@/lib/order-options'
+import { parseCart, type BrowserCartItem as CartItem } from '@/lib/cart-lines'
 
 const key = 'acoffee:preview-cart:v1'
 const event = 'acoffee:cart-change'
 let memory = '[]'
-type CartItem = { productId: string; quantity: number }
-
 function getSnapshot() {
   try {
     return localStorage.getItem(key) ?? memory
@@ -16,34 +16,6 @@ function getSnapshot() {
   }
 }
 
-function parseCart(raw: string): CartItem[] {
-  try {
-    const data: unknown = JSON.parse(raw)
-    if (!Array.isArray(data)) return []
-    const quantities = new Map<string, number>()
-    for (const item of data) {
-      if (
-        !item ||
-        typeof item !== 'object' ||
-        typeof item.productId !== 'string' ||
-        !/^[a-zA-Z0-9-]{1,200}$/.test(item.productId) ||
-        !Number.isSafeInteger(item.quantity) ||
-        item.quantity <= 0
-      )
-        continue
-      quantities.set(
-        item.productId,
-        Math.min((quantities.get(item.productId) ?? 0) + item.quantity, maxCartQuantity),
-      )
-    }
-    return Array.from(quantities, ([productId, quantity]) => ({
-      productId,
-      quantity,
-    })).slice(0, 50)
-  } catch {
-    return []
-  }
-}
 
 function subscribe(callback: () => void) {
   window.addEventListener(event, callback)
@@ -70,25 +42,33 @@ export function useCart() {
   const items = useMemo(() => parseCart(raw), [raw])
   const count = items.reduce((total, item) => total + item.quantity, 0)
 
-  function setQuantity(productId: string, quantity: number) {
+  function setQuantity(productId: string, quantity: number, grind: GrindOption | null = null) {
     if (!/^[a-zA-Z0-9-]{1,200}$/.test(productId) || !Number.isSafeInteger(quantity)) return
     const current = parseCart(getSnapshot())
+    const key = cartLineKey(productId, grind)
+    const matches = (item: CartItem) => cartLineKey(item.productId, item.grind) === key
     if (quantity <= 0) {
-      save(current.filter((item) => item.productId !== productId))
+      save(current.filter((item) => !matches(item)))
       return
     }
-    const next = { productId, quantity: Math.min(quantity, maxCartQuantity) }
-    save(current.some((item) => item.productId === productId)
-      ? current.map((item) => item.productId === productId ? next : item)
+    const next = { productId, grind, quantity: Math.min(quantity, maxCartQuantity) }
+    save(current.some(matches)
+      ? current.map((item) => matches(item) ? next : item)
       : [...current, next])
   }
 
-  function add(productId: string, quantity = 1) {
+  function add(productId: string, quantity: number, grind: GrindOption) {
     const current =
-      parseCart(getSnapshot()).find((item) => item.productId === productId)
+      parseCart(getSnapshot()).find((item) => item.productId === productId && item.grind === grind)
         ?.quantity ?? 0
-    setQuantity(productId, current + quantity)
+    setQuantity(productId, current + quantity, grind)
   }
 
-  return { items, count, add, setQuantity, hydrated }
+  function setGrind(productId: string, previous: GrindOption | null, grind: GrindOption) {
+    const current = parseCart(getSnapshot())
+    const next = current.map(item => item.productId === productId && item.grind === previous ? { ...item, grind } : item)
+    save(parseCart(JSON.stringify(next)))
+  }
+
+  return { items, count, add, setQuantity, setGrind, hydrated }
 }

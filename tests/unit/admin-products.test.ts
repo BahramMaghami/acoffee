@@ -50,7 +50,7 @@ test('live variant lookup requires the persisted SKU and ignores inactive prices
   const product: StoreProduct = { id: 'coffee', slug: 'coffee', name: 'تست', category: 'new', categoryLabel: 'جدید', wholesale: false,
     imageUrl: null, origin: '', description: '', weights: [250, 500], roasts: [], grades: ['vip'],
     prices: { '250-default-vip': 100, '500-default-vip': 200 }, skuIds: { '250-default-vip': 'old-sku', '500-default-vip': 'other-sku' },
-    availability: { '250-default-vip': false, '500-default-vip': true }, discounts: {} }
+    availability: { '250-default-vip': false, '500-default-vip': true }, discounts: {}, grindOptions: { '250-default-vip': ['WHOLE_BEAN', 'GROUND'], '500-default-vip': ['WHOLE_BEAN', 'GROUND'] } }
   assert.equal(productVariant(product, 250)?.id, 'old-sku')
   assert.equal(productVariant(product, 1000), null)
   assert.equal(startingPrice(product), 200)

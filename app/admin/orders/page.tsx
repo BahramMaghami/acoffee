@@ -6,6 +6,7 @@ import { formatNumber, formatPrice } from '@/lib/storefront'
 import { AdminOrderState } from './order-state'
 import { OrderControls } from './order-controls'
 import './orders.css'
+import { grindLabel, shippingLabel } from '@/lib/order-options'
 
 export const metadata = { title: 'مدیریت سفارش‌ها' }
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ page?: string | string[] }> }) {
@@ -15,7 +16,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     {data.orders.length ? <div className="admin-orders-list">{data.orders.map(order => <article className="admin-order-card" key={order.id} data-testid="admin-order-card">
       <header><div><h2>سفارش {formatNumber(order.number)} · {order.user.name}</h2><p>گیرنده: {order.recipientName}</p></div><time dateTime={order.createdAt.toISOString()}>{formatPersianDateTime(order.createdAt)}</time></header>
       <AdminOrderState payment={order.paymentStatus} status={order.status} paidAt={order.paidAt} deliveredAt={order.deliveredAt} />
-      <ul className="admin-order-items">{order.items.map(item => <li key={item.id}><span>{item.productName}</span><span>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم</span></li>)}</ul>
+      <p>روش دریافت: {shippingLabel(order.shippingMethod)}</p>
+      <ul className="admin-order-items">{order.items.map(item => <li key={item.id}><span>{item.productName}</span><span>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم · {grindLabel(item.grind)}</span></li>)}</ul>
       <footer><strong>{formatPrice(Number(order.total))}</strong><div className="admin-order-controls">
         <Button asChild variant="outline" size="sm"><Link href={`/admin/orders/${order.id}`} aria-label={`جزئیات سفارش ${formatNumber(order.number)}`}>جزئیات سفارش</Link></Button>
         <OrderControls id={order.id} number={formatNumber(order.number)} updatedAt={order.updatedAt.toISOString()} paid={order.paymentStatus === 'PAID'} delivered={order.status === 'DELIVERED'} />

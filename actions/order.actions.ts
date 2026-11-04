@@ -89,7 +89,7 @@ export async function placeOrderAction(input: unknown) {
   if (!parsed.success)
     return {
       success: false as const,
-      message: 'اطلاعات سفارش معتبر نیست. صفحه را تازه کن.',
+      message: parsed.error.issues[0].message,
     }
   try {
     const order = await getDb().$transaction(
@@ -115,6 +115,7 @@ export async function placeOrderAction(input: unknown) {
             userId: user.id,
             checkoutKey: quote.checkoutKey,
             ...quote.shipping,
+            shippingMethod: parsed.data.shippingMethod,
             subtotal: quote.subtotal,
             shippingFee: quote.shippingFee,
             total: quote.total,
