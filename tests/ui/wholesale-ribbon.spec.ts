@@ -40,6 +40,7 @@ test('home wholesale cards show the ten kilogram ribbon in both themes without c
   await page.getByRole('button', { name: '۱۰ کیلوگرم', exact: true }).click()
   await expect(page.locator('.detail-image .wholesale-ribbon')).toBeVisible()
   await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+  await page.getByRole('button', { name: 'دستگاه صنعتی', exact: true }).click()
   await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
   await page.goto('/cart')
   await expect(page.locator('.cart-row')).toContainText('۱۰ کیلوگرم · مدیوم · Commercial Blend')

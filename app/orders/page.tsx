@@ -7,7 +7,7 @@ import { formatPersianDate } from '@/lib/date'
 import { formatNumber, formatPrice } from '@/lib/storefront'
 import { OrderStatuses } from './order-status'
 import './orders.css'
-import { grindLabel, shippingLabel } from '@/lib/order-options'
+import { preparationLabel, shippingLabel } from '@/lib/order-options'
 
 export const metadata: Metadata = {
   title: 'سفارش‌های من',
@@ -51,7 +51,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     <span>
                       {formatNumber(item.quantity)} بسته ·{' '}
                       {formatNumber(item.weightGrams)} گرم
-                      {' · '}{grindLabel(item.grind)}
+                      {' · '}{preparationLabel(item.grind, item.grindDevice)}
                     </span>
                   </li>
                 ))}

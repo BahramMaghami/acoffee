@@ -6,7 +6,7 @@ import { formatNumber, formatPrice } from '@/lib/storefront'
 import { OrderControls } from '../order-controls'
 import { AdminOrderState } from '../order-state'
 import '../orders.css'
-import { grindLabel, shippingLabel } from '@/lib/order-options'
+import { preparationLabel, shippingLabel } from '@/lib/order-options'
 
 export const metadata = { title: 'جزئیات سفارش — مدیریت' }
 export default async function AdminOrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +29,6 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
         <div><dt>مبلغ ثبت‌شده</dt><dd>{formatPrice(Number(order.total))}</dd></div>
       </dl></section>
     </div>
-    <section className="admin-order-panel"><h2>محصولات سفارش</h2><ul className="admin-order-items">{order.items.map(item => <li key={item.id}><div><strong>{item.productName}</strong><p>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم · {grindLabel(item.grind)} · هر بسته {formatPrice(Number(item.unitPrice))}</p></div><span>{formatPrice(Number(item.lineTotal))}</span></li>)}</ul></section>
+    <section className="admin-order-panel"><h2>محصولات سفارش</h2><ul className="admin-order-items">{order.items.map(item => <li key={item.id}><div><strong>{item.productName}</strong><p>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم · {preparationLabel(item.grind, item.grindDevice)} · هر بسته {formatPrice(Number(item.unitPrice))}</p></div><span>{formatPrice(Number(item.lineTotal))}</span></li>)}</ul></section>
   </div>
 }

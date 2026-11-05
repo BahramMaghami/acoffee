@@ -2,6 +2,8 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import type { Prisma } from '@/generated/prisma/client'
 import { getDb } from './db'
+import { isShippingMethod } from './order-options'
+import { grindSelectionSchema } from './validators/checkout'
 
 export class CheckoutError extends Error {}
 
@@ -11,7 +13,7 @@ export async function lastShippingMethod(userId: string, db: Pick<ReturnType<typ
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: { shippingMethod: true },
   })
-  return order?.shippingMethod ?? null
+  return isShippingMethod(order?.shippingMethod) ? order.shippingMethod : null
 }
 
 export async function checkoutQuote(
@@ -21,7 +23,7 @@ export async function checkoutQuote(
   const cart = await db.cart.findUnique({
     where: { userId },
     include: {
-      items: { include: { product: { include: { catalogProduct: { select: { isActive: true } } } } }, orderBy: [{ productId: 'asc' }, { grind: 'asc' }, { id: 'asc' }] },
+      items: { include: { product: { include: { catalogProduct: { select: { isActive: true } } } } }, orderBy: [{ productId: 'asc' }, { grind: 'asc' }, { grindDevice: 'asc' }, { id: 'asc' }] },
     },
   })
   const address = await db.address.findFirst({
@@ -31,9 +33,12 @@ export async function checkoutQuote(
   if (!cart?.items.length)
     throw new CheckoutError('سبد خرید خالی است. دوباره قهوه‌هایت را انتخاب کن.')
   if (!address) throw new CheckoutError('ابتدا آدرس ارسال را ذخیره کن.')
-  const items = cart.items.map(({ product, quantity, grind }) => {
+  const items = cart.items.map(({ product, quantity, grind, grindDevice }) => {
     if (!grind || !product.grindOptions.includes(grind))
       throw new CheckoutError('نوع آسیاب یکی از قهوه‌ها مشخص نیست یا قابل سفارش نیست. در سبد خرید آن را انتخاب کن.')
+    const preparation = grindSelectionSchema.safeParse({ grind, grindDevice })
+    if (!preparation.success)
+      throw new CheckoutError('دستگاه آسیاب یکی از قهوه‌ها مشخص نیست یا معتبر نیست. در سبد خرید آن را انتخاب کن.')
     if (!product.catalogProduct || Number(product.price) <= 0)
       throw new CheckoutError('این انتخاب در فهرست فعلی آمادهٔ سفارش نیست. سبد را دوباره بررسی کن.')
     if (!product.isActive || !product.catalogProduct.isActive)
@@ -45,7 +50,7 @@ export async function checkoutQuote(
       productName: product.name,
       productSlug: product.slug,
       weightGrams: product.weightGrams,
-      grind,
+      ...preparation.data,
       quantity,
       unitPrice: Number(product.price),
       lineTotal: Number(product.price) * quantity,

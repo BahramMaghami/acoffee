@@ -42,7 +42,7 @@ export async function saveCheckoutCartAction(input: unknown) {
             )
           if (!product.grindOptions.includes(item.grind))
             throw new CheckoutError('نوع آسیاب انتخاب‌شده برای این محصول قابل سفارش نیست. سبد را بررسی کن.')
-          return { productId: product.id, quantity: item.quantity, grind: item.grind }
+          return { productId: product.id, quantity: item.quantity, grind: item.grind, grindDevice: item.grindDevice }
         })
         const cart = await tx.cart.upsert({
           where: { userId: user.id },

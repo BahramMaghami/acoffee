@@ -7,7 +7,7 @@ import { getDb } from '@/lib/db'
 import { formatNumber, formatPrice } from '@/lib/storefront'
 import { formatPersianDate } from '@/lib/date'
 import { Button } from '@/components/ui/button'
-import { grindLabel, shippingLabel } from '@/lib/order-options'
+import { preparationLabel, shippingLabel } from '@/lib/order-options'
 import '../../checkout/checkout.css'
 
 export const metadata: Metadata = { title: 'جزئیات سفارش' }
@@ -53,7 +53,7 @@ export default async function OrderPage({
                   <p>
                     {formatNumber(item.quantity)} بسته ·{' '}
                     {formatNumber(item.weightGrams)} گرم
-                    {' · '}{grindLabel(item.grind)}
+                    {' · '}{preparationLabel(item.grind, item.grindDevice)}
                   </p>
                 </div>
                 <span>{formatPrice(Number(item.lineTotal))}</span>

@@ -38,33 +38,71 @@ async function openForm(page: Page, kind: string) {
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
 
-test('grind choices remain separate in cart, legacy cart requires selection, and Persian header fits both themes', async ({ page }, info) => {
+test('grind devices remain separate in cart, legacy cart requires selection, and English header fits both themes', async ({ page }, info) => {
   await openForm(page, 'grind')
-  await expect(page.locator('.site-header .wordmark')).toHaveAccessibleName('آ، صفحهٔ اصلی')
+  await expect(page.locator('.site-header .wordmark')).toHaveAccessibleName('A coffee roastery، صفحهٔ اصلی')
   const add = page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true })
   await expect(add).toBeDisabled()
   await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+  await expect(add).toBeDisabled()
+  await page.getByRole('button', { name: 'موکاپات', exact: true }).click()
+  await add.click()
+  await page.getByRole('button', { name: 'اسپرسوساز خانگی', exact: true }).click()
   await add.click()
   await page.getByRole('button', { name: 'دانهٔ کامل (آسیاب‌نشده)', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'موکاپات', exact: true })).toHaveCount(0)
   await add.click()
-  await expect(page.locator('.cart-row')).toHaveCount(2)
-  await page.getByRole('button', { name: /افزایش تعداد قهوهٔ آزمون.*آسیاب‌شده$/ }).click()
+  await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+  await expect(add).toBeDisabled()
+  await expect(page.locator('.cart-row')).toHaveCount(3)
+  await page.getByRole('button', { name: /افزایش تعداد قهوهٔ آزمون.*موکاپات$/ }).click()
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('acoffee:preview-cart:v1')!))
-  expect(saved).toEqual([{ productId: 'test-coffee-500', quantity: 2, grind: 'GROUND' }, { productId: 'test-coffee-500', quantity: 1, grind: 'WHOLE_BEAN' }])
+  expect(saved).toEqual([
+    { productId: 'test-coffee-500', quantity: 2, grind: 'GROUND', grindDevice: 'MOKA_POT' },
+    { productId: 'test-coffee-500', quantity: 1, grind: 'GROUND', grindDevice: 'HOME_ESPRESSO' },
+    { productId: 'test-coffee-500', quantity: 1, grind: 'WHOLE_BEAN', grindDevice: null },
+  ])
   await openForm(page, 'grind')
-  await expect(page.locator('.cart-row')).toHaveCount(2)
+  await expect(page.locator('.cart-row')).toHaveCount(3)
+  await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+  await page.getByRole('button', { name: 'دستگاه نیمه‌صنعتی', exact: true }).click()
   for (const theme of ['light', 'dark']) {
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
     await page.screenshot({ path: info.outputPath(`grind-cart-${theme}.png`), fullPage: true, animations: 'disabled' })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
+  if (info.project.name === 'mobile') {
+    await page.setViewportSize({ width: 320, height: 800 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const mark = await page.locator('.site-header .wordmark').boundingBox()
+    const actions = await page.locator('.header-actions').boundingBox()
+    expect(actions!.x + actions!.width).toBeLessThanOrEqual(mark!.x)
+    await page.setViewportSize({ width: 393, height: 851 })
+  }
+  // Editing a device merges only the matching target, leaving whole beans intact.
+  await page.getByRole('combobox', { name: /دستگاه آسیاب.*موکاپات$/ }).selectOption('HOME_ESPRESSO')
+  await expect(page.locator('.cart-row')).toHaveCount(2)
+  const merged = await page.evaluate(() => JSON.parse(localStorage.getItem('acoffee:preview-cart:v1')!))
+  expect(merged[0]).toMatchObject({ quantity: 3, grindDevice: 'HOME_ESPRESSO' })
+  await page.getByRole('button', { name: /حذف قهوهٔ آزمون.*اسپرسوساز خانگی$/ }).click()
+  await expect(page.locator('.cart-row')).toHaveCount(1)
   await page.evaluate(() => {
     localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: 'test-coffee-500', quantity: 1 }]))
     window.dispatchEvent(new Event('storage'))
   })
   await expect(page.getByRole('button', { name: 'ابتدا نوع آسیاب را انتخاب کن' })).toBeDisabled()
-  await page.getByRole('combobox').selectOption('GROUND')
+  await page.getByRole('combobox', { name: /^نوع آسیاب/ }).selectOption('GROUND')
+  await expect(page.getByRole('button', { name: 'ابتدا دستگاه آسیاب را انتخاب کن' })).toBeDisabled()
+  await page.getByRole('combobox', { name: /^دستگاه آسیاب/ }).selectOption('COMMERCIAL')
   await expect(page.getByRole('link', { name: 'ادامهٔ خرید', exact: true })).toBeVisible()
+  await page.getByRole('combobox', { name: /^نوع آسیاب/ }).selectOption('WHOLE_BEAN')
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('acoffee:preview-cart:v1')!)[0].grindDevice)).toBeNull()
+  await page.evaluate(() => {
+    localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: 'test-coffee-500', quantity: 1, grind: 'GROUND' }]))
+    window.dispatchEvent(new Event('storage'))
+  })
+  await expect(page.getByRole('combobox', { name: /^دستگاه آسیاب/ })).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'ابتدا دستگاه آسیاب را انتخاب کن' })).toBeDisabled()
 })
 
 test('delivery requires first choice, preserves it on failure and prefills previous method', async ({ page }, info) => {
@@ -73,12 +111,12 @@ test('delivery requires first choice, preserves it on failure and prefills previ
   await expect(method).toHaveValue('')
   await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
   await expect(page.locator('#shipping-method-error')).toContainText('انتخاب کن')
-  await expect(method.locator('option')).toHaveText(['روش دریافت را انتخاب کن', 'پست', 'تیپاکس', 'پیک', 'تحویل حضوری'])
-  await method.selectOption('PICKUP')
+  await expect(method.locator('option')).toHaveText(['روش دریافت را انتخاب کن', 'پست', 'تیپاکس', 'پیک'])
+  await method.selectOption('COURIER')
   await page.evaluate(() => { window.formTestMode = 'offline' })
   await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
   await expect(page.getByRole('alert')).toContainText('ارتباط برقرار نشد')
-  await expect(method).toHaveValue('PICKUP')
+  await expect(method).toHaveValue('COURIER')
   for (const theme of ['light', 'dark']) {
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
     await page.screenshot({ path: info.outputPath(`delivery-${theme}.png`), fullPage: true, animations: 'disabled' })
@@ -86,7 +124,7 @@ test('delivery requires first choice, preserves it on failure and prefills previ
   }
   await page.evaluate(() => { window.formTestMode = 'success' })
   await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
-  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ shippingMethod: 'PICKUP' })
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ shippingMethod: 'COURIER' })
   await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/orders/test-order')
   await openForm(page, 'return-delivery')
   await expect(page.getByLabel('روش دریافت سفارش')).toHaveValue('TIPAX')

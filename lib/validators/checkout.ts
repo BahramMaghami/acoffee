@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { cartLineKey, grindValues, shippingValues } from '../order-options'
+import { cartLineKey, grindValues, grindDeviceValues, shippingValues, isValidPreparation } from '../order-options'
 
 export const normalizeDigits = (value: string) =>
   value.replace(/[۰-۹٠-٩]/g, (digit) =>
@@ -27,19 +27,25 @@ export const addressSchema = z.object({
       z.string().regex(/^0\d{10}$/, 'شماره تماس ۱۱ رقمی را با صفر وارد کن.'),
     ),
 })
+export const grindSelectionSchema = z.object({
+  grind: z.enum(grindValues, { error: 'آسیاب‌شده یا دانهٔ کامل را برای هر قهوه انتخاب کن.' }),
+  grindDevice: z.enum(grindDeviceValues, { error: 'دستگاه آسیاب معتبر نیست.' }).nullable().default(null),
+}).refine(value => isValidPreparation(value.grind, value.grindDevice), {
+  path: ['grindDevice'], message: 'برای قهوهٔ آسیاب‌شده دستگاه را انتخاب کن؛ دانهٔ کامل نباید دستگاه داشته باشد.',
+})
+
 export const cartInputSchema = z
   .array(
-    z.object({
+    grindSelectionSchema.safeExtend({
       productId: z.string().min(1).max(200),
       quantity: z.number().int().min(1).max(100),
-      grind: z.enum(grindValues, { error: 'آسیاب‌شده یا دانهٔ کامل را برای هر قهوه انتخاب کن.' }),
     }),
   )
   .min(1, 'سبد خرید خالی است.')
   .max(50)
   .refine(
     (items) =>
-      new Set(items.map((item) => cartLineKey(item.productId, item.grind))).size === items.length,
+      new Set(items.map((item) => cartLineKey(item.productId, item.grind, item.grindDevice))).size === items.length,
     'سبد خرید تکراری یا نامعتبر است.',
   )
 export const placeOrderSchema = z.object({

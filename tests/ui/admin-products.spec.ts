@@ -74,6 +74,7 @@ test.describe('Neon product management', () => {
     await expect(page.locator('.product-card h3')).toHaveText(['قهوهٔ آزمایشی پنل'])
     await page.goto(`/shop/${product.slug}`)
     await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()
+    await page.getByRole('button', { name: 'موکاپات', exact: true }).click()
     await page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true }).click()
     await page.goto('/checkout/address')
     await page.getByLabel('استان', { exact: true }).fill('تهران')

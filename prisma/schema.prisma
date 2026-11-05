@@ -41,6 +41,13 @@ enum GrindOption {
   GROUND
 }
 
+enum GrindDevice {
+  MOKA_POT
+  HOME_ESPRESSO
+  SEMI_COMMERCIAL
+  COMMERCIAL
+}
+
 enum ShippingMethod {
   POST
   TIPAX
@@ -222,10 +229,12 @@ model CartItem {
   quantity  Int      @default(1)
   /// Null for pre-feature carts: the customer must explicitly choose before checkout.
   grind     GrindOption?
+  /// Required for new ground-coffee checkouts; null for legacy carts and whole beans.
+  grindDevice GrindDevice?
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  @@unique([cartId, productId, grind])
+  @@unique([cartId, productId, grind, grindDevice])
   @@index([productId])
 }
 
@@ -274,6 +283,8 @@ model OrderItem {
   weightGrams Int
   /// Immutable preparation snapshot; null for historical orders.
   grind       GrindOption?
+  /// Immutable device snapshot; null for historical orders and whole beans.
+  grindDevice GrindDevice?
   unitPrice   Decimal  @db.Decimal(14, 0)
   quantity    Int
   lineTotal   Decimal  @db.Decimal(14, 0)

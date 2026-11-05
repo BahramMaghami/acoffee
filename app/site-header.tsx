@@ -39,15 +39,13 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
         <div className="shell header-inner">
           <Link
             href="/"
-            className="wordmark wordmark-fa"
-            aria-label="آ، صفحهٔ اصلی"
+            className="wordmark wordmark-en"
+            aria-label="A coffee roastery، صفحهٔ اصلی"
+            dir="ltr"
             onClick={() => setOpen(false)}
           >
-            <svg className="brand-monogram" viewBox="0 0 48 56" aria-hidden="true" focusable="false">
-              <path d="M27 22 33 19.5 32 47.5Q29 49 26 47Z" />
-              <path d="M18 14Q23 5 29 10Q35 15 39 8L40 10Q36 20 29 15Q23 10 18 17Z" />
-              <circle cx="15" cy="46" r="2.5" />
-            </svg>
+            <span className="brand-mark" aria-hidden="true">A</span>
+            <span className="brand-descriptor" aria-hidden="true"><span>coffee</span><span>roastery</span></span>
           </Link>
           <nav className="desktop-nav" aria-label="منوی اصلی">
             {links.map((link) => (

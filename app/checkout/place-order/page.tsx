@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { requireUser } from '@/lib/current-user'
 import { checkoutQuote, CheckoutError, lastShippingMethod } from '@/lib/checkout'
-import { cartLineKey, grindLabel } from '@/lib/order-options'
+import { cartLineKey, preparationLabel } from '@/lib/order-options'
 import { getDb } from '@/lib/db'
 import { formatNumber, formatPrice } from '@/lib/storefront'
 import { PlaceOrderButton } from './place-order-button'
@@ -67,13 +67,13 @@ export default async function PlaceOrderPage() {
           <section className="checkout-panel">
             <h2>قهوه‌های انتخابی</h2>
             {quote.items.map((item) => (
-              <div className="checkout-line" key={cartLineKey(item.productId, item.grind)}>
+              <div className="checkout-line" key={cartLineKey(item.productId, item.grind, item.grindDevice)}>
                 <div>
                   <strong>{item.productName}</strong>
                   <p>
                     {formatNumber(item.quantity)} بسته ·{' '}
                     {formatNumber(item.weightGrams)} گرم
-                    {' · '}{grindLabel(item.grind)}
+                    {' · '}{preparationLabel(item.grind, item.grindDevice)}
                   </p>
                 </div>
                 <span>{formatPrice(item.lineTotal)}</span>

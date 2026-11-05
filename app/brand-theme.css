@@ -171,40 +171,59 @@
   .header-actions { gap: 4px; }
   .cart-count { display: none; }
 }
-.header-inner .wordmark.wordmark-fa {
+.header-inner .wordmark.wordmark-en {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  color: var(--foreground);
+  letter-spacing: 0;
+  direction: ltr;
+  flex-shrink: 0;
+  white-space: nowrap;
+  border-radius: 14px;
+}
+.wordmark-en .brand-mark {
+  display: grid;
+  place-items: center;
   width: 58px;
   height: 58px;
   border: 1px solid rgb(255 248 237 / 12%);
   border-radius: 14px;
   background: #72262e;
   color: #f7efdf;
-  letter-spacing: 0;
-  direction: rtl;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding: 4px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 44px;
+  font-weight: 400;
+  line-height: 1;
   transition: background-color 160ms ease;
 }
-.header-inner .wordmark-fa:hover {
+.wordmark-en .brand-descriptor,
+.wordmark-en .brand-descriptor span {
+  color: var(--foreground);
+}
+.wordmark-en .brand-descriptor {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 1.2px;
+}
+.header-inner .wordmark-en:hover .brand-mark {
   background: #85323b;
 }
-.header-inner .wordmark-fa:focus-visible {
+.header-inner .wordmark-en:focus-visible {
   outline: 2px solid var(--foreground);
   outline-offset: 4px;
 }
-.brand-monogram {
-  display: block;
-  width: 42px;
-  height: 49px;
-  fill: currentColor;
-}
 @media (max-width: 760px) {
-  .header-inner .wordmark.wordmark-fa { width: 48px; height: 48px; border-radius: 12px; }
-  .brand-monogram { width: 35px; height: 41px; }
+  .header-inner .wordmark.wordmark-en { gap: 8px; }
+  .wordmark-en .brand-mark { width: 48px; height: 48px; border-radius: 12px; font-size: 36px; }
+  .wordmark-en .brand-descriptor { font-size: 9px; letter-spacing: .7px; gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .header-inner .wordmark.wordmark-fa { transition: none; }
+  .wordmark-en .brand-mark { transition: none; }
 }

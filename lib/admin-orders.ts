@@ -17,7 +17,7 @@ export async function getAdminOrders(requested: unknown) {
         id: true, number: true, createdAt: true, updatedAt: true, total: true,
         paymentStatus: true, status: true, paidAt: true, deliveredAt: true, shippingMethod: true,
         user: { select: { name: true } }, recipientName: true,
-        items: { select: { id: true, productName: true, quantity: true, weightGrams: true, grind: true }, orderBy: { id: 'asc' } },
+        items: { select: { id: true, productName: true, quantity: true, weightGrams: true, grind: true, grindDevice: true }, orderBy: { id: 'asc' } },
       },
     })
     return { orders, page, pages, total }
