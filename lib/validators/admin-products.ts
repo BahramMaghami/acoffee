@@ -1,12 +1,21 @@
 import { z } from 'zod'
 import { normalizeDigits } from './checkout'
-import { maxPrice } from '../product-pricing'
+import { maxPrice, calculateDiscount } from '../product-pricing'
 
 export const moneyInputSchema = z.string().max(30).transform(value => normalizeDigits(value).replace(/[,٬\s]/g, ''))
   .refine(value => value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) > 0 && Number(value) <= maxPrice), 'قیمت باید عدد صحیح مثبت به تومان باشد.')
   .transform(value => value === '' ? null : Number(value))
+export const discountInputSchema = z.object({
+  originalPrice: moneyInputSchema.refine(value => value !== null, 'قیمت قبل از تخفیف را وارد کن.').transform(value => value!),
+  mode: z.enum(['percent', 'final']),
+  value: moneyInputSchema.refine(value => value !== null, 'درصد یا قیمت نهایی را وارد کن.').transform(value => value!),
+}).superRefine((value, ctx) => {
+  try { calculateDiscount(value) }
+  catch (error) { ctx.addIssue({ code: 'custom', path: ['value'], message: error instanceof Error ? error.message : 'تخفیف معتبر نیست.' }) }
+})
 export const priceInputSchema = z.object({
   basePrices: z.object({ standard: moneyInputSchema, vip: moneyInputSchema }),
+  discounts: z.record(z.string().regex(/^\d+-(default|medium|medium-dark)-(standard|vip)$/), discountInputSchema.nullable()).refine(value => Object.keys(value).length <= 100).optional(),
   overrides: z.record(z.string().regex(/^\d+-(default|medium|medium-dark)-(standard|vip)$/), moneyInputSchema)
     .refine(value => Object.keys(value).length <= 100, 'تعداد قیمت‌ها بیش از حد مجاز است.'),
 })

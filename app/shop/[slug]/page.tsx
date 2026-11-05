@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
-import { ProductVisual } from '../product-visual'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronLeft, ArrowLeft } from 'lucide-react'
-import { cafeGroups, hasWholesaleDiscount } from '@/lib/storefront'
+import { cafeGroups } from '@/lib/storefront'
 import { getStoreCatalog } from '@/lib/catalog'
-import { ProductPurchase } from './product-purchase'
+import { ProductDetail } from './product-detail'
 import { ProductCard } from '../product-card'
 import { CafeOffer } from '../cafe-offer'
 
@@ -35,6 +34,9 @@ export default async function ProductPage({
     product.weights.find((weight) => String(weight) === query.weight) ??
     (product.weights.includes(250) ? 250 : product.weights[0])
   const category = product.categoryLabel
+  const initialSelection = { weight: initialWeight,
+    roast: product.roasts.find(roast => roast === query.roast) ?? product.roasts[0],
+    grade: product.grades.find(grade => grade === query.grade) ?? product.grades[0] }
   return (
     <div className="shell page-space">
       <nav className="breadcrumbs" aria-label="مسیر صفحه">
@@ -44,24 +46,7 @@ export default async function ProductPage({
         <ChevronLeft />
         <span>{product.name}</span>
       </nav>
-      <div className="product-detail">
-        <div className="detail-image">
-          <ProductVisual
-            name={product.name}
-            imageUrl={product.imageUrl}
-            sizes="(max-width: 760px) 100vw, 50vw"
-          />
-          {hasWholesaleDiscount(product) && (
-            <span className="wholesale-ribbon">
-              <strong>۳٪ تخفیف</strong>
-              <span>بستهٔ ۱۰ کیلویی</span>
-            </span>
-          )}
-          <span className="detail-image-caption" dir="ltr">
-            ACOFFEE
-          </span>
-        </div>
-        <div className="detail-copy">
+      <ProductDetail key={`${product.id}:${initialSelection.weight}:${initialSelection.roast}:${initialSelection.grade}`} product={product} initialSelection={initialSelection}>
           <span className="eyebrow">
             {category}
             {product.cafeGroup
@@ -80,13 +65,7 @@ export default async function ProductPage({
               </div>
             </dl>
           )}
-          <ProductPurchase
-            key={`${product.id}:${initialWeight}`}
-            product={product}
-            initialWeight={initialWeight}
-          />
-        </div>
-      </div>
+      </ProductDetail>
       {product.category === 'wholesale' && <CafeOffer />}
       <section className="related-products">
         <div className="section-heading">

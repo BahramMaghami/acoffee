@@ -24,6 +24,10 @@
 .admin-price-table th { min-width: 180px; }
 .admin-price-table td { min-width: 140px; }
 .admin-price-table td small { display: block; }
+.admin-price-table del { display: block; color: var(--muted-foreground); font-size: 12px; }
+.admin-discount-fields { min-width: 210px; display: grid; gap: 6px; }
+.admin-discount-fields label { display: grid; gap: 6px; font-size: 12px; }
+.admin-discount-fields select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--foreground); }
 .admin-price-table input:not([type='checkbox']) { min-width: 140px; }
 .admin-price-table .quiet-link { font-size: 11px; margin-top: 6px; }
 .admin-image-preview { position: relative; height: 190px; width: 180px; margin-bottom: 18px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }

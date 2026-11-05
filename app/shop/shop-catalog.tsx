@@ -26,7 +26,7 @@ export async function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) 
                 href={`/shop/category/${category.value}`}
                 count={items.length}
               >
-                {items.map((product) => <ProductCard key={product.id} product={product} showWholesaleRibbon={idPrefix === 'home'} />)}
+                {items.map((product) => <ProductCard key={product.id} product={product} />)}
               </CategorySlider>
               {category.value === 'wholesale' && <CafeOffer />}
             </div>

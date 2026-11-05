@@ -56,6 +56,7 @@ export async function getProductEditor(id?: string) {
 export function productFormValues(product: CatalogRow): ProductFormInput {
   const prices = product.basePrices as Record<string, number | null>
   const overrides: Record<string, string> = {}
+  const discounts: NonNullable<ProductFormInput['discounts']> = {}
   const availability: Record<string, boolean> = {}
   for (const v of product.variants) {
     const key = variantKey(
@@ -64,6 +65,10 @@ export function productFormValues(product: CatalogRow): ProductFormInput {
       v.grade as Grade,
     )
     if (v.manualPrice) overrides[key] = v.price?.toString() ?? ''
+    // Reopen as an exact final price, avoiding percentage rounding on a second save.
+    if (v.manualPrice && v.originalPrice !== null && v.originalPrice !== undefined && v.price !== null) {
+      discounts[key] = { originalPrice: v.originalPrice.toString(), mode: 'final', value: v.price.toString() }
+    }
     availability[key] = v.isActive
   }
   return {
@@ -81,6 +86,7 @@ export function productFormValues(product: CatalogRow): ProductFormInput {
       vip: prices.vip == null ? '' : String(prices.vip),
     },
     overrides,
+    discounts,
     availability,
     isActive: product.isActive,
     removeImage: false,

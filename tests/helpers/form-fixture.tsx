@@ -6,6 +6,8 @@ import { ResetPasswordForm } from '../../app/(auth)/reset-password/reset-passwor
 import { RegisterForm } from '../../app/(auth)/register/register-form'
 import { AccountPhoneForm } from '../../app/account/account-phone-form'
 import { ProductPurchase } from '../../app/shop/[slug]/product-purchase'
+import { ProductDetail } from '../../app/shop/[slug]/product-detail'
+import { ProductCard } from '../../app/shop/product-card'
 import { CartContent } from '../../app/cart/cart-content'
 import { PlaceOrderButton } from '../../app/checkout/place-order/place-order-button'
 import { SiteHeader } from '../../app/site-header'
@@ -36,6 +38,14 @@ window.mountFormTest = kind => {
   else if (kind === 'phone') root.render(<AccountPhoneForm phone={null} verifiedAt={null} />)
   else if (kind === 'verified-phone') root.render(<AccountPhoneForm phone="09121234567" verifiedAt="2026-11-03T10:00:00Z" />)
   else if (kind === 'grind') root.render(<><SiteHeader user={null} /><ProductPurchase product={coffee} initialWeight={500} /><CartContent products={[coffee]} /></>)
+  else if (kind === 'discount-shop') {
+    const discounted: StoreProduct = { ...coffee, weights: [500, 1000], grades: ['standard', 'vip'],
+      prices: { '500-medium-standard': 150000, '500-medium-vip': 150000, '1000-medium-standard': 300000, '1000-medium-vip': 400000 },
+      originalPrices: { '500-medium-vip': 200000 }, discounts: { '500-medium-vip': 25 },
+      skuIds: { '500-medium-standard': 's1', '500-medium-vip': 's2', '1000-medium-standard': 's3', '1000-medium-vip': 's4' },
+      availability: { '500-medium-standard': true, '500-medium-vip': true, '1000-medium-standard': true, '1000-medium-vip': true } }
+    root.render(<><div className="product-grid"><ProductCard product={discounted} /></div><ProductDetail product={discounted} initialSelection={{ weight: 500, roast: 'medium', grade: 'vip' }}><h1>{discounted.name}</h1></ProductDetail></>)
+  }
   else if (kind === 'delivery' || kind === 'return-delivery') root.render(<aside className="order-summary"><PlaceOrderButton checkoutKey="b9ec07be-a73b-47d8-b230-7247827c0d28" quoteHash={'a'.repeat(64)} initialShippingMethod={kind === 'return-delivery' ? 'TIPAX' : null} /></aside>)
   else root.render(<ResetPasswordForm token={'a'.repeat(43)} />)
 }

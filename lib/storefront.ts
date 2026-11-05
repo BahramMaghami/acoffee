@@ -20,6 +20,7 @@ export type StoreProduct = {
   weights: readonly number[]; roasts: readonly Roast[]; grades: readonly Grade[]
   prices: Record<string, number | null>; skuIds: Record<string, string>
   availability: Record<string, boolean>; discounts: Record<string, number>
+  originalPrices?: Record<string, number | null>
   grindOptions: Record<string, readonly GrindOption[]>
 }
 export const variantKey = (weight: number, roast?: Roast, grade: Grade = 'standard') => weight + '-' + (roast ?? 'default') + '-' + grade
@@ -28,6 +29,7 @@ export function productVariant(product: StoreProduct, weight = product.weights.i
   const key = variantKey(weight, roast, grade)
   if (!product.skuIds[key]) return null
   return { id: product.skuIds[key], product, weightGrams: weight, roast, grade, price: product.prices[key] ?? null,
+    originalPrice: product.originalPrices?.[key] ?? null,
     isActive: product.availability[key] === true, discountPercent: product.discounts[key] ?? 0, grindOptions: product.grindOptions[key] ?? [],
     label: [formatWeight(weight), roastOptions.find(option => option.value === roast)?.label, product.grades.length > 1 ? gradeLabels[grade] : undefined].filter(Boolean).join(' · '),
   }
@@ -43,4 +45,8 @@ export function startingPrice(product: StoreProduct) {
   const prices = productVariants(product).filter(v => v.isActive && v.price !== null).map(v => v.price!)
   return prices.length ? Math.min(...prices) : null
 }
-export const hasWholesaleDiscount = (product: StoreProduct) => product.wholesale && productVariants(product).some(v => v.weightGrams === 10000 && v.discountPercent === 3 && v.isActive)
+export const hasVariantDiscount = (variant: StoreVariant) => variant.isActive && variant.price !== null && variant.price > 0 &&
+  (variant.originalPrice !== null ? variant.originalPrice > variant.price : variant.discountPercent > 0)
+export const discountedVariant = (product: StoreProduct) => productVariants(product).filter(hasVariantDiscount)
+  .sort((a, b) => b.discountPercent - a.discountPercent)[0] ?? null
+export const discountLabel = (percent: number) => (percent > 0 ? formatNumber(percent) + '٪' : 'کمتر از ۱٪') + ' تخفیف'

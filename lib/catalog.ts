@@ -10,7 +10,7 @@ export type CatalogRow = Prisma.CatalogProductGetPayload<{ include: { category: 
 export function storefrontProduct(row: CatalogRow): StoreProduct {
   const result: StoreProduct = { id: row.slug, slug: row.slug, name: row.name, category: row.category.slug, categoryLabel: row.category.name,
     wholesale: row.category.wholesale, cafeGroup: row.cafeGroup as CafeGroup | undefined, description: row.description, origin: row.origin,
-    imageUrl: row.imageUrl, weights: row.weights, roasts: row.roasts as Roast[], grades: row.grades as Grade[], prices: {}, skuIds: {}, availability: {}, discounts: {}, grindOptions: {},
+    imageUrl: row.imageUrl, weights: row.weights, roasts: row.roasts as Roast[], grades: row.grades as Grade[], prices: {}, originalPrices: {}, skuIds: {}, availability: {}, discounts: {}, grindOptions: {},
   }
   for (const variant of row.variants) {
     const key = variantKey(variant.weightGrams, variant.roast === 'default' ? undefined : variant.roast as Roast, variant.grade as Grade)
@@ -18,6 +18,7 @@ export function storefrontProduct(row: CatalogRow): StoreProduct {
     result.skuIds[key] = variant.slug
     result.availability[key] = row.isActive && variant.isActive
     result.discounts[key] = variant.discountPercent
+    result.originalPrices![key] = variant.originalPrice == null ? null : Number(variant.originalPrice)
     result.grindOptions[key] = variant.grindOptions
   }
   return result

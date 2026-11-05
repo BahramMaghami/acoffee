@@ -10,8 +10,8 @@ test('home wholesale cards show the ten kilogram ribbon in both themes without c
   await expect(section.locator('.wholesale-ribbon')).toHaveCount(6)
   await expect(page.locator('.wholesale-ribbon')).toHaveCount(6)
   const card = section.locator('.product-card').first()
-  await expect(card.locator('.wholesale-ribbon')).toHaveText('۳٪ تخفیفبستهٔ ۱۰ کیلویی')
-  await expect(card.locator('.product-card-price')).toContainText('۱۱٬۵۰۰٬۰۰۰ تومان')
+  await expect(card.locator('.wholesale-ribbon')).toHaveText('۳٪ تخفیف۱۰ کیلوگرم')
+  await expect(card.locator('.product-card-price')).toContainText('۲۲٬۳۱۰٬۰۰۰ تومان')
   const frame = await card.locator('.product-image-link').boundingBox()
   const ribbon = await card.locator('.wholesale-ribbon').boundingBox()
   expect(frame).not.toBeNull()
@@ -25,10 +25,10 @@ test('home wholesale cards show the ten kilogram ribbon in both themes without c
   await section.screenshot({ path: `artifacts/ui/wholesale-ribbon-light-${testInfo.project.name}.png` })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   for (const link of await card.getByRole('link').all()) {
-    await expect(link).toHaveAttribute('href', '/shop/wholesale-robusta-100?weight=10000')
+    await expect(link).toHaveAttribute('href', '/shop/wholesale-robusta-100?weight=10000&grade=standard&roast=medium')
   }
   await card.locator('.product-image-link').click()
-  await expect(page).toHaveURL(/\/shop\/wholesale-robusta-100\?weight=10000$/)
+  await expect(page).toHaveURL(/\/shop\/wholesale-robusta-100\?weight=10000&grade=standard&roast=medium$/)
   await expect(page.getByRole('button', { name: '۱۰ کیلوگرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.detail-image .wholesale-ribbon')).toBeVisible()
   await expect(page.locator('.purchase-price strong')).toHaveText('۲۲٬۳۱۰٬۰۰۰ تومان')
@@ -50,7 +50,7 @@ test('home wholesale cards show the ten kilogram ribbon in both themes without c
   await expect(page.getByRole('button', { name: '۲۵۰ گرم', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.detail-image .wholesale-ribbon')).toHaveCount(0)
   await page.goto('/shop/category/wholesale')
-  await expect(page.locator('.wholesale-ribbon')).toHaveCount(0)
+  await expect(page.locator('.wholesale-ribbon')).toHaveCount(6)
 })
 
 test.skip(!hasTestDatabase, 'Requires a dedicated test database prepared with db:prepare:test.')

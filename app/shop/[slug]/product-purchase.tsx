@@ -9,11 +9,17 @@ import { cartLineKey, grindOptions, grindDevices, preparationLabel, isValidPrepa
 import { useCart } from '@/app/cart/cart-store'
 import { formatNumber, formatWeight, formatPrice, productVariant, roastOptions, gradeLabels, maxCartQuantity, type StoreProduct, type Roast, type Grade } from '@/lib/storefront'
 
-export function ProductPurchase({ product, initialWeight }: { product: StoreProduct; initialWeight: number }) {
+export type ProductSelection = { weight: number; roast?: Roast; grade: Grade }
+
+export function ProductPurchase({ product, initialWeight, selection, onSelectionChange }: { product: StoreProduct; initialWeight: number; selection?: ProductSelection; onSelectionChange?: (selection: ProductSelection) => void }) {
   const [quantity, setQuantity] = useState(1)
-  const [weight, setWeight] = useState(initialWeight)
-  const [roast, setRoast] = useState<Roast | undefined>(product.roasts[0])
-  const [grade, setGrade] = useState<Grade>(product.grades[0])
+  const [localSelection, setLocalSelection] = useState<ProductSelection>({ weight: initialWeight, roast: product.roasts[0], grade: product.grades[0] })
+  const { weight, roast, grade } = selection ?? localSelection
+  function select(patch: Partial<ProductSelection>) {
+    const next = { weight, roast, grade, ...patch }
+    setLocalSelection(next)
+    onSelectionChange?.(next)
+  }
   const [grind, setGrind] = useState<GrindOption | null>(null)
   const [grindDevice, setGrindDevice] = useState<GrindDevice | null>(null)
   const router = useRouter()
@@ -28,7 +34,7 @@ export function ProductPurchase({ product, initialWeight }: { product: StoreProd
   return <div className="product-purchase" data-weight={weight} data-discount={variant.isActive ? variant.discountPercent : 0}>
     <div className="purchase-options">
       <fieldset><legend>وزن بسته</legend><div className="option-buttons">{product.weights.map((value) =>
-        <button key={value} type="button" aria-pressed={weight === value} onClick={() => setWeight(value)}>{formatWeight(value)}</button>)}</div></fieldset>
+        <button key={value} type="button" aria-pressed={weight === value} onClick={() => select({ weight: value })}>{formatWeight(value)}</button>)}</div></fieldset>
       <fieldset><legend>قهوه را چطور آماده کنیم؟</legend><div className="option-buttons">{grindOptions.filter(option => variant.grindOptions.includes(option.value)).map(option =>
         <button key={option.value} type="button" aria-pressed={grind === option.value} onClick={() => { setGrind(option.value); if (option.value === 'WHOLE_BEAN') setGrindDevice(null) }}>{option.label}</button>)}</div>
         {!validGrind && <p className="product-reassurance">آسیاب‌شده یا دانهٔ کامل را انتخاب کن.</p>}
@@ -37,11 +43,11 @@ export function ProductPurchase({ product, initialWeight }: { product: StoreProd
         {grindDevices.map(option => <button key={option.value} type="button" aria-pressed={grindDevice === option.value} onClick={() => setGrindDevice(option.value)}>{option.label}</button>)}
       </div>{!grindDevice && <p className="product-reassurance">دستگاهت را انتخاب کن تا اندازهٔ آسیاب مناسبش باشد.</p>}</fieldset>}
       {product.roasts.length > 0 && <fieldset><legend>درجهٔ رست</legend><div className="option-buttons">{roastOptions.filter((option) => product.roasts.includes(option.value)).map((option) =>
-        <button key={option.value} type="button" aria-pressed={roast === option.value} onClick={() => setRoast(option.value)}>{option.label}</button>)}</div></fieldset>}
+        <button key={option.value} type="button" aria-pressed={roast === option.value} onClick={() => select({ roast: option.value })}>{option.label}</button>)}</div></fieldset>}
       {product.grades.length > 1 && <fieldset><legend>نوع قهوه</legend><div className="option-buttons">{product.grades.map((value) =>
-        <button key={value} type="button" dir="ltr" aria-pressed={grade === value} onClick={() => setGrade(value)}>{gradeLabels[value]}</button>)}</div></fieldset>}
+        <button key={value} type="button" dir="ltr" aria-pressed={grade === value} onClick={() => select({ grade: value })}>{gradeLabels[value]}</button>)}</div></fieldset>}
     </div>
-    <div className="purchase-price"><div><span className="eyebrow">{variant.label}</span><strong>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price)}</strong></div></div>
+    <div className="purchase-price"><div><span className="eyebrow">{variant.label}</span>{variant.originalPrice !== null && <del>{formatPrice(variant.originalPrice)}</del>}<strong>{variant.price === null ? 'قیمت به‌زودی' : formatPrice(variant.price)}</strong></div></div>
     <div className="purchase-actions">
       <div className="quantity-control">
         <button aria-label="افزایش تعداد" disabled={selected >= remaining} onClick={() => setQuantity(selected + 1)}><Plus size={16} /></button>

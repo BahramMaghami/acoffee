@@ -184,6 +184,8 @@ model Product {
   description String      @db.Text
   /// All money fields store whole toman; never use floating-point arithmetic.
   price       Decimal?    @db.Decimal(14, 0)
+  /// Optional reference price for an actual discount; price remains the payable amount.
+  originalPrice Decimal?  @db.Decimal(14, 0)
   catalogProductId String?
   catalogProduct CatalogProduct? @relation(fields: [catalogProductId], references: [id], onDelete: Cascade)
   roast       String @default("default")

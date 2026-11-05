@@ -59,7 +59,7 @@ export async function saveProductAction(input: unknown) {
         roasts: data.noRoast ? [] : data.roasts.length ? data.roasts : category.defaultRoasts as Roast[],
         grades: data.grades.length ? data.grades : category.defaultGrades as Grade[], wholesale: category.wholesale,
       }
-      const prices = calculateProductPrices({ ...options, basePrices: data.basePrices, overrides: data.overrides })
+      const prices = calculateProductPrices({ ...options, basePrices: data.basePrices, overrides: data.overrides, discounts: data.discounts })
       if (!prices.length || prices.length > 80) throw new ProductError('حداکثر ۸۰ انتخاب برای هر محصول مجاز است.')
       if (!existing && prices.some(p => p.price === null || p.price <= 0)) throw new ProductError('قیمت پایه یا قیمت مستقل تمام انتخاب‌های محصول جدید را وارد کن.')
       if (prices.some(p => p.price !== null && p.price <= 0)) throw new ProductError('قیمت محاسبه‌شده باید حداقل یک تومان باشد.')
@@ -79,7 +79,8 @@ export async function saveProductAction(input: unknown) {
           options.grades.length > 1 ? gradeLabels[value.grade] : undefined].filter(Boolean).join(' · ')
         const fields = { catalogProductId: parent.id, name: name.slice(0, 150), description: parent.description, weightGrams: value.weightGrams,
           roast: value.roast, grade: value.grade, price: value.price, manualPrice: value.manualPrice,
-          discountPercent: prior?.manualPrice && value.manualPrice && Number(prior.price) === value.price ? prior.discountPercent : value.discountPercent,
+          originalPrice: value.originalPrice,
+          discountPercent: !Object.hasOwn(data.discounts ?? {}, value.key) && prior?.manualPrice && value.manualPrice && Number(prior.price) === value.price ? prior.discountPercent : value.discountPercent,
           isActive: data.availability[value.key] ?? prior?.isActive ?? true }
         await tx.product.upsert({ where: { slug: `${productSlug}--${value.key}` }, create: { ...fields, slug: `${productSlug}--${value.key}` }, update: fields })
       }

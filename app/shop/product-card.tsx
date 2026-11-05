@@ -1,17 +1,19 @@
 import { ProductVisual } from './product-visual'
 import Link from 'next/link'
 import { ArrowUpLeft } from 'lucide-react'
-import { cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, hasWholesaleDiscount, type StoreProduct } from '@/lib/storefront'
+import { cafeGroups, startingPrice, formatPrice, formatWeight, gradeLabels, discountedVariant, type StoreProduct } from '@/lib/storefront'
+import { DiscountRibbon } from './discount-ribbon'
 
-export function ProductCard({ product, showWholesaleRibbon = false }: { product: StoreProduct; showWholesaleRibbon?: boolean }) {
-  const price = startingPrice(product)
+export function ProductCard({ product }: { product: StoreProduct }) {
+  const discounted = discountedVariant(product)
+  const price = discounted?.price ?? startingPrice(product)
   const category = product.categoryLabel
-  const ribbon = showWholesaleRibbon && hasWholesaleDiscount(product)
-  const href = '/shop/' + product.slug + (ribbon ? '?weight=10000' : '')
+  const query = discounted ? new URLSearchParams({ weight: String(discounted.weightGrams), grade: discounted.grade, ...(discounted.roast ? { roast: discounted.roast } : {}) }) : null
+  const href = '/shop/' + product.slug + (query ? '?' + query.toString() : '')
   return <article className="product-card">
     <Link href={href} className="product-image-link" aria-label={'مشاهدهٔ ' + product.name}>
       <ProductVisual name={product.name} imageUrl={product.imageUrl} />
-      {ribbon ? <span className="wholesale-ribbon"><strong>۳٪ تخفیف</strong><span>بستهٔ ۱۰ کیلویی</span></span>
+      {discounted ? <DiscountRibbon percent={discounted.discountPercent} weight={discounted.weightGrams} />
         : <span className="product-badge">{product.cafeGroup ? cafeGroups.find((group) => group.value === product.cafeGroup)!.label : category}</span>}
       <span className="product-arrow"><ArrowUpLeft size={20} /></span>
     </Link>
@@ -19,6 +21,6 @@ export function ProductCard({ product, showWholesaleRibbon = false }: { product:
     <h3><Link href={href}>{product.name}</Link></h3>
     <p className="product-card-weights">{product.weights.map(formatWeight).join(' · ')}</p>
     {product.grades.length > 1 && <p className="tasting-notes" dir="ltr">{product.grades.map((grade) => gradeLabels[grade]).join(' / ')}</p>}
-    <div className="product-card-price"><span>{price === null ? 'قیمت به‌زودی' : 'از ' + formatPrice(price)}</span><Link href={href}>انتخاب قهوه</Link></div>
+    <div className="product-card-price"><span>{discounted?.originalPrice != null && <del>{formatPrice(discounted.originalPrice)}</del>}{price === null ? 'قیمت به‌زودی' : (discounted ? '' : 'از ') + formatPrice(price)}{discounted && <small>{discounted.label}</small>}</span><Link href={href}>انتخاب قهوه</Link></div>
   </article>
 }

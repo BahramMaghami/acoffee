@@ -10,13 +10,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ProductVisual } from '@/app/shop/product-visual'
-import { productFormSchema, type ProductFormInput } from '@/lib/validators/admin-products'
+import { productFormSchema, discountInputSchema, type ProductFormInput } from '@/lib/validators/admin-products'
 import { categoryDefaults, type ProductDefaults } from '@/lib/product-pricing'
 import { productPricePreview } from '@/lib/product-price-preview'
 import { normalizeDigits } from '@/lib/validators/checkout'
-import { formatWeight, formatPrice, gradeLabels, roastOptions, type Grade, type Roast } from '@/lib/storefront'
+import { formatWeight, formatPrice, formatNumber, gradeLabels, roastOptions, type Grade, type Roast } from '@/lib/storefront'
 import { prepareProductImageAction, saveProductAction } from '@/actions/product.actions'
 import { ConfirmationDialog } from '../confirmation-dialog'
+import { DiscountFields } from './discount-fields'
 
 type EditorCategory = { id: string; name: string; slug: string; defaultWeights: number[]; defaultRoasts: string[]; defaultGrades: string[]; wholesale: boolean }
 export function ProductForm({ categories, initial, imageUrl, uploadEnabled }: {
@@ -29,6 +30,8 @@ export function ProductForm({ categories, initial, imageUrl, uploadEnabled }: {
   const [newCategory, setNewCategory] = useState(false)
   const [customWeight, setCustomWeight] = useState('')
   const [weightError, setWeightError] = useState('')
+  const [bulkPercent, setBulkPercent] = useState('')
+  const [bulkError, setBulkError] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [preview, setPreview] = useState(imageUrl ?? null)
@@ -124,14 +127,31 @@ export function ProductForm({ categories, initial, imageUrl, uploadEnabled }: {
         <fieldset className="admin-option-field"><legend>۶. قیمت</legend>
           <p>قیمت یک کیلو به تومان؛ قیمت مستقل هر انتخاب بر محاسبات اولویت دارد.</p>
           <div className="admin-base-prices">{effective.grades.map(grade => <div key={grade}><label htmlFor={`price-${grade}`}>{gradeLabels[grade]} · یک کیلو</label><Input id={`price-${grade}`} inputMode="numeric" aria-invalid={Boolean(priceErrors[`basePrices.${grade}`])} aria-describedby={`price-${grade}-error`} {...form.register(`basePrices.${grade}`)} /><p id={`price-${grade}-error`} className="field-error">{priceErrors[`basePrices.${grade}`]}</p></div>)}</div>
-          {preset.wholesale && <p>۱۰ کیلو: دو برابر قیمت نهایی ۵ کیلو با ۳٪ تخفیف؛ مگر قیمت مستقل وارد کنی.</p>}
-          <div className="admin-price-table"><table><caption className="sr-only">پیش‌نمایش قیمت انتخاب‌ها</caption><thead><tr><th>انتخاب</th><th>قیمت نهایی</th><th>قیمت مستقل (تومان)</th><th>قابل سفارش</th></tr></thead><tbody>
+          {preset.wholesale && <p>پیش‌فرض ۱۰ کیلو: دو برابر قیمت نهایی ۵ کیلو با ۳٪ تخفیف؛ قیمت مستقل یا تخفیف دلخواه بر آن اولویت دارد.</p>}
+          <p>برای تخفیف، قیمت قبل از تخفیف را مشخص کن و درصد یا قیمت نهایی را وارد کن. تخفیف هر انتخاب جداگانه قابل تنظیم است.</p>
+          <div className="admin-inline-fields"><Input aria-label="درصد تخفیف مشترک" placeholder="درصد مشترک" inputMode="numeric" value={bulkPercent} onChange={e => setBulkPercent(e.target.value)} /><Button type="button" variant="outline" onClick={() => {
+            const valid = discountInputSchema.safeParse({ originalPrice: '10000', mode: 'percent', value: bulkPercent })
+            if (!valid.success) { setBulkError('درصد صحیح بین ۱ تا ۹۹ وارد کن.'); return }
+            const next = { ...value.discounts }
+            const eligible = rows.filter(row => !row.invalid && row.price !== null)
+            if (!eligible.length) { setBulkError('ابتدا قیمت انتخاب‌ها را وارد کن.'); return }
+            const overrides = { ...value.overrides }
+            for (const row of eligible) { next[row.key] = { originalPrice: String(row.originalPrice ?? row.price), mode: 'percent', value: bulkPercent }; delete overrides[row.key] }
+            form.setValue('overrides', overrides, { shouldDirty: true })
+            form.setValue('discounts', next, { shouldDirty: true }); setBulkError('')
+          }}>اعمال به همهٔ انتخاب‌های قیمت‌دار</Button></div><p className="field-error">{bulkError}</p>
+          <div className="admin-price-table"><table><caption className="sr-only">پیش‌نمایش قیمت انتخاب‌ها</caption><thead><tr><th>انتخاب</th><th>قیمت نهایی</th><th>قیمت مستقل (تومان)</th><th>تخفیف</th><th>قابل سفارش</th></tr></thead><tbody>
             {rows.map(row => {
               const label = [formatWeight(row.weightGrams), roastOptions.find(r => r.value === row.roast)?.label, gradeLabels[row.grade]].filter(Boolean).join(' · ')
-              return <tr key={row.key}><th scope="row">{label}</th><td>{row.invalid ? <span className="field-error">قابل محاسبه نیست؛ قیمت را اصلاح کن.</span> : row.price === null ? 'اعلام نشده' : formatPrice(row.price)}{!row.invalid && row.discountPercent === 3 && <small>۳٪ تخفیف</small>}</td>
-                <td><Input aria-label={`قیمت مستقل ${label}`} aria-invalid={Boolean(priceErrors[`overrides.${row.key}`])} aria-describedby={`override-${row.key}-error`} inputMode="numeric" value={value.overrides[row.key] ?? ''} placeholder="محاسبهٔ خودکار" onChange={e => form.setValue('overrides', { ...value.overrides, [row.key]: e.target.value }, { shouldDirty: true })} />
+              const discount = value.discounts?.[row.key]
+              return <tr key={row.key}><th scope="row">{label}</th><td>{row.invalid ? <span className="field-error">قابل محاسبه نیست؛ قیمت را اصلاح کن.</span> : <>{row.originalPrice !== null && <del>{formatPrice(row.originalPrice)}</del>}{row.price === null ? 'اعلام نشده' : formatPrice(row.price)}{row.originalPrice !== null && <small>{row.discountPercent ? formatNumber(row.discountPercent) + '٪' : 'کمتر از ۱٪'} تخفیف</small>}</>}</td>
+                <td><Input disabled={Boolean(discount)} aria-label={`قیمت مستقل ${label}`} aria-invalid={Boolean(priceErrors[`overrides.${row.key}`])} aria-describedby={`override-${row.key}-error`} inputMode="numeric" value={value.overrides[row.key] ?? ''} placeholder="محاسبهٔ خودکار" onChange={e => { form.setValue('overrides', { ...value.overrides, [row.key]: e.target.value }, { shouldDirty: true }); form.setValue('discounts', { ...value.discounts, [row.key]: null }, { shouldDirty: true }) }} />
                 <p id={`override-${row.key}-error`} className="field-error">{priceErrors[`overrides.${row.key}`]}</p>
-                {Object.hasOwn(value.overrides, row.key) && <button type="button" className="quiet-link" onClick={() => { const next = { ...value.overrides }; delete next[row.key]; form.setValue('overrides', next, { shouldDirty: true }) }}>بازگشت به محاسبه</button>}</td>
+                {(Object.hasOwn(value.overrides, row.key) || Object.hasOwn(value.discounts ?? {}, row.key)) && <button type="button" className="quiet-link" onClick={() => { const next = { ...value.overrides }; delete next[row.key]; const discounts = { ...value.discounts }; delete discounts[row.key]; form.setValue('overrides', next, { shouldDirty: true }); form.setValue('discounts', discounts, { shouldDirty: true }) }}>بازگشت به محاسبه</button>}</td>
+                <td>{discount ? <DiscountFields label={label} value={discount} errors={{ originalPrice: priceErrors[`discounts.${row.key}.originalPrice`], value: priceErrors[`discounts.${row.key}.value`] }}
+                  onChange={next => form.setValue('discounts', { ...value.discounts, [row.key]: next }, { shouldDirty: true })}
+                  onRemove={() => { form.setValue('overrides', { ...value.overrides, [row.key]: discount.originalPrice }, { shouldDirty: true }); form.setValue('discounts', { ...value.discounts, [row.key]: null }, { shouldDirty: true }) }} />
+                  : <button type="button" className="quiet-link" onClick={() => { const overrides = { ...value.overrides }; delete overrides[row.key]; form.setValue('overrides', overrides, { shouldDirty: true }); form.setValue('discounts', { ...value.discounts, [row.key]: { originalPrice: row.invalid ? '' : String(row.originalPrice ?? row.price ?? ''), mode: 'percent', value: '' } }, { shouldDirty: true }) }}>تنظیم تخفیف</button>}</td>
                 <td><input type="checkbox" aria-label={`قابل سفارش ${label}`} checked={value.availability[row.key] ?? true} onChange={e => form.setValue('availability', { ...value.availability, [row.key]: e.target.checked }, { shouldDirty: true })} /></td></tr>
             })}
           </tbody></table></div>
