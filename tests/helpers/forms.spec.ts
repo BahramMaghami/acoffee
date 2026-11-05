@@ -40,7 +40,7 @@ async function openForm(page: Page, kind: string) {
 
 test('grind choices remain separate in cart, legacy cart requires selection, and Persian header fits both themes', async ({ page }, info) => {
   await openForm(page, 'grind')
-  await expect(page.locator('.site-header .wordmark')).toHaveText(/رستری\s*آ/)
+  await expect(page.locator('.site-header .wordmark')).toHaveAccessibleName('آ، صفحهٔ اصلی')
   const add = page.getByRole('button', { name: 'افزودن به سبد خرید', exact: true })
   await expect(add).toBeDisabled()
   await page.getByRole('button', { name: 'آسیاب‌شده', exact: true }).click()

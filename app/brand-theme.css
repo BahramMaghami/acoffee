@@ -173,40 +173,38 @@
 }
 .header-inner .wordmark.wordmark-fa {
   display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  font-family: inherit;
-  color: var(--foreground);
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgb(255 248 237 / 12%);
+  border-radius: 14px;
+  background: #72262e;
+  color: #f7efdf;
   letter-spacing: 0;
   direction: rtl;
   flex-shrink: 0;
   white-space: nowrap;
-  padding: 3px 2px;
+  padding: 4px;
+  transition: background-color 160ms ease;
 }
-.header-inner .wordmark-fa .wordmark-label {
-  color: inherit;
-  font-size: 16px;
-  font-weight: 550;
-  line-height: 1.5;
+.header-inner .wordmark-fa:hover {
+  background: #85323b;
 }
-.header-inner .wordmark-fa .wordmark-letter {
-  display: inline-block;
-  color: var(--foreground);
-  font-size: 58px;
-  font-weight: 800;
-  line-height: 1;
+.header-inner .wordmark-fa:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 4px;
 }
-/* Color the madda without separating or reshaping the Persian glyph. */
-@supports (background-clip: text) or (-webkit-background-clip: text) {
-  .header-inner .wordmark-fa .wordmark-letter {
-    background: linear-gradient(to bottom, #b8444e 0 30%, var(--foreground) 30% 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-  }
+.brand-monogram {
+  display: block;
+  width: 42px;
+  height: 49px;
+  fill: currentColor;
 }
 @media (max-width: 760px) {
-  .header-inner .wordmark.wordmark-fa { gap: 7px; }
-  .header-inner .wordmark-fa .wordmark-label { font-size: 13px; }
-  .header-inner .wordmark-fa .wordmark-letter { font-size: 48px; }
+  .header-inner .wordmark.wordmark-fa { width: 48px; height: 48px; border-radius: 12px; }
+  .brand-monogram { width: 35px; height: 41px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-inner .wordmark.wordmark-fa { transition: none; }
 }
