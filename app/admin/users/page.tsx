@@ -68,7 +68,13 @@ export default async function UsersPage({
                 </td>
                 <td>{user.role === 'ADMIN' ? 'مدیر' : 'کاربر'}</td>
                 <td>{formatPersianDate(user.createdAt)}</td>
-                <td>{formatNumber(user._count.orders)}</td>
+                <td>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/admin/orders?userId=${encodeURIComponent(user.id)}`} aria-label={`سفارش‌های ${user.name}`}>
+                      سفارش‌ها ({formatNumber(user._count.orders)})
+                    </Link>
+                  </Button>
+                </td>
                 <td>
                   <UserControls
                     id={user.id}
