@@ -15,6 +15,7 @@ import { AdminNav } from '../../app/admin/admin-nav'
 import { DiscountForm } from '../../app/admin/discount-generator/discount-form'
 import { CodeControls } from '../../app/admin/discount-generator/code-controls'
 import { CheckoutSummary } from '../../app/checkout/place-order/checkout-summary'
+import { AddressForm } from '../../app/checkout/address/address-form'
 import type { StoreProduct } from '../../lib/storefront'
 
 const coffee: StoreProduct = { id: 'test-coffee', slug: 'test-coffee', name: 'قهوهٔ آزمون', category: 'blend', categoryLabel: 'ترکیبی', wholesale: false,
@@ -36,7 +37,9 @@ window.mountFormTest = kind => {
     id: 'product-test', expectedUpdatedAt: '2026-10-26T00:00:00.000Z', categoryId: 'wholesale', newCategoryName: '', name: 'قهوهٔ آزمون', weights: [5000, 10000], roasts: ['medium', 'medium-dark'], noRoast: false,
     grades: ['standard', 'vip'], basePrices: { standard: '2000000', vip: '3000000' }, overrides: {}, availability: {}, isActive: true, imagePublicId: null, removeImage: false, confirmRemoved: false,
   }} />)
-  else if (kind === 'account') root.render(<div className="account-settings"><div><ProfileForm name="بهرام" email="test@acoffee.test" /><ChangePasswordForm /></div><AccountAddressForm /></div>)
+  else if (kind === 'account') root.render(<div className="account-settings"><div><ProfileForm name="بهرام" email="test@acoffee.test" /><ChangePasswordForm /></div><AccountAddressForm verifiedPhone="09121234567" /></div>)
+  else if (kind === 'address') root.render(<AddressForm verifiedPhone="09121234567" recipientName="آزمون" initial={{ province: 'تهران', city: 'تهران', postalCode: '1234567890', addressLine: 'نشانی آزمایشی پلاک ۱۲', phone: '09129999999', alternatePhone: '02112345678' }} />)
+  else if (kind === 'unverified-address') root.render(<AccountAddressForm verifiedPhone={null} />)
   else if (kind === 'coupon-admin') root.render(<><AdminNav /><DiscountForm /><section className="coupon-list"><h2>کدهای ساخته‌شده</h2><p dir="ltr">ABCD234567</p><CodeControls id="cm000000000000000000000001" code="ABCD234567" isActive updatedAt="2026-11-06T00:00:00.000Z" /></section></>)
   else if (kind === 'coupon-checkout') root.render(<CheckoutSummary quote={{ checkoutKey: 'b9ec07be-a73b-47d8-b230-7247827c0d28', quoteHash: 'a'.repeat(64), subtotal: 200000, shippingFee: 0, total: 200000 }} initialShippingMethod={null} />)
   else if (kind === 'forgot') root.render(<ForgotPasswordForm enabled />)

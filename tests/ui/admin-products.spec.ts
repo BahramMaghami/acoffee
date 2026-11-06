@@ -37,7 +37,7 @@ test.describe('Neon product management', () => {
   test('create, edit, checkout, stale edit, deactivate and delete preserve historical orders', async ({ page, browser }) => {
     const password = randomBytes(24).toString('base64url')
     const passwordHash = await hash(password, 12)
-    const admin = await db.user.create({ data: { name: 'مدیر تست محصولات', email: emails[0], passwordHash, role: 'ADMIN' } })
+    const admin = await db.user.create({ data: { name: 'مدیر تست محصولات', email: emails[0], passwordHash, role: 'ADMIN', phone: '09121234567', phoneVerifiedAt: new Date() } })
     await db.user.create({ data: { name: 'مشتری تست محصولات', email: emails[1], passwordHash } })
     async function login(target: Page, email: string) {
       await target.goto('http://127.0.0.1:3310/login?next=%2Fadmin')
@@ -81,7 +81,7 @@ test.describe('Neon product management', () => {
     await page.getByLabel('شهر', { exact: true }).fill('تهران')
     await page.getByLabel('نشانی کامل', { exact: true }).fill('نشانی موقت تست محصولات، پلاک ۱')
     await page.getByLabel('کد پستی', { exact: true }).fill('1234567890')
-    await page.getByLabel('شماره تماس', { exact: true }).fill('09121234567')
+    await expect(page.getByLabel('شمارهٔ موبایل تأییدشده')).toHaveValue('09121234567')
     await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
     await expect(page).toHaveURL(/\/checkout\/place-order$/, { timeout: 40000 })
     await page.getByLabel('روش دریافت سفارش').selectOption('TIPAX')

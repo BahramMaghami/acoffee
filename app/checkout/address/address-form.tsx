@@ -34,8 +34,8 @@ const fields = [
     placeholder: 'کد پستی ۱۰ رقمی',
   },
   {
-    name: 'phone',
-    label: 'شماره تماس',
+    name: 'alternatePhone',
+    label: 'شمارهٔ تماس جایگزین (اختیاری)',
     autoComplete: 'tel',
     placeholder: '۰۹۱۲۱۲۳۴۵۶۷',
   },
@@ -44,9 +44,11 @@ const fields = [
 export function AddressForm({
   initial,
   recipientName,
+  verifiedPhone,
 }: {
   initial?: AddressInput
   recipientName: string
+  verifiedPhone: string
 }) {
   const router = useRouter()
   const { items, hydrated } = useCart()
@@ -58,13 +60,12 @@ export function AddressForm({
     formState: { errors },
   } = useForm<AddressInput>({
     resolver: zodResolver(addressSchema),
-    defaultValues: initial ?? {
+    defaultValues: { ...(initial ?? {
       province: '',
       city: '',
       addressLine: '',
       postalCode: '',
-      phone: '',
-    },
+    }), phone: verifiedPhone, alternatePhone: initial?.alternatePhone ?? '' },
   })
   if (!hydrated) return <p role="status">در حال خواندن سبد خرید…</p>
   if (!items.length)
@@ -107,6 +108,7 @@ export function AddressForm({
         )}
       >
         <div className="address-fields">
+          <div className="form-field address-full"><label htmlFor="verified-phone">شمارهٔ موبایل تأییدشده</label><Input id="verified-phone" value={verifiedPhone} readOnly dir="ltr" type="tel" aria-describedby="verified-phone-note" /><small id="verified-phone-note">شمارهٔ اصلی حساب است و در فرم آدرس قابل تغییر نیست. شمارهٔ جایگزین فقط برای هماهنگی ارسال استفاده می‌شود و تأیید پیامکی نشده است.</small></div>
           {fields.map((field) => (
             <div className="form-field" key={field.name}>
               <label htmlFor={field.name}>{field.label}</label>
@@ -118,12 +120,12 @@ export function AddressForm({
                 inputMode={
                   field.name === 'postalCode'
                     ? 'numeric'
-                    : field.name === 'phone'
+                    : field.name === 'alternatePhone'
                       ? 'tel'
                       : 'text'
                 }
                 dir={
-                  field.name === 'postalCode' || field.name === 'phone'
+                  field.name === 'postalCode' || field.name === 'alternatePhone'
                     ? 'ltr'
                     : 'rtl'
                 }
@@ -181,8 +183,7 @@ export function AddressForm({
           گیرندهٔ سفارش: <strong>{recipientName}</strong>
         </p>
         <p>
-          کد پستی و شماره تماس را دقیق وارد کن تا برای هماهنگی ارسال به تو
-          دسترسی داشته باشیم.
+          برای هماهنگی ارسال از شمارهٔ تأییدشدهٔ حساب استفاده می‌کنیم؛ در صورت نیاز یک شمارهٔ جایگزین هم اضافه کن.
         </p>
         <p>آدرس در حسابت می‌ماند و هر بار می‌توانی آن را ویرایش کنی.</p>
       </aside>

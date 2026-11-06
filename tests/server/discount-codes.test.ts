@@ -31,7 +31,7 @@ function fixture() {
   const db = {
     cart: { findUnique: async () => cart },
     address: { findFirst: async () => ({ recipientName: 'آزمون', province: 'تهران', city: 'تهران', addressLine: 'آدرس تست پلاک ۱', postalCode: '1234567890', phone: '09121234567' }) },
-    user: { findUnique: async () => state.actor },
+    user: { findUnique: async () => state.actor ? { ...state.actor, phone: '09121234567', phoneVerifiedAt: new Date() } : null },
     discountCode: { findUnique: async ({ where }: { where: { code: string } }) => where.code === code.code ? code : null,
       create: async ({ data }: { data: Record<string, unknown> }) => { state.createdCodes.push(data); return data },
       updateMany: async ({ where, data }: { where: { updatedAt: Date }; data: { isActive: boolean } }) => {

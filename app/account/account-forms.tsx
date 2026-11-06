@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -42,14 +43,15 @@ const addressFields = [
   { name: 'province', label: 'استان', autoComplete: 'address-level1' },
   { name: 'city', label: 'شهر', autoComplete: 'address-level2' },
   { name: 'postalCode', label: 'کد پستی', autoComplete: 'postal-code' },
-  { name: 'phone', label: 'شماره تماس', autoComplete: 'tel' },
+  { name: 'alternatePhone', label: 'شمارهٔ تماس جایگزین (اختیاری)', autoComplete: 'tel' },
 ] as const
 
-export function AccountAddressForm({ initial }: { initial?: AddressInput }) {
+export function AccountAddressForm({ initial, verifiedPhone = null }: { initial?: AddressInput; verifiedPhone?: string | null }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
-  const form = useForm<AddressInput>({ resolver: zodResolver(addressSchema), defaultValues: initial ?? { province: '', city: '', addressLine: '', postalCode: '', phone: '' } })
+  const form = useForm<AddressInput>({ resolver: zodResolver(addressSchema), defaultValues: { ...(initial ?? { province: '', city: '', addressLine: '', postalCode: '' }), phone: verifiedPhone ?? '', alternatePhone: initial?.alternatePhone ?? '' } })
+  if (!verifiedPhone) return <section className="checkout-panel"><h2>آدرس ارسال</h2><p>برای ذخیرهٔ آدرس و ادامهٔ خرید، ابتدا شمارهٔ موبایلت را با پیامک تأیید کن.</p><Link className="quiet-link" href="#account-phone-title">تأیید شمارهٔ حساب</Link></section>
   return <form className="checkout-panel account-edit-form address-form" aria-labelledby="account-address-title" aria-busy={pending} noValidate onSubmit={form.handleSubmit(values => {
     setMessage(''); form.clearErrors('root')
     startTransition(async () => {
@@ -63,9 +65,10 @@ export function AccountAddressForm({ initial }: { initial?: AddressInput }) {
     <h2 id="account-address-title">آدرس ارسال</h2>
     <p className="account-form-note">این آدرس برای خریدهای بعدی استفاده می‌شود. آدرس سفارش‌های قبلی تغییر نمی‌کند.</p>
     <fieldset disabled={pending}>
+      <div className="form-field"><label htmlFor="account-address-phone">شمارهٔ موبایل تأییدشده</label><Input id="account-address-phone" dir="ltr" type="tel" value={verifiedPhone} readOnly /><small>شمارهٔ اصلی حساب در آدرس قابل تغییر نیست. شمارهٔ جایگزین تأیید پیامکی نشده است.</small></div>
       <div className="address-fields">{addressFields.map(field => <div className="form-field" key={field.name}>
         <label htmlFor={`account-${field.name}`}>{field.label}</label>
-        <Input id={`account-${field.name}`} {...form.register(field.name)} autoComplete={field.autoComplete} dir={['phone', 'postalCode'].includes(field.name) ? 'ltr' : undefined} inputMode={field.name === 'phone' ? 'tel' : field.name === 'postalCode' ? 'numeric' : 'text'} aria-invalid={Boolean(form.formState.errors[field.name])} aria-describedby={`account-${field.name}-error`} />
+        <Input id={`account-${field.name}`} {...form.register(field.name)} autoComplete={field.autoComplete} dir={['alternatePhone', 'postalCode'].includes(field.name) ? 'ltr' : undefined} inputMode={field.name === 'alternatePhone' ? 'tel' : field.name === 'postalCode' ? 'numeric' : 'text'} aria-invalid={Boolean(form.formState.errors[field.name])} aria-describedby={`account-${field.name}-error`} />
         <p className="field-error" id={`account-${field.name}-error`}>{form.formState.errors[field.name]?.message}</p>
       </div>)}</div>
       <div className="form-field"><label htmlFor="account-addressLine">نشانی کامل</label><textarea id="account-addressLine" rows={4} autoComplete="street-address" {...form.register('addressLine')} aria-invalid={Boolean(form.formState.errors.addressLine)} aria-describedby="account-addressLine-error" /><p className="field-error" id="account-addressLine-error">{form.formState.errors.addressLine?.message}</p></div>

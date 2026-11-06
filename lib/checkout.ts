@@ -5,6 +5,7 @@ import { getDb } from './db'
 import { isShippingMethod } from './order-options'
 import { grindSelectionSchema } from './validators/checkout'
 import { resolveDiscountCode } from './discount-codes'
+import { verifiedContactPhone, addressContactDefaults } from './address-contact'
 
 export class CheckoutError extends Error {}
 
@@ -19,7 +20,7 @@ export async function lastShippingMethod(userId: string, db: Pick<ReturnType<typ
 
 export async function checkoutQuote(
   userId: string,
-  db: Pick<ReturnType<typeof getDb>, 'cart' | 'address' | 'discountCode' | '$queryRaw'> = getDb(),
+  db: Pick<ReturnType<typeof getDb>, 'cart' | 'address' | 'user' | 'discountCode' | '$queryRaw'> = getDb(),
   discountCode?: string,
 ) {
   const cart = await db.cart.findUnique({
@@ -35,6 +36,9 @@ export async function checkoutQuote(
   if (!cart?.items.length)
     throw new CheckoutError('سبد خرید خالی است. دوباره قهوه‌هایت را انتخاب کن.')
   if (!address) throw new CheckoutError('ابتدا آدرس ارسال را ذخیره کن.')
+  const owner = await db.user.findUnique({ where: { id: userId }, select: { phone: true, phoneVerifiedAt: true } })
+  const phone = owner && verifiedContactPhone(owner)
+  if (!phone) throw new CheckoutError('ابتدا شمارهٔ موبایل را در حساب خود با پیامک تأیید کن.')
   const items = cart.items.map(({ product, quantity, grind, grindDevice }) => {
     if (!grind || !product.grindOptions.includes(grind))
       throw new CheckoutError('نوع آسیاب یکی از قهوه‌ها مشخص نیست یا قابل سفارش نیست. در سبد خرید آن را انتخاب کن.')
@@ -69,7 +73,8 @@ export async function checkoutQuote(
     city: address.city,
     addressLine: address.addressLine,
     postalCode: address.postalCode,
-    phone: address.phone,
+    phone,
+    alternatePhone: addressContactDefaults(address, phone).alternatePhone || null,
   }
   const coupon = discountCode ? await resolveDiscountCode(db, discountCode, userId, subtotal) : null
   const discount = coupon?.amount ?? 0

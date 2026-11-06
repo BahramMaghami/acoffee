@@ -14,7 +14,7 @@ test.beforeAll(async () => {
         if (args.path === 'next/link') return { contents: 'import {createElement} from "react"; export default function Link({children,...props}) { return createElement("a",props,children) }', resolveDir: process.cwd() }
         if (args.path === 'next/image') return { contents: 'import {createElement} from "react"; export default function Image({fill,priority,unoptimized,...props}) { return createElement("img",props) }', resolveDir: process.cwd() }
         return { contents: `async function run(input) { window.formTestPayload=input; if (window.formTestMode==='offline') throw new Error('offline'); if (window.formTestMode==='error') return {success:false,message:'ذخیره انجام نشد؛ دوباره تلاش کن.'}; return {success:true,message:'ذخیره شد.'} }
-          export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, requestPasswordResetAction=run, resetPasswordAction=run, logoutAction=run;
+          export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, saveCheckoutCartAction=run, requestPasswordResetAction=run, resetPasswordAction=run, logoutAction=run;
           export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date().toISOString()}; }
           export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
           export async function placeOrderAction(input) { return {...await run(input),orderId:'test-order'}; }
@@ -40,6 +40,40 @@ async function openForm(page: Page, kind: string) {
   await page.addScriptTag({ content: bundle })
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
+
+test('address keeps verified mobile readonly and validates an optional alternate without losing failed input', async ({ page }, info) => {
+  await openForm(page, 'address')
+  await page.evaluate(() => {
+    localStorage.setItem('acoffee:preview-cart:v1', JSON.stringify([{ productId: 'test-coffee-500', quantity: 1, grind: 'WHOLE_BEAN', grindDevice: null }]))
+    window.dispatchEvent(new Event('storage'))
+  })
+  const primary = page.getByLabel('شمارهٔ موبایل تأییدشده')
+  const alternate = page.getByLabel('شمارهٔ تماس جایگزین (اختیاری)')
+  await expect(primary).toHaveValue('09121234567')
+  await expect(primary).toHaveAttribute('readonly', '')
+  await expect(alternate).toHaveValue('02112345678')
+  await alternate.fill('bad')
+  await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
+  await expect(page.locator('#alternatePhone-error')).toContainText('۱۱ رقم')
+  await alternate.fill('۰۲۱۸۷۶۵۴۳۲۱')
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
+  await expect(page.getByRole('alert')).toContainText('ارتباط برقرار نشد')
+  await expect(alternate).toHaveValue('۰۲۱۸۷۶۵۴۳۲۱')
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ phone: '09121234567', alternatePhone: '02187654321' })
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await page.screenshot({ path: info.outputPath(`address-contact-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await alternate.fill('')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
+  await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/checkout/place-order')
+  await openForm(page, 'unverified-address')
+  await expect(page.getByRole('link', { name: 'تأیید شمارهٔ حساب' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ذخیرهٔ آدرس' })).toHaveCount(0)
+})
 
 test('coupon admin validates N users, M uses and days, retains failed input and shows generated code', async ({ page }, info) => {
   await openForm(page, 'coupon-admin')
@@ -383,7 +417,9 @@ test('account forms validate independently and retain input after failed request
   await page.getByLabel('استان', { exact: true }).fill('تهران')
   await page.getByLabel('شهر', { exact: true }).fill('تهران')
   await page.getByLabel('کد پستی').fill('۱۲۳۴۵۶۷۸۹۰')
-  await page.getByLabel('شماره تماس').fill('۰۹۱۲۱۲۳۴۵۶۷')
+  await expect(page.getByLabel('شمارهٔ موبایل تأییدشده')).toHaveValue('09121234567')
+  await expect(page.getByLabel('شمارهٔ موبایل تأییدشده')).toHaveAttribute('readonly', '')
+  await page.getByLabel('شمارهٔ تماس جایگزین (اختیاری)').fill('۰۹۱۲۱۲۳۴۵۶۸')
   await page.getByLabel('نشانی کامل').fill('خیابان آزمایش، کوچهٔ آ، پلاک ۱۲')
   await page.getByRole('button', { name: 'ذخیرهٔ آدرس', exact: true }).click()
   await expect(page.getByRole('form', { name: 'آدرس ارسال' }).getByRole('alert')).toBeVisible()
@@ -391,7 +427,7 @@ test('account forms validate independently and retain input after failed request
   await page.evaluate(() => { window.formTestMode = 'success' })
   await page.getByRole('button', { name: 'ذخیرهٔ آدرس', exact: true }).click()
   await expect(page.getByRole('form', { name: 'آدرس ارسال' }).getByRole('status')).toContainText('ذخیره شد')
-  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ postalCode: '1234567890', phone: '09121234567' })
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ postalCode: '1234567890', phone: '09121234567', alternatePhone: '09121234568' })
   for (const theme of ['light', 'dark']) {
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
     await expect(page.locator('.form-field input').first()).toHaveCSS('background-color', theme === 'dark' ? 'rgb(27, 25, 23)' : 'rgb(255, 250, 243)')

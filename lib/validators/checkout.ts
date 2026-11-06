@@ -6,6 +6,7 @@ import { cartLineKey, grindValues, grindDeviceValues, shippingValues, isValidPre
 export { normalizeDigits } from '../digits'
 
 export const addressSchema = z.object({
+  alternatePhone: z.string().max(30).trim().transform(normalizeDigits).refine(value => value === '' || /^0\d{10}$/.test(value), 'شمارهٔ تماس جایگزین باید ۱۱ رقم و با صفر باشد.').optional(),
   province: z.string().trim().min(2, 'استان را وارد کن.').max(100),
   city: z.string().trim().min(2, 'شهر را وارد کن.').max(100),
   addressLine: z

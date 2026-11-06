@@ -101,6 +101,7 @@ export default async function PlaceOrderPage() {
             <p>
               شماره تماس: <bdi>{quote.shipping.phone}</bdi>
             </p>
+            {quote.shipping.alternatePhone && <p>شمارهٔ تماس جایگزین: <bdi>{quote.shipping.alternatePhone}</bdi></p>}
           </section>
         </div>
         <CheckoutSummary key={quote.quoteHash} quote={{ checkoutKey: quote.checkoutKey, quoteHash: quote.quoteHash, subtotal: quote.subtotal, shippingFee: quote.shippingFee, total: quote.total }} initialShippingMethod={initialShippingMethod} />

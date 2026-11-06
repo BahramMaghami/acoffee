@@ -161,6 +161,7 @@ model Address {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipientName String   @db.VarChar(100)
   phone         String   @db.VarChar(20)
+  alternatePhone String? @db.VarChar(20)
   province      String   @db.VarChar(100)
   city          String   @db.VarChar(100)
   addressLine   String   @db.VarChar(500)
@@ -300,6 +301,7 @@ model Order {
   /// Shipping snapshot, independent of the user's editable address book.
   recipientName String        @db.VarChar(100)
   phone         String        @db.VarChar(20)
+  alternatePhone String?       @db.VarChar(20)
   province      String        @db.VarChar(100)
   city          String        @db.VarChar(100)
   addressLine   String        @db.VarChar(500)

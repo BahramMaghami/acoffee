@@ -21,6 +21,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
       <section className="admin-order-panel"><h2>خریدار و نشانی گیرنده</h2><p>{order.user.name}</p><p><bdi>{order.user.email}</bdi></p><hr />
         <p>روش دریافت: {shippingLabel(order.shippingMethod)}</p>
         <p>گیرنده: {order.recipientName}</p><p>{order.province}، {order.city}، {order.addressLine}</p><p>کد پستی: <bdi>{order.postalCode}</bdi></p><p>تماس: <bdi>{order.phone}</bdi></p>
+        {order.alternatePhone && <p>شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi></p>}
       </section>
       <section className="admin-order-panel"><h2>مبلغ سفارش</h2><dl className="admin-order-totals">
         <div><dt>جمع کالاها</dt><dd>{formatPrice(Number(order.subtotal))}</dd></div>

@@ -9,7 +9,7 @@ function fixture() {
   const items = [{ id: 'ground', product, quantity: 2, grind: 'GROUND', grindDevice: 'MOKA_POT' as string | null }, { id: 'whole', product, quantity: 1, grind: 'WHOLE_BEAN', grindDevice: null as string | null }]
   const cart = { checkoutKey: 'b9ec07be-a73b-47d8-b230-7247827c0d28', items }
   const address = { recipientName: 'تست', province: 'تهران', city: 'تهران', addressLine: 'نشانی آزمایشی پلاک ۱', postalCode: '1234567890', phone: '09121234567' }
-  return { cart, address, product, db: { cart: { findUnique: async () => cart }, address: { findFirst: async () => address } } }
+  return { cart, address, product, db: { user: { findUnique: async () => ({ phone: '09121234567', phoneVerifiedAt: new Date() }) }, cart: { findUnique: async () => cart }, address: { findFirst: async () => address } } }
 }
 
 test('quotes snapshot both grinds, detect changes, and reject unavailable or legacy choices', async () => {

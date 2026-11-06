@@ -21,6 +21,7 @@
     "test:grind-migration": "node --conditions=react-server --import tsx --test tests/helpers/grind-device.integration.ts",
     "test:product-discounts": "node --conditions=react-server --import tsx --test tests/server/product-discounts.test.ts tests/helpers/product-discounts.integration.ts",
     "test:discount-codes": "node --conditions=react-server --import tsx --test tests/server/discount-codes.test.ts tests/helpers/discount-codes.integration.ts",
+    "test:address-contact": "node --conditions=react-server --import tsx --test tests/server/address-contact.test.ts tests/helpers/address-contact.integration.ts",
     "smtp:verify": "node --conditions=react-server --import tsx scripts/verify-smtp.ts",
     "prices:compare": "tsx scripts/compare-blend-prices.ts",
     "postinstall": "prisma generate",

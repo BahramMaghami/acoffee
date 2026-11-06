@@ -73,6 +73,7 @@ export default async function OrderPage({
             <p>
               شماره تماس: <bdi>{order.phone}</bdi>
             </p>
+            {order.alternatePhone && <p>شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi></p>}
           </section>
         </div>
         <aside className="order-summary">

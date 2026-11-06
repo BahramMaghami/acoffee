@@ -41,3 +41,4 @@
 .coupon-input-row input { min-width: 0; text-transform: uppercase; letter-spacing: 1px; }
 .coupon-input-row button { flex-shrink: 0; }
 .coupon-applied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 12px; }
+.address-form small { display: block; font-size: 12px; line-height: 2; margin-top: 8px; color: var(--muted-foreground); }
