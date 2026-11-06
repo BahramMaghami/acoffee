@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getAdminUsers } from '@/lib/admin-users'
 import { formatPersianDate } from '@/lib/date'
 import { formatNumber } from '@/lib/storefront'
@@ -11,21 +12,44 @@ export const metadata = { title: 'مدیریت کاربران' }
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string | string[]; field?: string | string[]; q?: string | string[] }>
 }) {
-  const data = await getAdminUsers((await searchParams).page)
+  const params = await searchParams
+  const data = await getAdminUsers(params.page, { field: params.field, q: params.q })
+  function pageHref(page: number) {
+    const query = new URLSearchParams({ page: String(page) })
+    query.set('field', data.search.field)
+    if (data.search.q) query.set('q', data.search.q)
+    return `/admin/users?${query}`
+  }
   return (
     <div className="shell admin-page">
       <header className="admin-heading">
         <div>
           <span className="eyebrow">مدیریت آ</span>
           <h1>کاربران</h1>
-          <p>{formatNumber(data.total)} کاربر · هر صفحه ۲۰ نفر</p>
+          <p>{formatNumber(data.total)} {data.search.q ? 'کاربر مطابق جست‌وجو' : 'کاربر'} · هر صفحه ۲۰ نفر</p>
         </div>
         <Button asChild variant="outline">
           <Link href="/admin">داشبورد فروش</Link>
         </Button>
       </header>
+      <form action="/admin/users" method="get" role="search" aria-label="جست‌وجوی کاربران" className="admin-users-search" key={`${data.search.field}:${data.search.q}`}>
+        <div className="admin-users-search-field">
+          <label htmlFor="user-search-field">جست‌وجو بر اساس</label>
+          <select id="user-search-field" name="field" defaultValue={data.search.field}>
+            <option value="name">نام</option>
+            <option value="phone">شماره تماس</option>
+            <option value="email">ایمیل</option>
+          </select>
+        </div>
+        <div className="admin-users-search-query">
+          <label htmlFor="user-search-query">عبارت جست‌وجو</label>
+          <Input id="user-search-query" name="q" type="search" dir="auto" defaultValue={data.search.q} maxLength={200} placeholder="تمام یا بخشی از مقدار را وارد کن" />
+        </div>
+        <Button type="submit">جست‌وجو</Button>
+        {data.search.q && <Button asChild variant="outline"><Link href="/admin/users">پاک‌کردن جست‌وجو</Link></Button>}
+      </form>
       <div className="admin-users-table">
         <table>
           <caption className="sr-only">کاربران فروشگاه</caption>
@@ -88,12 +112,12 @@ export default async function UsersPage({
             ))}
           </tbody>
         </table>
-        {!data.users.length && <p>کاربری ثبت نشده است.</p>}
+        {!data.users.length && <p className="admin-users-empty">{data.search.q ? 'کاربری با این مشخصات پیدا نشد.' : 'کاربری ثبت نشده است.'}</p>}
       </div>
       <nav className="admin-users-pagination" aria-label="صفحه‌بندی کاربران">
         {data.page > 1 ? (
           <Button asChild variant="outline">
-            <Link href={`/admin/users?page=${data.page - 1}`}>قبلی</Link>
+            <Link href={pageHref(data.page - 1)}>قبلی</Link>
           </Button>
         ) : (
           <Button variant="outline" disabled>
@@ -105,7 +129,7 @@ export default async function UsersPage({
         </span>
         {data.page < data.pages ? (
           <Button asChild variant="outline">
-            <Link href={`/admin/users?page=${data.page + 1}`}>بعدی</Link>
+            <Link href={pageHref(data.page + 1)}>بعدی</Link>
           </Button>
         ) : (
           <Button variant="outline" disabled>
