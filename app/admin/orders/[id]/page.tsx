@@ -24,7 +24,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
       </section>
       <section className="admin-order-panel"><h2>مبلغ سفارش</h2><dl className="admin-order-totals">
         <div><dt>جمع کالاها</dt><dd>{formatPrice(Number(order.subtotal))}</dd></div>
-        <div><dt>تخفیف</dt><dd>{formatPrice(Number(order.discount))}</dd></div>
+        <div><dt>تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}</dt><dd>{formatPrice(Number(order.discount))}</dd></div>
         <div><dt>ارسال</dt><dd>{order.shippingFeeFinalized ? formatPrice(Number(order.shippingFee)) : 'هنوز نهایی نشده'}</dd></div>
         <div><dt>مبلغ ثبت‌شده</dt><dd>{formatPrice(Number(order.total))}</dd></div>
       </dl></section>

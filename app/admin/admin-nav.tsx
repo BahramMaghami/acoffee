@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Package, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, Users, Package, ShoppingBag, TicketPercent } from 'lucide-react'
 
 export function AdminNav() {
   const pathname = usePathname()
@@ -10,6 +10,7 @@ export function AdminNav() {
     { href: '/admin/users', label: 'کاربران', Icon: Users },
     { href: '/admin/orders', label: 'سفارش‌ها', Icon: ShoppingBag },
     { href: '/admin/products', label: 'محصولات', Icon: Package },
+    { href: '/admin/discount-generator', label: 'کدهای تخفیف', Icon: TicketPercent },
   ]
   return <nav className="shell admin-nav" aria-label="بخش‌های مدیریت">
     {links.map(({ href, label, Icon }) => <Link key={href} href={href}

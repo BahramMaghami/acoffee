@@ -1,10 +1,9 @@
 import { z } from 'zod'
+import { normalizeDigits } from '../digits'
+import { discountCodeTextSchema } from './discount-codes'
 import { cartLineKey, grindValues, grindDeviceValues, shippingValues, isValidPreparation } from '../order-options'
 
-export const normalizeDigits = (value: string) =>
-  value.replace(/[۰-۹٠-٩]/g, (digit) =>
-    String(digit.charCodeAt(0) - (digit >= '۰' ? 1776 : 1632)),
-  )
+export { normalizeDigits } from '../digits'
 
 export const addressSchema = z.object({
   province: z.string().trim().min(2, 'استان را وارد کن.').max(100),
@@ -49,6 +48,7 @@ export const cartInputSchema = z
     'سبد خرید تکراری یا نامعتبر است.',
   )
 export const placeOrderSchema = z.object({
+  discountCode: discountCodeTextSchema.optional(),
   checkoutKey: z.uuid(),
   quoteHash: z.string().regex(/^[a-f0-9]{64}$/),
   shippingMethod: z.enum(shippingValues, { error: 'روش دریافت سفارش را انتخاب کن.' }),

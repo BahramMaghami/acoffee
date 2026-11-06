@@ -36,6 +36,42 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum DiscountCodeType {
+  PERCENT
+  FIXED
+}
+
+model DiscountCode {
+  id String @id @default(cuid())
+  code String @unique @db.VarChar(10)
+  type DiscountCodeType
+  value Decimal @db.Decimal(14, 0)
+  maxUsers Int
+  maxUsesPerUser Int
+  expiresAt DateTime @db.Timestamptz(3)
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  redemptions DiscountRedemption[]
+
+  @@index([createdAt])
+}
+
+/// Durable quota ledger: deleting an order/account never silently restores usage.
+model DiscountRedemption {
+  id String @id @default(cuid())
+  discountCodeId String
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Restrict)
+  /// Snapshot of account identity, intentionally retained after account deletion.
+  userId String
+  orderId String? @unique
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  amount Decimal @db.Decimal(14, 0)
+  consumedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([discountCodeId, userId])
+}
+
 enum GrindOption {
   WHOLE_BEAN
   GROUND
@@ -255,6 +291,11 @@ model Order {
   /// Null only for historical orders; new orders require an explicit choice.
   shippingMethod ShippingMethod?
   discount      Decimal       @default(0) @db.Decimal(14, 0)
+  /// Immutable coupon snapshots; Product discounts are already included in subtotal.
+  discountCode String? @db.VarChar(10)
+  discountCodeType DiscountCodeType?
+  discountCodeValue Decimal? @db.Decimal(14, 0)
+  discountRedemption DiscountRedemption?
   total         Decimal       @db.Decimal(14, 0)
   /// Shipping snapshot, independent of the user's editable address book.
   recipientName String        @db.VarChar(100)

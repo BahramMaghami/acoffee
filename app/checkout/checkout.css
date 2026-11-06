@@ -35,3 +35,9 @@
 .delivery-form select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .delivery-form select[aria-invalid=true] { border-color: var(--primary); }
 .delivery-form #shipping-method-note { margin-top: 8px; }
+.checkout-coupon { margin-block: 20px; padding-block: 18px; border-block: 1px solid var(--border); }
+.checkout-coupon label { display: block; font-size: 13px; margin-bottom: 10px; }
+.coupon-input-row { display: flex; gap: 8px; }
+.coupon-input-row input { min-width: 0; text-transform: uppercase; letter-spacing: 1px; }
+.coupon-input-row button { flex-shrink: 0; }
+.coupon-applied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 12px; }

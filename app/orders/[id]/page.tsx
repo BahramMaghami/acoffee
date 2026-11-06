@@ -95,6 +95,7 @@ export default async function OrderPage({
                   : 'هنوز تعیین نشده'}
               </dd>
             </div>
+            {Number(order.discount) > 0 && <div><dt>تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}</dt><dd>− {formatPrice(Number(order.discount))}</dd></div>}
             <div className="summary-total">
               <dt>
                 {order.shippingFeeFinalized ? 'مبلغ سفارش' : 'جمع فعلی سفارش'}

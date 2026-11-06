@@ -8,6 +8,8 @@ import { checkoutQuote, CheckoutError, lockCheckout } from '@/lib/checkout'
 import { logAuthError } from '@/lib/auth-error'
 import { adminOrderSchema } from '@/lib/validators/admin-orders'
 import { orderStatusUpdate } from '@/lib/order-status-update'
+import { lockDiscountCode, consumeDiscountAtPlacement } from '@/lib/discount-codes'
+import { DiscountCodeError } from '@/lib/discount-code-rules'
 
 export async function manageOrderAction(
   input: unknown,
@@ -101,7 +103,8 @@ export async function placeOrderAction(input: unknown) {
         })
         if (existing?.userId === user.id) return existing
         if (existing) throw new CheckoutError('اطلاعات سفارش معتبر نیست.')
-        const quote = await checkoutQuote(user.id, tx)
+        if (parsed.data.discountCode) await lockDiscountCode(tx, parsed.data.discountCode)
+        const quote = await checkoutQuote(user.id, tx, parsed.data.discountCode)
         if (
           quote.checkoutKey !== parsed.data.checkoutKey ||
           quote.quoteHash !== parsed.data.quoteHash
@@ -110,7 +113,7 @@ export async function placeOrderAction(input: unknown) {
             'سبد، آدرس یا قیمت تغییر کرده است. صفحه را تازه کن و دوباره تأیید کن.',
           )
         // Orders remain pending/unpaid until payment integration is implemented.
-        return tx.order.create({
+        const created = await tx.order.create({
           data: {
             userId: user.id,
             checkoutKey: quote.checkoutKey,
@@ -119,22 +122,29 @@ export async function placeOrderAction(input: unknown) {
             subtotal: quote.subtotal,
             shippingFee: quote.shippingFee,
             total: quote.total,
+            discount: quote.discount,
+            discountCode: quote.coupon?.code ?? null,
+            discountCodeType: quote.coupon?.type ?? null,
+            discountCodeValue: quote.coupon?.value ?? null,
             items: { create: quote.items },
           },
           select: { id: true },
         })
+        if (quote.coupon) await consumeDiscountAtPlacement(tx, { discountCodeId: quote.coupon.id, userId: user.id, orderId: created.id, amount: quote.discount })
+        return created
       },
-      { maxWait: 10_000, timeout: 30_000 },
+      { isolationLevel: 'ReadCommitted', maxWait: 10_000, timeout: 30_000 },
     )
     revalidatePath('/account')
     revalidatePath('/orders')
+    revalidatePath('/admin/discount-generator')
     return { success: true as const, orderId: order.id }
   } catch (error) {
     logAuthError('place-order', error)
     return {
       success: false as const,
       message:
-        error instanceof CheckoutError
+        error instanceof CheckoutError || error instanceof DiscountCodeError
           ? error.message
           : 'ثبت سفارش انجام نشد. دوباره تلاش کن؛ درخواست تکراری سفارش تازه نمی‌سازد.',
     }

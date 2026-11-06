@@ -18,6 +18,9 @@ test.beforeAll(async () => {
           export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date().toISOString()}; }
           export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
           export async function placeOrderAction(input) { return {...await run(input),orderId:'test-order'}; }
+          export async function createDiscountCodeAction(input) { return {...await run(input),code:'ABCD234567',expiresAt:'2026-11-13T10:00:00Z'}; }
+          export const setDiscountCodeStatusAction=run;
+          export async function applyDiscountCodeAction(input) { return {...await run(input),quote:{code:'ABCD234567',checkoutKey:input.checkoutKey,quoteHash:'b'.repeat(64),subtotal:200000,shippingFee:0,discount:40000,total:160000}}; }
           export const requestAccountPhoneOtpAction = requestSignupOtpAction;
           export async function verifyAccountPhoneOtpAction(input) { return {...await run(input),phone:'09121234567',verifiedAt:'2026-11-03T10:00:00Z'}; }
           export async function prepareProductImageAction() { throw new Error('آپلود انجام نشد؛ دوباره تلاش کن.') }` }
@@ -25,7 +28,7 @@ test.beforeAll(async () => {
     } }],
   })
   bundle = result.outputFiles[0].text
-  css = (await Promise.all(['app/admin/admin.css', 'app/admin/products/products.css', 'app/checkout/checkout.css', 'app/account/account.css'].map(path => readFile(path, 'utf8')))).join('\n')
+  css = (await Promise.all(['app/admin/admin.css', 'app/admin/discount-generator/discounts.css', 'app/admin/products/products.css', 'app/checkout/checkout.css', 'app/account/account.css'].map(path => readFile(path, 'utf8')))).join('\n')
 })
 
 async function openForm(page: Page, kind: string) {
@@ -37,6 +40,66 @@ async function openForm(page: Page, kind: string) {
   await page.addScriptTag({ content: bundle })
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
+
+test('coupon admin validates N users, M uses and days, retains failed input and shows generated code', async ({ page }, info) => {
+  await openForm(page, 'coupon-admin')
+  await expect(page.getByRole('link', { name: 'کدهای تخفیف' })).toHaveAttribute('href', '/admin/discount-generator')
+  const form = page.getByRole('form', { name: 'ساخت کد تخفیف', exact: true })
+  await form.getByRole('button', { name: 'ساخت کد تخفیف' }).click()
+  await expect(form.locator('#coupon-value-error')).not.toBeEmpty()
+  await form.getByLabel('درصد تخفیف', { exact: true }).fill('۲۰')
+  await form.getByLabel('حداکثر کاربران متفاوت').fill('۱۰')
+  await form.getByLabel('دفعات استفادهٔ هر کاربر').fill('۲')
+  await form.getByLabel('اعتبار از زمان ساخت (روز)').fill('۷')
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await form.getByRole('button', { name: 'ساخت کد تخفیف' }).click()
+  await expect(form.getByRole('alert')).toContainText('محفوظ')
+  await expect(form.getByLabel('حداکثر کاربران متفاوت')).toHaveValue('۱۰')
+  await form.getByLabel('نوع تخفیف').selectOption('FIXED')
+  await form.getByLabel('مبلغ تخفیف (تومان)').fill('۵۰۰۰۰')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await form.getByRole('button', { name: 'ساخت کد تخفیف' }).click()
+  await expect(form.getByRole('status')).toContainText('ABCD234567')
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ type: 'FIXED', value: '۵۰۰۰۰', maxUsers: '۱۰', maxUsesPerUser: '۲', validDays: '۷' })
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await expect(form.getByLabel('حداکثر کاربران متفاوت')).toBeEnabled()
+    await page.screenshot({ path: info.outputPath(`coupon-admin-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.getByRole('button', { name: 'غیرفعال‌کردن' }).click()
+  await expect(page.locator('.coupon-controls [role="status"]')).toContainText('ذخیره شد')
+})
+
+test('checkout coupon applies, removes, retains failed input and submits only the reviewed discounted quote', async ({ page }, info) => {
+  await openForm(page, 'coupon-checkout')
+  const form = page.getByRole('form', { name: 'اعمال کد تخفیف' })
+  await page.getByLabel('روش دریافت سفارش').selectOption('POST')
+  await form.getByLabel('کد تخفیف', { exact: true }).fill('abcd234567')
+  await expect(page.getByRole('button', { name: 'ثبت سفارش و ادامه' })).toBeDisabled()
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
+  await expect(form.getByRole('alert')).toContainText('دوباره تلاش کن')
+  await expect(form.getByLabel('کد تخفیف', { exact: true })).toHaveValue('abcd234567')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
+  await expect(form.getByRole('status')).toContainText('ABCD234567')
+  await expect(page.locator('.summary-total dd')).toHaveText('۱۶۰٬۰۰۰ تومان')
+  await expect(page.getByRole('button', { name: 'ثبت سفارش و ادامه' })).toBeEnabled()
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await page.screenshot({ path: info.outputPath(`coupon-checkout-${theme}.png`), fullPage: true, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await form.getByRole('button', { name: 'حذف کد' }).click()
+  await expect(page.locator('.summary-total dd')).toHaveText('۲۰۰٬۰۰۰ تومان')
+  await form.getByLabel('کد تخفیف', { exact: true }).fill('ABCD234567')
+  await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
+  await expect(form.getByRole('status')).toBeVisible()
+  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/orders/test-order')
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ discountCode: 'ABCD234567', quoteHash: 'b'.repeat(64), shippingMethod: 'POST' })
+})
 
 test('grind devices remain separate in cart, legacy cart requires selection, and English header fits both themes', async ({ page }, info) => {
   await openForm(page, 'grind')

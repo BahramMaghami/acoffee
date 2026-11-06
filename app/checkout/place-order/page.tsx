@@ -6,7 +6,7 @@ import { checkoutQuote, CheckoutError, lastShippingMethod } from '@/lib/checkout
 import { cartLineKey, preparationLabel } from '@/lib/order-options'
 import { getDb } from '@/lib/db'
 import { formatNumber, formatPrice } from '@/lib/storefront'
-import { PlaceOrderButton } from './place-order-button'
+import { CheckoutSummary } from './checkout-summary'
 
 export const metadata: Metadata = { title: 'تأیید سفارش' }
 
@@ -103,33 +103,7 @@ export default async function PlaceOrderPage() {
             </p>
           </section>
         </div>
-        <aside className="order-summary">
-          <span className="eyebrow">خلاصهٔ سفارش</span>
-          <h2>همه‌چیز آماده است</h2>
-          <dl>
-            <div>
-              <dt>جمع کالاها</dt>
-              <dd>{formatPrice(quote.subtotal)}</dd>
-            </div>
-            <div>
-              <dt>هزینهٔ ارسال</dt>
-              <dd>هنوز تعیین نشده</dd>
-            </div>
-            <div className="summary-total">
-              <dt>جمع فعلی سفارش</dt>
-              <dd>{formatPrice(quote.total)}</dd>
-            </div>
-          </dl>
-          <PlaceOrderButton
-            checkoutKey={quote.checkoutKey}
-            quoteHash={quote.quoteHash}
-            initialShippingMethod={initialShippingMethod}
-          />
-          <p>
-            سفارش با وضعیت «در انتظار پرداخت» ثبت می‌شود. هزینهٔ ارسال و پرداخت
-            آنلاین در مرحلهٔ بعد فعال می‌شوند.
-          </p>
-        </aside>
+        <CheckoutSummary key={quote.quoteHash} quote={{ checkoutKey: quote.checkoutKey, quoteHash: quote.quoteHash, subtotal: quote.subtotal, shippingFee: quote.shippingFee, total: quote.total }} initialShippingMethod={initialShippingMethod} />
       </div>
     </>
   )

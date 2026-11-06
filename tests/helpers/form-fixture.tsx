@@ -11,6 +11,10 @@ import { ProductCard } from '../../app/shop/product-card'
 import { CartContent } from '../../app/cart/cart-content'
 import { PlaceOrderButton } from '../../app/checkout/place-order/place-order-button'
 import { SiteHeader } from '../../app/site-header'
+import { AdminNav } from '../../app/admin/admin-nav'
+import { DiscountForm } from '../../app/admin/discount-generator/discount-form'
+import { CodeControls } from '../../app/admin/discount-generator/code-controls'
+import { CheckoutSummary } from '../../app/checkout/place-order/checkout-summary'
 import type { StoreProduct } from '../../lib/storefront'
 
 const coffee: StoreProduct = { id: 'test-coffee', slug: 'test-coffee', name: 'قهوهٔ آزمون', category: 'blend', categoryLabel: 'ترکیبی', wholesale: false,
@@ -33,6 +37,8 @@ window.mountFormTest = kind => {
     grades: ['standard', 'vip'], basePrices: { standard: '2000000', vip: '3000000' }, overrides: {}, availability: {}, isActive: true, imagePublicId: null, removeImage: false, confirmRemoved: false,
   }} />)
   else if (kind === 'account') root.render(<div className="account-settings"><div><ProfileForm name="بهرام" email="test@acoffee.test" /><ChangePasswordForm /></div><AccountAddressForm /></div>)
+  else if (kind === 'coupon-admin') root.render(<><AdminNav /><DiscountForm /><section className="coupon-list"><h2>کدهای ساخته‌شده</h2><p dir="ltr">ABCD234567</p><CodeControls id="cm000000000000000000000001" code="ABCD234567" isActive updatedAt="2026-11-06T00:00:00.000Z" /></section></>)
+  else if (kind === 'coupon-checkout') root.render(<CheckoutSummary quote={{ checkoutKey: 'b9ec07be-a73b-47d8-b230-7247827c0d28', quoteHash: 'a'.repeat(64), subtotal: 200000, shippingFee: 0, total: 200000 }} initialShippingMethod={null} />)
   else if (kind === 'forgot') root.render(<ForgotPasswordForm enabled />)
   else if (kind === 'signup') root.render(<RegisterForm destination="/account" />)
   else if (kind === 'phone') root.render(<AccountPhoneForm phone={null} verifiedAt={null} />)

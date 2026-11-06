@@ -4,6 +4,7 @@ import type { Prisma } from '@/generated/prisma/client'
 import { getDb } from './db'
 import { isShippingMethod } from './order-options'
 import { grindSelectionSchema } from './validators/checkout'
+import { resolveDiscountCode } from './discount-codes'
 
 export class CheckoutError extends Error {}
 
@@ -18,7 +19,8 @@ export async function lastShippingMethod(userId: string, db: Pick<ReturnType<typ
 
 export async function checkoutQuote(
   userId: string,
-  db: Pick<ReturnType<typeof getDb>, 'cart' | 'address'> = getDb(),
+  db: Pick<ReturnType<typeof getDb>, 'cart' | 'address' | 'discountCode' | '$queryRaw'> = getDb(),
+  discountCode?: string,
 ) {
   const cart = await db.cart.findUnique({
     where: { userId },
@@ -69,17 +71,23 @@ export async function checkoutQuote(
     postalCode: address.postalCode,
     phone: address.phone,
   }
+  const coupon = discountCode ? await resolveDiscountCode(db, discountCode, userId, subtotal) : null
+  const discount = coupon?.amount ?? 0
   const quoteHash = createHash('sha256')
-    .update(JSON.stringify({ items, shipping, fee }))
+    .update(JSON.stringify({ items, shipping, fee, coupon }))
     .digest('hex')
+  const baseQuoteHash = createHash('sha256').update(JSON.stringify({ items, shipping, fee, coupon: null })).digest('hex')
   return {
     checkoutKey: cart.checkoutKey,
     items,
     shipping,
     subtotal,
     shippingFee: fee,
-    total: subtotal + fee,
+    discount,
+    coupon,
+    total: subtotal - discount + fee,
     quoteHash,
+    baseQuoteHash,
   }
 }
 
