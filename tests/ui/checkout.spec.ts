@@ -29,6 +29,7 @@ test.describe('Neon checkout', () => {
     try {
       const users = await db.user.findMany({ where: { email: { in: identities } }, select: { id: true } })
       const ids = users.map((user) => user.id)
+      await db.paymentAttempt.deleteMany({ where: { order: { userId: { in: ids } } } })
       await db.orderItem.deleteMany({ where: { order: { userId: { in: ids } } } })
       await db.order.deleteMany({ where: { userId: { in: ids } } })
       await db.user.deleteMany({ where: { id: { in: ids } } })
@@ -76,17 +77,19 @@ test.describe('Neon checkout', () => {
     const cart = await db.cart.findUniqueOrThrow({ where: { userId: user.id } })
     await db.cartItem.updateMany({ where: { cartId: cart.id }, data: { quantity: 2 } })
     await page.getByLabel('روش دریافت سفارش').selectOption('TIPAX')
-    await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+    await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
     await expect(page.locator('.form-error')).toContainText('تغییر کرده', { timeout: 30_000 })
     expect(await db.order.count({ where: { userId: user.id } })).toBe(0)
     await page.reload()
     await page.screenshot({ path: `artifacts/ui/place-order-${testInfo.project.name}.png`, fullPage: true })
     const requestPromise = page.waitForRequest((request) => request.method() === 'POST' && request.url().endsWith('/checkout/place-order'))
     await page.getByLabel('روش دریافت سفارش').selectOption('TIPAX')
-    await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+    await page.route('https://sandbox.zarinpal.com/pg/StartPay/**', route => route.fulfill({ body: 'Sandbox reached; no bank submission in checkout test.' }))
+    await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
     const request = await requestPromise
-    await expect(page).toHaveURL(/\/orders\/[a-z0-9-]+$/, { timeout: 40_000 })
+    await expect(page).toHaveURL(/sandbox\.zarinpal\.com|\/orders\/[a-z0-9-]+$/, { timeout: 40_000 })
     const order = await db.order.findFirstOrThrow({ where: { userId: user.id }, include: { items: true } })
+    await page.goto(`/orders/${order.id}`)
     expect(order.paymentStatus).toBe('UNPAID')
     expect(order.status).toBe('PENDING')
     expect(order.shippingFeeFinalized).toBe(false)
@@ -100,7 +103,7 @@ test.describe('Neon checkout', () => {
     expect(order.phone).toBe('09121234567')
     expect(order.alternatePhone).toBe('02112345678')
     expect(await db.product.findUniqueOrThrow({ where: { id: product.id } })).toEqual(product)
-    await expect(page.getByRole('button', { name: 'پرداخت آنلاین به‌زودی' })).toBeDisabled()
+    await expect(page.getByText('هزینهٔ ارسال جداگانه دریافت می‌شود.', { exact: false })).toBeVisible()
 
     const headers = { 'next-action': request.headers()['next-action'], 'content-type': request.headers()['content-type'], origin: 'http://127.0.0.1:3310' }
     const body = request.postData()!
@@ -120,7 +123,7 @@ test.describe('Neon checkout', () => {
     // The next checkout fetches the address from Neon; edits keep old snapshots.
     await page.goto('/checkout/address')
     await expect(page.getByLabel('کد پستی', { exact: true })).toHaveValue('1234567890')
-    await expect(page.getByLabel('شماره تماس', { exact: true })).toHaveValue('09121234567')
+    await expect(page.getByLabel('شمارهٔ موبایل تأییدشده')).toHaveValue('09121234567')
     await page.getByLabel('نشانی کامل', { exact: true }).fill('نشانی جدید آزمایشی، پلاک ۴۲، واحد ۲')
     await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
     await expect(page).toHaveURL(/\/checkout\/place-order$/, { timeout: 40_000 })

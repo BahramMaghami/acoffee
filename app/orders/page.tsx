@@ -40,6 +40,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   {formatPersianDate(order.createdAt)}
                 </time>
               </header>
+              {order.paymentEnvironment === 'SANDBOX' && <p>سفارش آزمایشی — مبلغ واقعی پرداخت نشده است.</p>}
               <OrderStatuses
                 payment={order.paymentStatus}
                 shipping={order.status}
@@ -66,7 +67,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   </span>
                   <strong>{formatPrice(Number(order.total))}</strong>
                   {!order.shippingFeeFinalized && (
-                    <small>هزینهٔ ارسال هنوز نهایی نشده است.</small>
+                    <small>هزینهٔ ارسال جداگانه دریافت می‌شود.</small>
                   )}
                 </div>
                 <Button asChild variant="outline" size="sm">

@@ -4,11 +4,14 @@ import { createRequire } from 'node:module'
 import { build } from 'esbuild'
 import { checkoutQuote } from '../../lib/checkout'
 import { generateDiscountCode, discountConsumptionStage } from '../../lib/discount-codes'
+process.env.ZARINPAL_SANDBOX = 'true'
+process.env.ZARINPAL_MERCHANT_ID = 'f58f584a-2d2a-4daa-974a-8259d22ba8e6'
+process.env.PAYMENT_BASE_URL = 'http://localhost:3000'
 
 async function actions(path: string, state: unknown) {
   const result = await build({ entryPoints: [path], bundle: true, write: false, platform: 'node', format: 'cjs', conditions: ['react-server'], plugins: [{ name: 'boundaries', setup(builder) {
     builder.onResolve({ filter: /^(next\/cache|@\/lib\/(current-user|db|auth-error))$/ }, args => ({ path: args.path, namespace: 'stub' }))
-    builder.onResolve({ filter: /^\.\/db$/ }, args => args.importer.endsWith('checkout.ts') ? { path: 'db', namespace: 'stub' } : undefined)
+    builder.onResolve({ filter: /^\.\/db$/ }, () => ({ path: 'db', namespace: 'stub' }))
     builder.onLoad({ filter: /.*/, namespace: 'stub' }, args => {
       if (args.path === 'next/cache') return { contents: 'export const revalidatePath=()=>{};' }
       if (args.path.endsWith('current-user')) return { contents: 'export const getCurrentUser=async()=>state.actor;export const requireAdmin=async()=>{if(state.actor?.role!=="ADMIN")throw Error("denied");return state.actor};' }
@@ -27,7 +30,7 @@ function fixture() {
   const cart = { checkoutKey: 'b9ec07be-a73b-47d8-b230-7247827c0d28', items: [{ quantity: 2, grind: 'WHOLE_BEAN', grindDevice: null,
     product: { id: 'sku', slug: 'coffee', name: 'قهوه', weightGrams: 500, price: 800000, isActive: true, catalogProduct: { isActive: true }, grindOptions: ['WHOLE_BEAN'] } }] }
   const state = { actor: { id: 'owner', role: 'CUSTOMER' } as { id: string; role: string } | null, code, cart, db: {} as unknown,
-    saved: null as Record<string, unknown> | null, redemptions: [] as { userId: string; orderId: string; discountCodeId: string; amount: number }[], createdCodes: [] as Record<string, unknown>[], locks: 0, failLedger: false }
+    saved: null as Record<string, unknown> | null, redemptions: [] as { userId: string; orderId: string; discountCodeId: string; amount: number }[], reservations: [] as Record<string, unknown>[], createdCodes: [] as Record<string, unknown>[], locks: 0, failLedger: false }
   const db = {
     cart: { findUnique: async () => cart },
     address: { findFirst: async () => ({ recipientName: 'آزمون', province: 'تهران', city: 'تهران', addressLine: 'آدرس تست پلاک ۱', postalCode: '1234567890', phone: '09121234567' }) },
@@ -40,16 +43,17 @@ function fixture() {
       } },
     order: { findUnique: async () => state.saved, create: async ({ data }: { data: Record<string, unknown> }) => { state.saved = { ...data, id: 'order' }; return { id: 'order' } } },
     discountRedemption: { create: async ({ data }: { data: typeof state.redemptions[number] }) => { if (state.failLedger) throw new Error('rollback'); state.redemptions.push(data); return data } },
+    discountReservation: { create: async ({ data }: { data: Record<string, unknown> }) => { if (state.failLedger) throw new Error('rollback'); state.reservations.push(data); return data } },
     $queryRaw: async (sql: TemplateStringsArray, ...values: unknown[]) => {
       const text = sql.join('?')
       if (text.includes('FROM "DiscountCode"') && text.includes('FOR UPDATE')) state.locks++
-      if (text.includes('COUNT(DISTINCT')) return [{ users: new Set(state.redemptions.map(r => r.userId)).size, userUses: state.redemptions.filter(r => r.userId === values[0]).length }]
+      if (text.includes('COUNT(DISTINCT')) { const uses = [...state.redemptions, ...state.reservations]; return [{ users: new Set(uses.map(r => r.userId)).size, userUses: uses.filter(r => r.userId === values[0]).length }] }
       return []
     },
   }
   state.db = { ...db, $transaction: async (callback: (tx: typeof db) => unknown) => {
-    const saved = state.saved, count = state.redemptions.length
-    try { return await callback(db) } catch (error) { state.saved = saved; state.redemptions.splice(count); throw error }
+    const saved = state.saved, count = state.redemptions.length, holds = state.reservations.length
+    try { return await callback(db) } catch (error) { state.saved = saved; state.redemptions.splice(count); state.reservations.splice(holds); throw error }
   } }
   return state
 }
@@ -77,7 +81,7 @@ test('admin generation and status enforce authorization, limits, expiry and stal
   assert.equal((await api.setDiscountCodeStatusAction({ ...status, isActive: true })).success, false)
 })
 
-test('preview is read-only; placement snapshots discounted totals and consumes once, with rollback on failure', async () => {
+test('preview is read-only; placement snapshots discounted totals and reserves once, with rollback on failure', async () => {
   const state = fixture(), api = await actions('actions/discount-code.actions.ts', state), order = await actions('actions/order.actions.ts', state)
   const db = state.db as Parameters<typeof checkoutQuote>[1]
   const base = await checkoutQuote('owner', db)
@@ -97,11 +101,13 @@ test('preview is read-only; placement snapshots discounted totals and consumes o
   assert.equal((await order.placeOrderAction(place)).success, true)
   assert.ok(state.locks > 0)
   assert.equal(state.saved!.discount, 320000); assert.equal(state.saved!.total, 1280000); assert.equal(state.saved!.discountCode, state.code.code)
-  assert.deepEqual(state.redemptions[0], { orderId: 'order', userId: 'owner', discountCodeId: state.code.id, amount: 320000 })
+  assert.equal(state.redemptions.length, 0)
+  assert.equal(state.reservations[0].orderId, 'order'); assert.equal(state.reservations[0].amount, 320000)
+  assert.equal(state.reservations[0].environment, 'SANDBOX')
   state.code.isActive = false
   assert.equal((await order.placeOrderAction(place)).success, true)
-  assert.equal(state.redemptions.length, 1)
-  assert.equal(discountConsumptionStage, 'ORDER_PLACED')
+  assert.equal(state.reservations.length, 1); assert.equal(state.redemptions.length, 0)
+  assert.equal(discountConsumptionStage, 'PAYMENT_SETTLED')
 })
 
 test('placement rechecks quotas, active status and expiration after a successful preview', async () => {

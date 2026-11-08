@@ -25,6 +25,7 @@ export async function getAdminOrders(requested: unknown, requestedUserId?: unkno
       skip: (page - 1) * 20, take: 20, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: {
         id: true, number: true, createdAt: true, updatedAt: true, total: true,
+        paymentEnvironment: true, payments: { select: { method: true, status: true } },
         paymentStatus: true, status: true, paidAt: true, deliveredAt: true, shippingMethod: true,
         user: { select: { name: true } }, recipientName: true,
         items: { select: { id: true, productName: true, quantity: true, weightGrams: true, grind: true, grindDevice: true }, orderBy: { id: 'asc' } },
@@ -42,7 +43,7 @@ export async function getAdminOrders(requested: unknown, requestedUserId?: unkno
 export async function getAdminOrder(id: string) {
   await requireAdmin()
   const order = await getDb().order.findUnique({
-    where: { id }, include: { user: { select: { name: true, email: true } }, items: { orderBy: { id: 'asc' } } },
+    where: { id }, include: { user: { select: { name: true, email: true } }, items: { orderBy: { id: 'asc' } }, payments: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] } },
   }).catch((error: unknown) => {
     logAuthError('admin-order', error)
     throw new Error('جزئیات سفارش دریافت نشد.')

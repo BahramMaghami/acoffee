@@ -7,29 +7,154 @@ import { OrderControls } from '../order-controls'
 import { AdminOrderState } from '../order-state'
 import '../orders.css'
 import { preparationLabel, shippingLabel } from '@/lib/order-options'
+import { PaymentHistory } from '@/app/orders/[id]/payment-history'
+import { paymentView } from '@/lib/payment-view'
+import { canDeleteFinancialOrder } from '@/lib/payment-rules'
+import { ManualPaymentForm } from '../manual-payment-form'
 
 export const metadata = { title: 'جزئیات سفارش — مدیریت' }
-export default async function AdminOrderPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminOrderPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const order = await getAdminOrder((await params).id)
-  return <div className="shell admin-page">
-    <header className="admin-heading"><div><span className="eyebrow">مدیریت سفارش</span><h1>سفارش شمارهٔ {formatNumber(order.number)}</h1><p>ثبت‌شده در {formatPersianDateTime(order.createdAt)}</p></div><Button asChild variant="outline" size="sm"><Link href="/admin/orders">همهٔ سفارش‌ها</Link></Button></header>
-    <section className="admin-order-panel"><h2>وضعیت سفارش</h2>
-      <AdminOrderState payment={order.paymentStatus} status={order.status} paidAt={order.paidAt} deliveredAt={order.deliveredAt} />
-      <OrderControls detail id={order.id} number={formatNumber(order.number)} updatedAt={order.updatedAt.toISOString()} paid={order.paymentStatus === 'PAID'} delivered={order.status === 'DELIVERED'} />
-    </section>
-    <div className="admin-order-detail-grid">
-      <section className="admin-order-panel"><h2>خریدار و نشانی گیرنده</h2><p>{order.user.name}</p><p><bdi>{order.user.email}</bdi></p><hr />
-        <p>روش دریافت: {shippingLabel(order.shippingMethod)}</p>
-        <p>گیرنده: {order.recipientName}</p><p>{order.province}، {order.city}، {order.addressLine}</p><p>کد پستی: <bdi>{order.postalCode}</bdi></p><p>تماس: <bdi>{order.phone}</bdi></p>
-        {order.alternatePhone && <p>شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi></p>}
+  const payment = paymentView(order)
+  console.log(
+    payment.canManual +
+      '======' +
+      payment.active +
+      '========' +
+      payment.settled,
+  )
+  return (
+    <div className="shell admin-page">
+      <header className="admin-heading">
+        <div>
+          <span className="eyebrow">مدیریت سفارش</span>
+          <h1>سفارش شمارهٔ {formatNumber(order.number)}</h1>
+          <p>ثبت‌شده در {formatPersianDateTime(order.createdAt)}</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin/orders">همهٔ سفارش‌ها</Link>
+        </Button>
+      </header>
+      <section className="admin-order-panel">
+        <h2>وضعیت سفارش</h2>
+        {order.paymentEnvironment === 'SANDBOX' && (
+          <p>سفارش آزمایشی — در درآمد واقعی محاسبه نمی‌شود</p>
+        )}
+        <AdminOrderState
+          payment={order.paymentStatus}
+          status={order.status}
+          paidAt={order.paidAt}
+          deliveredAt={order.deliveredAt}
+        />
+        <OrderControls
+          detail
+          id={order.id}
+          number={formatNumber(order.number)}
+          updatedAt={order.updatedAt.toISOString()}
+          paid={order.paymentStatus === 'PAID'}
+          delivered={order.status === 'DELIVERED'}
+          canDelete={canDeleteFinancialOrder(order)}
+        />
       </section>
-      <section className="admin-order-panel"><h2>مبلغ سفارش</h2><dl className="admin-order-totals">
-        <div><dt>جمع کالاها</dt><dd>{formatPrice(Number(order.subtotal))}</dd></div>
-        <div><dt>تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}</dt><dd>{formatPrice(Number(order.discount))}</dd></div>
-        <div><dt>ارسال</dt><dd>{order.shippingFeeFinalized ? formatPrice(Number(order.shippingFee)) : 'هنوز نهایی نشده'}</dd></div>
-        <div><dt>مبلغ ثبت‌شده</dt><dd>{formatPrice(Number(order.total))}</dd></div>
-      </dl></section>
+      <section className="admin-order-panel">
+        <h2>پرداخت و سوابق مالی</h2>
+        <p>{payment.label} · هزینهٔ ارسال جداگانه دریافت می‌شود.</p>
+        <ManualPaymentForm
+          key={order.updatedAt.toISOString()}
+          orderId={order.id}
+          updatedAt={order.updatedAt.toISOString()}
+          amount={Number(order.total)}
+          canManual={payment.canManual}
+          active={payment.active}
+          enabled={payment.enabled}
+          voidPaymentId={
+            order.payments.find(
+              (p) => p.method === 'MANUAL' && p.status === 'SUCCEEDED',
+            )?.id
+          }
+        />
+
+        {!payment.canManual && !payment.active && !payment.settled && (
+          <p>برای تسویه، مشتری باید قیمت روز سفارش را دوباره تأیید کند.</p>
+        )}
+        <PaymentHistory payments={order.payments} admin />
+      </section>
+      <div className="admin-order-detail-grid">
+        <section className="admin-order-panel">
+          <h2>خریدار و نشانی گیرنده</h2>
+          <p>{order.user.name}</p>
+          <p>
+            <bdi>{order.user.email}</bdi>
+          </p>
+          <hr />
+          <p>روش دریافت: {shippingLabel(order.shippingMethod)}</p>
+          <p>گیرنده: {order.recipientName}</p>
+          <p>
+            {order.province}، {order.city}، {order.addressLine}
+          </p>
+          <p>
+            کد پستی: <bdi>{order.postalCode}</bdi>
+          </p>
+          <p>
+            تماس: <bdi>{order.phone}</bdi>
+          </p>
+          {order.alternatePhone && (
+            <p>
+              شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi>
+            </p>
+          )}
+        </section>
+        <section className="admin-order-panel">
+          <h2>مبلغ سفارش</h2>
+          <dl className="admin-order-totals">
+            <div>
+              <dt>جمع کالاها</dt>
+              <dd>{formatPrice(Number(order.subtotal))}</dd>
+            </div>
+            <div>
+              <dt>
+                تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}
+              </dt>
+              <dd>{formatPrice(Number(order.discount))}</dd>
+            </div>
+            <div>
+              <dt>ارسال</dt>
+              <dd>
+                {order.shippingFeeFinalized
+                  ? formatPrice(Number(order.shippingFee))
+                  : 'جداگانه دریافت می‌شود'}
+              </dd>
+            </div>
+            <div>
+              <dt>مبلغ ثبت‌شده</dt>
+              <dd>{formatPrice(Number(order.total))}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+      <section className="admin-order-panel">
+        <h2>محصولات سفارش</h2>
+        <ul className="admin-order-items">
+          {order.items.map((item) => (
+            <li key={item.id}>
+              <div>
+                <strong>{item.productName}</strong>
+                <p>
+                  {formatNumber(item.quantity)} بسته ·{' '}
+                  {formatNumber(item.weightGrams)} گرم ·{' '}
+                  {preparationLabel(item.grind, item.grindDevice)} · هر بسته{' '}
+                  {formatPrice(Number(item.unitPrice))}
+                </p>
+              </div>
+              <span>{formatPrice(Number(item.lineTotal))}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
-    <section className="admin-order-panel"><h2>محصولات سفارش</h2><ul className="admin-order-items">{order.items.map(item => <li key={item.id}><div><strong>{item.productName}</strong><p>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم · {preparationLabel(item.grind, item.grindDevice)} · هر بسته {formatPrice(Number(item.unitPrice))}</p></div><span>{formatPrice(Number(item.lineTotal))}</span></li>)}</ul></section>
-  </div>
+  )
 }

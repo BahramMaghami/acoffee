@@ -74,5 +74,6 @@ export function useCart() {
     save(parseCart(JSON.stringify(next)))
   }
 
-  return { items, count, add, setQuantity, setPreparation, hydrated }
+  function replace(items: CartItem[]) { save(parseCart(JSON.stringify(items))) }
+  return { items, count, add, setQuantity, setPreparation, replace, hydrated }
 }

@@ -36,6 +36,34 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PaymentEnvironment {
+  SANDBOX
+  LIVE
+}
+
+enum PaymentMethod {
+  ZARINPAL
+  MANUAL
+  DISCOUNT
+}
+
+enum PaymentAttemptStatus {
+  REQUESTING
+  PENDING
+  VERIFYING
+  UNKNOWN
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  VOIDED
+}
+
+enum DiscountReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+}
+
 enum DiscountCodeType {
   PERCENT
   FIXED
@@ -53,6 +81,7 @@ model DiscountCode {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   redemptions DiscountRedemption[]
+  reservations DiscountReservation[]
 
   @@index([createdAt])
 }
@@ -68,8 +97,60 @@ model DiscountRedemption {
   order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
   amount Decimal @db.Decimal(14, 0)
   consumedAt DateTime @default(now()) @db.Timestamptz(3)
+  /// Null is a historical, real-world consumption; never rewritten by migration.
+  environment PaymentEnvironment?
 
   @@index([discountCodeId, userId])
+}
+
+model DiscountReservation {
+  id String @id @default(cuid())
+  discountCodeId String
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Restrict)
+  userId String
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  environment PaymentEnvironment
+  amount Decimal @db.Decimal(14, 0)
+  status DiscountReservationStatus @default(ACTIVE)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([discountCodeId, environment, status, userId])
+}
+
+model PaymentAttempt {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  method PaymentMethod
+  environment PaymentEnvironment
+  status PaymentAttemptStatus
+  amountRial Decimal @db.Decimal(16, 0)
+  merchantId String? @db.VarChar(36)
+  authority String? @db.VarChar(36)
+  referenceId String? @db.VarChar(100)
+  errorCode String? @db.VarChar(80)
+  expiresAt DateTime @db.Timestamptz(3)
+  leaseToken String? @db.VarChar(36)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  verificationStartedAt DateTime? @db.Timestamptz(3)
+  settledAt DateTime? @db.Timestamptz(3)
+  actorId String?
+  actorName String? @db.VarChar(100)
+  note String? @db.VarChar(500)
+  voidedAt DateTime? @db.Timestamptz(3)
+  voidedById String?
+  voidedByName String? @db.VarChar(100)
+  voidReason String? @db.VarChar(500)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([environment, authority])
+  @@unique([environment, merchantId, referenceId])
+  @@index([orderId, createdAt])
+  @@index([environment, status, updatedAt])
 }
 
 enum GrindOption {
@@ -244,6 +325,8 @@ model Product {
 }
 
 model Cart {
+  /// Set only by the owned-order reprice action, consumed at checkout.
+  repriceSourceId String?
   id             String     @id @default(cuid())
   checkoutKey    String     @unique @default(dbgenerated("gen_random_uuid()::text")) @db.VarChar(36)
   userId         String?    @unique
@@ -285,6 +368,14 @@ model Order {
   user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   status        OrderStatus   @default(PENDING)
   paymentStatus PaymentStatus @default(UNPAID)
+  paymentEnvironment PaymentEnvironment?
+  paymentExpiresAt DateTime? @db.Timestamptz(3)
+  supersededAt DateTime? @db.Timestamptz(3)
+  repricedFromId String?
+  repricedFrom Order? @relation("RepricedOrders", fields: [repricedFromId], references: [id], onDelete: SetNull)
+  replacements Order[] @relation("RepricedOrders")
+  payments PaymentAttempt[]
+  discountReservation DiscountReservation?
   /// Amounts are calculated on the server from current product prices.
   subtotal      Decimal       @db.Decimal(14, 0)
   shippingFee   Decimal       @default(0) @db.Decimal(14, 0)

@@ -42,3 +42,7 @@
 .coupon-input-row button { flex-shrink: 0; }
 .coupon-applied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 12px; }
 .address-form small { display: block; font-size: 12px; line-height: 2; margin-top: 8px; color: var(--muted-foreground); }
+.payment-controls { display: grid; gap: 12px; margin-block: 18px; }
+.payment-controls button:not(.bg-primary) { color: var(--foreground); }
+.payment-history { display: grid; gap: 14px; margin-block: 20px; font-size: 13px; }
+.payment-history article { border-top: 1px solid var(--border); padding-top: 16px; overflow-wrap: anywhere; }

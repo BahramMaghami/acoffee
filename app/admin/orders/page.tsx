@@ -7,6 +7,7 @@ import { AdminOrderState } from './order-state'
 import { OrderControls } from './order-controls'
 import './orders.css'
 import { preparationLabel, shippingLabel } from '@/lib/order-options'
+import { canDeleteFinancialOrder } from '@/lib/payment-rules'
 
 export const metadata = { title: 'مدیریت سفارش‌ها' }
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ page?: string | string[]; userId?: string | string[] }> }) {
@@ -34,10 +35,11 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <header><div><h2>سفارش {formatNumber(order.number)} · {order.user.name}</h2><p>گیرنده: {order.recipientName}</p></div><time dateTime={order.createdAt.toISOString()}>{formatPersianDateTime(order.createdAt)}</time></header>
       <AdminOrderState payment={order.paymentStatus} status={order.status} paidAt={order.paidAt} deliveredAt={order.deliveredAt} />
       <p>روش دریافت: {shippingLabel(order.shippingMethod)}</p>
+      {order.paymentEnvironment === 'SANDBOX' && <p>سفارش آزمایشی</p>}
       <ul className="admin-order-items">{order.items.map(item => <li key={item.id}><span>{item.productName}</span><span>{formatNumber(item.quantity)} بسته · {formatNumber(item.weightGrams)} گرم · {preparationLabel(item.grind, item.grindDevice)}</span></li>)}</ul>
       <footer><strong>{formatPrice(Number(order.total))}</strong><div className="admin-order-controls">
         <Button asChild variant="outline" size="sm"><Link href={`/admin/orders/${order.id}`} aria-label={`جزئیات سفارش ${formatNumber(order.number)}`}>جزئیات سفارش</Link></Button>
-        <OrderControls id={order.id} number={formatNumber(order.number)} updatedAt={order.updatedAt.toISOString()} paid={order.paymentStatus === 'PAID'} delivered={order.status === 'DELIVERED'} />
+        <OrderControls id={order.id} number={formatNumber(order.number)} updatedAt={order.updatedAt.toISOString()} paid={order.paymentStatus === 'PAID'} delivered={order.status === 'DELIVERED'} canDelete={canDeleteFinancialOrder(order)} />
       </div></footer>
     </article>)}</div> : <p className="admin-orders-empty">{data.user ? 'این کاربر هنوز سفارشی ثبت نکرده است.' : 'هنوز سفارشی ثبت نشده است.'}</p>}
     {data.pages > 1 && <nav className="admin-orders-pagination" aria-label="صفحه‌بندی سفارش‌های مدیریت">

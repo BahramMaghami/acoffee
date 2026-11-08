@@ -31,6 +31,7 @@ export default defineConfig({
     url: "http://127.0.0.1:3310/login",
     reuseExistingServer: false,
     env: { ACOFFEE_E2E: '1', DATABASE_URL: testDb?.pooled ?? '', DIRECT_URL: testDb?.direct ?? '',
+      ZARINPAL_SANDBOX: 'true', ZARINPAL_MERCHANT_ID: 'f58f584a-2d2a-4daa-974a-8259d22ba8e6', PAYMENT_BASE_URL: 'http://127.0.0.1:3310',
       AUTH_SECRET: 'local-test-secret-only-not-for-production-2026', AUTH_URL: 'http://127.0.0.1:3310',
       SMTP_HOST: '127.0.0.1', SMTP_PORT: '3325', SMTP_FROM: 'آ <noreply@acoffee.test>', SMTP_USER: '', SMTP_PASS: '' },
     timeout: 90_000,

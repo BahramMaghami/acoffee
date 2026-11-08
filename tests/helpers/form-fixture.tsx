@@ -17,6 +17,8 @@ import { CodeControls } from '../../app/admin/discount-generator/code-controls'
 import { CheckoutSummary } from '../../app/checkout/place-order/checkout-summary'
 import { AddressForm } from '../../app/checkout/address/address-form'
 import type { StoreProduct } from '../../lib/storefront'
+import { PaymentControls } from '../../app/orders/[id]/payment-controls'
+import { ManualPaymentForm } from '../../app/admin/orders/manual-payment-form'
 
 const coffee: StoreProduct = { id: 'test-coffee', slug: 'test-coffee', name: 'قهوهٔ آزمون', category: 'blend', categoryLabel: 'ترکیبی', wholesale: false,
   imageUrl: null, description: '', origin: '', weights: [500], roasts: ['medium'], grades: ['standard'], prices: { '500-medium-standard': 150000 },
@@ -43,6 +45,9 @@ window.mountFormTest = kind => {
   else if (kind === 'coupon-admin') root.render(<><AdminNav /><DiscountForm /><section className="coupon-list"><h2>کدهای ساخته‌شده</h2><p dir="ltr">ABCD234567</p><CodeControls id="cm000000000000000000000001" code="ABCD234567" isActive updatedAt="2026-11-06T00:00:00.000Z" /></section></>)
   else if (kind === 'coupon-checkout') root.render(<CheckoutSummary quote={{ checkoutKey: 'b9ec07be-a73b-47d8-b230-7247827c0d28', quoteHash: 'a'.repeat(64), subtotal: 200000, shippingFee: 0, total: 200000 }} initialShippingMethod={null} />)
   else if (kind === 'forgot') root.render(<ForgotPasswordForm enabled />)
+  else if (kind === 'payment') root.render(<section className="order-summary"><h1>پرداخت سفارش</h1><p>هزینهٔ ارسال جداگانه دریافت می‌شود.</p><PaymentControls orderId="cm000000000000000000000001" enabled settled={false} active canStart={false} canReprice={false} /></section>)
+  else if (kind === 'reprice') root.render(<PaymentControls orderId="cm000000000000000000000001" enabled settled={false} active={false} canStart={false} canReprice />)
+  else if (kind === 'manual-payment') root.render(<section className="admin-order-panel"><h1>تسویهٔ سفارش</h1><ManualPaymentForm orderId="cm000000000000000000000001" enabled updatedAt="2026-11-08T10:00:00.000Z" amount={200000} canManual active={false} /></section>)
   else if (kind === 'signup') root.render(<RegisterForm destination="/account" />)
   else if (kind === 'phone') root.render(<AccountPhoneForm phone={null} verifiedAt={null} />)
   else if (kind === 'verified-phone') root.render(<AccountPhoneForm phone="09121234567" verifiedAt="2026-11-03T10:00:00Z" />)

@@ -17,7 +17,10 @@ test.beforeAll(async () => {
           export const saveProductAction=run, updateProfileAction=run, changePasswordAction=run, saveAddressAction=run, saveCheckoutCartAction=run, requestPasswordResetAction=run, resetPasswordAction=run, logoutAction=run;
           export async function requestSignupOtpAction(input) { const result=await run(input); return {...result,challengeId:'b9ec07be-a73b-47d8-b230-7247827c0d28',expiresAt:new Date(Date.now()+120000).toISOString(),resendAt:new Date().toISOString()}; }
           export async function registerAction(input) { const result=await run(input); return {...result,redirectTo:'/account'}; }
-          export async function placeOrderAction(input) { return {...await run(input),orderId:'test-order'}; }
+          export async function placeOrderAction(input) { window.formTestOrderPayload=input; return {...await run(input),orderId:'test-order'}; }
+          export async function startPaymentAction(input) { const result=await run(input); window.formTestPayload={...window.formTestOrderPayload,...input}; return result; }
+          export const checkPaymentAction=run, recordManualPaymentAction=run, voidManualPaymentAction=run;
+          export async function prepareOrderRepriceAction(input) { return {...await run(input),items:[{productId:'test-coffee-500',quantity:1,grind:'GROUND',grindDevice:null}]}; }
           export async function createDiscountCodeAction(input) { return {...await run(input),code:'ABCD234567',expiresAt:'2026-11-13T10:00:00Z'}; }
           export const setDiscountCodeStatusAction=run;
           export async function applyDiscountCodeAction(input) { return {...await run(input),quote:{code:'ABCD234567',checkoutKey:input.checkoutKey,quoteHash:'b'.repeat(64),subtotal:200000,shippingFee:0,discount:40000,total:160000}}; }
@@ -28,7 +31,7 @@ test.beforeAll(async () => {
     } }],
   })
   bundle = result.outputFiles[0].text
-  css = (await Promise.all(['app/admin/admin.css', 'app/admin/discount-generator/discounts.css', 'app/admin/products/products.css', 'app/checkout/checkout.css', 'app/account/account.css'].map(path => readFile(path, 'utf8')))).join('\n')
+  css = (await Promise.all(['app/admin/admin.css', 'app/admin/orders/orders.css', 'app/admin/discount-generator/discounts.css', 'app/admin/products/products.css', 'app/checkout/checkout.css', 'app/account/account.css'].map(path => readFile(path, 'utf8')))).join('\n')
 })
 
 async function openForm(page: Page, kind: string) {
@@ -40,6 +43,52 @@ async function openForm(page: Page, kind: string) {
   await page.addScriptTag({ content: bundle })
   await page.evaluate(kind => window.mountFormTest(kind), kind)
 }
+
+test('pending payments allow checking only, and repricing requires confirmation before replacing the cart', async ({ page }, info) => {
+  await openForm(page, 'payment')
+  await expect(page.getByRole('button', { name: 'پرداخت سفارش', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'بررسی قیمت روز و پرداخت' })).toHaveCount(0)
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('button', { name: 'بررسی وضعیت پرداخت' }).click()
+  await expect(page.getByRole('status')).toContainText('دوباره پرداخت نکن')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await expect(page.getByRole('button', { name: 'بررسی وضعیت پرداخت' })).toHaveCSS('color', await page.locator('body').evaluate(el => getComputedStyle(el).color))
+    await page.screenshot({ path: info.outputPath(`payment-${theme}.png`), fullPage: true })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await openForm(page, 'reprice')
+  await page.getByRole('button', { name: 'بررسی قیمت روز و پرداخت' }).click()
+  await expect(page.getByRole('dialog')).toContainText('کد تخفیف قبلی منتقل نمی‌شود')
+  await page.getByRole('button', { name: 'انتقال به سبد و بررسی' }).click()
+  await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/cart')
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('acoffee:preview-cart:v1')!))).toEqual([{ productId: 'test-coffee-500', quantity: 1, grind: 'GROUND', grindDevice: null }])
+})
+
+test('manual settlement requires a reason and confirmation; a failed request keeps entered receipt and reason', async ({ page }, info) => {
+  await openForm(page, 'manual-payment')
+  await page.getByRole('button', { name: 'ثبت پرداخت خارج از درگاه', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.getByLabel('توضیح و دلیل پرداخت خارج از درگاه').fill('دریافت وجه با کارت به کارت')
+  await page.getByLabel('شمارهٔ رسید (اختیاری)').fill('123456')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+    await expect(page.getByLabel('شمارهٔ رسید (اختیاری)')).toHaveCSS('color', await page.locator('body').evaluate(el => getComputedStyle(el).color))
+    await page.screenshot({ path: info.outputPath(`manual-payment-${theme}.png`), fullPage: true })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.getByRole('button', { name: 'ثبت پرداخت خارج از درگاه', exact: true }).click()
+  await page.evaluate(() => { window.formTestMode = 'offline' })
+  await page.getByRole('dialog').getByRole('button', { name: 'ثبت تغییر' }).click()
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('ارتباط برقرار نشد')
+  await page.getByRole('button', { name: 'انصراف', exact: true }).click()
+  await expect(page.getByLabel('شمارهٔ رسید (اختیاری)')).toHaveValue('123456')
+  await page.evaluate(() => { window.formTestMode = 'success' })
+  await page.getByRole('button', { name: 'ثبت پرداخت خارج از درگاه', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'ثبت تغییر' }).click()
+  await expect(page.getByRole('status')).toContainText('ذخیره شد')
+  expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ note: 'دریافت وجه با کارت به کارت', reference: '123456' })
+})
 
 test('address keeps verified mobile readonly and validates an optional alternate without losing failed input', async ({ page }, info) => {
   await openForm(page, 'address')
@@ -110,7 +159,7 @@ test('checkout coupon applies, removes, retains failed input and submits only th
   const form = page.getByRole('form', { name: 'اعمال کد تخفیف' })
   await page.getByLabel('روش دریافت سفارش').selectOption('POST')
   await form.getByLabel('کد تخفیف', { exact: true }).fill('abcd234567')
-  await expect(page.getByRole('button', { name: 'ثبت سفارش و ادامه' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'ثبت سفارش و پرداخت' })).toBeDisabled()
   await page.evaluate(() => { window.formTestMode = 'offline' })
   await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
   await expect(form.getByRole('alert')).toContainText('دوباره تلاش کن')
@@ -119,7 +168,7 @@ test('checkout coupon applies, removes, retains failed input and submits only th
   await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
   await expect(form.getByRole('status')).toContainText('ABCD234567')
   await expect(page.locator('.summary-total dd')).toHaveText('۱۶۰٬۰۰۰ تومان')
-  await expect(page.getByRole('button', { name: 'ثبت سفارش و ادامه' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'ثبت سفارش و پرداخت' })).toBeEnabled()
   for (const theme of ['light', 'dark']) {
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
     await page.screenshot({ path: info.outputPath(`coupon-checkout-${theme}.png`), fullPage: true, animations: 'disabled' })
@@ -130,7 +179,7 @@ test('checkout coupon applies, removes, retains failed input and submits only th
   await form.getByLabel('کد تخفیف', { exact: true }).fill('ABCD234567')
   await form.getByRole('button', { name: 'اعمال کد', exact: true }).click()
   await expect(form.getByRole('status')).toBeVisible()
-  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
   await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/orders/test-order')
   expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ discountCode: 'ABCD234567', quoteHash: 'b'.repeat(64), shippingMethod: 'POST' })
 })
@@ -206,12 +255,12 @@ test('delivery requires first choice, preserves it on failure and prefills previ
   await openForm(page, 'delivery')
   const method = page.getByLabel('روش دریافت سفارش')
   await expect(method).toHaveValue('')
-  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
   await expect(page.locator('#shipping-method-error')).toContainText('انتخاب کن')
   await expect(method.locator('option')).toHaveText(['روش دریافت را انتخاب کن', 'پست', 'تیپاکس', 'پیک'])
   await method.selectOption('COURIER')
   await page.evaluate(() => { window.formTestMode = 'offline' })
-  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
   await expect(page.getByRole('alert')).toContainText('ارتباط برقرار نشد')
   await expect(method).toHaveValue('COURIER')
   for (const theme of ['light', 'dark']) {
@@ -220,7 +269,7 @@ test('delivery requires first choice, preserves it on failure and prefills previ
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
   await page.evaluate(() => { window.formTestMode = 'success' })
-  await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
+  await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
   expect(await page.evaluate(() => window.formTestPayload)).toMatchObject({ shippingMethod: 'COURIER' })
   await expect.poll(() => page.evaluate(() => window.formTestRoute)).toBe('/orders/test-order')
   await openForm(page, 'return-delivery')

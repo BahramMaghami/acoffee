@@ -21,6 +21,13 @@
 [data-theme='dark'] .admin-order-delete { color: #ffb0b6; }
 .admin-orders-pagination { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 28px; font-size: 13px; }
 .admin-orders-empty { margin-block: 48px; color: var(--muted-foreground); }
+.manual-payment form { display: grid; gap: 14px; max-width: 560px; margin-block: 18px; }
+.manual-payment label { display: block; font-size: 13px; margin-bottom: 8px; }
+.manual-payment input, .manual-payment button { color: var(--foreground); }
+.manual-payment input { background: var(--background); }
+.manual-payment .field-error { color: var(--primary); }
+.payment-history { display: grid; gap: 14px; margin-block: 20px; font-size: 13px; }
+.payment-history article { border-top: 1px solid var(--border); padding-top: 16px; overflow-wrap: anywhere; }
 .admin-order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .admin-order-totals { display: grid; gap: 18px; font-size: 13px; }
 .admin-order-totals > div { display: flex; justify-content: space-between; gap: 10px; }

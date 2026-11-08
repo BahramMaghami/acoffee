@@ -63,7 +63,7 @@ export async function checkoutQuote(
     }
   })
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0)
-  // Delivery pricing and payment are a separate, upcoming feature.
+  // Shipping is settled separately from the online merchandise payment.
   const fee = 0
   if (!Number.isSafeInteger(subtotal) || subtotal + fee > 99_999_999_999_999)
     throw new CheckoutError('مبلغ سفارش بیش از حد مجاز است.')
@@ -79,10 +79,11 @@ export async function checkoutQuote(
   const coupon = discountCode ? await resolveDiscountCode(db, discountCode, userId, subtotal) : null
   const discount = coupon?.amount ?? 0
   const quoteHash = createHash('sha256')
-    .update(JSON.stringify({ items, shipping, fee, coupon }))
+    .update(JSON.stringify({ items, shipping, fee, coupon, source: cart.repriceSourceId ?? null }))
     .digest('hex')
-  const baseQuoteHash = createHash('sha256').update(JSON.stringify({ items, shipping, fee, coupon: null })).digest('hex')
+  const baseQuoteHash = createHash('sha256').update(JSON.stringify({ items, shipping, fee, coupon: null, source: cart.repriceSourceId ?? null })).digest('hex')
   return {
+    repriceSourceId: cart.repriceSourceId ?? null,
     checkoutKey: cart.checkoutKey,
     items,
     shipping,

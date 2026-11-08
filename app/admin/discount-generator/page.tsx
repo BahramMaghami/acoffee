@@ -14,11 +14,12 @@ export default async function DiscountGeneratorPage({ searchParams }: { searchPa
   return <div className="shell admin-page">
     <header className="admin-heading"><div><span className="eyebrow">مدیریت آ</span><h1>کدهای تخفیف</h1><p>{formatNumber(data.total)} کد · هر صفحه ۲۰ کد</p></div></header>
     <DiscountForm />
+    <p>آمار {data.environment === 'SANDBOX' ? 'آزمایشی' : 'واقعی'}؛ ظرفیت کاربران شامل مصرف قطعی و رزروهای در انتظار پرداخت است.</p>
     <section className="coupon-list"><h2>کدهای ساخته‌شده</h2><p>کاربران قبلی تا سقف دفعات خود می‌توانند دوباره استفاده کنند؛ تکمیل ظرفیت کاربران فقط مانع ورود کاربر جدید می‌شود.</p>
       <div className="coupon-table"><table><caption className="sr-only">فهرست کدهای تخفیف</caption><thead><tr>{['کد', 'تخفیف', 'کاربران', 'دفعات هر کاربر', 'کل استفاده‌ها', 'پایان اعتبار', 'وضعیت', 'عملیات'].map(label => <th key={label}>{label}</th>)}</tr></thead><tbody>
         {data.codes.map(code => <tr key={code.id}><th scope="row"><bdi>{code.code}</bdi></th><td>{code.type === 'PERCENT' ? formatNumber(code.value) + '٪' : formatPrice(code.value)}</td>
           <td>{formatNumber(code.users)} از {formatNumber(code.maxUsers)}<small>{formatNumber(Math.max(0, code.maxUsers - code.users))} ظرفیت کاربر جدید</small></td>
-          <td>{formatNumber(code.maxUsesPerUser)} بار</td><td>{formatNumber(code.uses)}</td><td>{formatPersianDateTime(code.expiresAt)}</td>
+          <td>{formatNumber(code.maxUsesPerUser)} بار</td><td>{formatNumber(code.uses)} قطعی<small>{formatNumber(code.reserved)} رزرو فعال</small></td><td>{formatPersianDateTime(code.expiresAt)}</td>
           <td>{!code.isActive ? 'غیرفعال' : code.expiresAt <= now ? 'منقضی' : 'فعال'}</td><td><CodeControls id={code.id} code={code.code} isActive={code.isActive} updatedAt={code.updatedAt.toISOString()} /></td></tr>)}
       </tbody></table></div>{!data.codes.length && <p>هنوز کدی ساخته نشده است.</p>}
     </section>

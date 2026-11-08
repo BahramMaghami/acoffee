@@ -51,3 +51,4 @@ next-env.d.ts
 /artifacts/tmp/
 /artifacts/npm-cache/
 /artifacts/next-test/
+/artifacts/payment/

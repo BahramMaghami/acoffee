@@ -26,6 +26,7 @@ test.describe('Neon product management', () => {
   test.afterAll(async () => {
     try {
       const owners = { user: { email: { in: emails } } }
+      await db.paymentAttempt.deleteMany({ where: { order: owners } })
       await db.orderItem.deleteMany({ where: { order: owners } })
       await db.order.deleteMany({ where: owners })
       await db.catalogProduct.deleteMany({ where: { category: { name: categoryName } } })
@@ -85,8 +86,9 @@ test.describe('Neon product management', () => {
     await page.getByRole('button', { name: 'ذخیره و بررسی سفارش' }).click()
     await expect(page).toHaveURL(/\/checkout\/place-order$/, { timeout: 40000 })
     await page.getByLabel('روش دریافت سفارش').selectOption('TIPAX')
-    await page.getByRole('button', { name: 'ثبت سفارش و ادامه' }).click()
-    await expect(page).toHaveURL(/\/orders\//, { timeout: 40000 })
+    await page.route('https://sandbox.zarinpal.com/pg/StartPay/**', route => route.fulfill({ body: 'Sandbox reached; no bank submission in product test.' }))
+    await page.getByRole('button', { name: 'ثبت سفارش و پرداخت' }).click()
+    await expect(page).toHaveURL(/sandbox\.zarinpal\.com|\/orders\//, { timeout: 40000 })
     const order = await db.order.findFirstOrThrow({ where: { userId: admin.id }, include: { items: true } })
     expect(Number(order.total)).toBe(250000)
     const editUrl = `/admin/products/${product.id}/edit`

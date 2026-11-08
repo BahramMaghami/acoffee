@@ -8,8 +8,10 @@ import { checkoutQuote, CheckoutError, lockCheckout } from '@/lib/checkout'
 import { logAuthError } from '@/lib/auth-error'
 import { adminOrderSchema } from '@/lib/validators/admin-orders'
 import { orderStatusUpdate } from '@/lib/order-status-update'
-import { lockDiscountCode, consumeDiscountAtPlacement } from '@/lib/discount-codes'
+import { lockDiscountCode, reserveDiscount, releaseDiscount } from '@/lib/discount-codes'
 import { DiscountCodeError } from '@/lib/discount-code-rules'
+import { paymentConfig, paymentLifetimeMs, tomanToRial, requireGatewayMinimum, canDeleteFinancialOrder, PaymentError } from '@/lib/payment-rules'
+import { lockPaymentOrder } from '@/lib/payments'
 
 export async function manageOrderAction(
   input: unknown,
@@ -22,11 +24,12 @@ export async function manageOrderAction(
   try {
     const result = await getDb().$transaction(
       async (tx) => {
+        await lockPaymentOrder(tx, data.orderId)
         const admin = await tx.user.findUnique({
           where: { id: actor.id },
-          select: { role: true },
+          select: { role: true, sessionVersion: true },
         })
-        if (admin?.role !== 'ADMIN')
+        if (admin?.role !== 'ADMIN' || admin.sessionVersion !== actor.sessionVersion)
           return { success: false, message: 'دسترسی مدیریت نداری.' }
         const order = await tx.order.findUnique({
           where: { id: data.orderId },
@@ -37,6 +40,7 @@ export async function manageOrderAction(
             status: true,
             paidAt: true,
             deliveredAt: true,
+            payments: { select: { method: true, status: true } },
           },
         })
         if (!order)
@@ -51,10 +55,14 @@ export async function manageOrderAction(
               'این سفارش تغییر کرده است. صفحه را تازه کن و دوباره تصمیم بگیر.',
           }
         if (data.operation === 'delete') {
+          if (!canDeleteFinancialOrder(order)) return { success: false, message: 'سفارش دارای سابقهٔ مالی یا پرداخت در جریان قابل حذف نیست.' }
+          await releaseDiscount(tx, order.id)
+          await tx.paymentAttempt.deleteMany({ where: { orderId: order.id } })
           await tx.orderItem.deleteMany({ where: { orderId: order.id } })
           await tx.order.delete({ where: { id: order.id } })
           return { success: true, message: 'سفارش و اقلام آن حذف شدند.' }
         }
+        if (data.field === 'paid') return { success: false, message: 'برای پرداخت از بخش تسویه و ثبت پرداخت خارج از درگاه استفاده کن.' }
         await tx.order.update({
           where: { id: order.id },
           data: orderStatusUpdate(order, data.field, data.value, new Date()),
@@ -94,6 +102,7 @@ export async function placeOrderAction(input: unknown) {
       message: parsed.error.issues[0].message,
     }
   try {
+    const config = paymentConfig()
     const order = await getDb().$transaction(
       async (tx) => {
         await lockCheckout(tx, user.id)
@@ -103,6 +112,10 @@ export async function placeOrderAction(input: unknown) {
         })
         if (existing?.userId === user.id) return existing
         if (existing) throw new CheckoutError('اطلاعات سفارش معتبر نیست.')
+        // Consistent lock order: account, source order, coupon. Settlement also
+        // locks an order before its coupon; reversing this can deadlock.
+        const cart = await tx.cart.findUnique({ where: { userId: user.id }, select: { repriceSourceId: true } })
+        if (cart?.repriceSourceId) await lockPaymentOrder(tx, cart.repriceSourceId)
         if (parsed.data.discountCode) await lockDiscountCode(tx, parsed.data.discountCode)
         const quote = await checkoutQuote(user.id, tx, parsed.data.discountCode)
         if (
@@ -112,9 +125,17 @@ export async function placeOrderAction(input: unknown) {
           throw new CheckoutError(
             'سبد، آدرس یا قیمت تغییر کرده است. صفحه را تازه کن و دوباره تأیید کن.',
           )
-        // Orders remain pending/unpaid until payment integration is implemented.
+        requireGatewayMinimum(tomanToRial(quote.total))
+        const expiresAt = new Date(Date.now() + paymentLifetimeMs)
+        if (quote.repriceSourceId) {
+          const source = await tx.order.findFirst({ where: { id: quote.repriceSourceId, userId: user.id }, select: { id: true, paymentStatus: true, status: true } })
+          if (!source || ['PAID', 'REFUNDED'].includes(source.paymentStatus) || source.status === 'CANCELLED') throw new CheckoutError('سفارش قبلی قابل پرداخت مجدد نیست.')
+        }
         const created = await tx.order.create({
           data: {
+            paymentEnvironment: config.environment,
+            paymentExpiresAt: expiresAt,
+            repricedFromId: quote.repriceSourceId,
             userId: user.id,
             checkoutKey: quote.checkoutKey,
             ...quote.shipping,
@@ -130,7 +151,8 @@ export async function placeOrderAction(input: unknown) {
           },
           select: { id: true },
         })
-        if (quote.coupon) await consumeDiscountAtPlacement(tx, { discountCodeId: quote.coupon.id, userId: user.id, orderId: created.id, amount: quote.discount })
+        if (quote.coupon) await reserveDiscount(tx, { discountCodeId: quote.coupon.id, userId: user.id, orderId: created.id, amount: quote.discount, environment: config.environment, expiresAt })
+        if (quote.repriceSourceId) await tx.cart.update({ where: { userId: user.id }, data: { repriceSourceId: null } })
         return created
       },
       { isolationLevel: 'ReadCommitted', maxWait: 10_000, timeout: 30_000 },
@@ -144,7 +166,7 @@ export async function placeOrderAction(input: unknown) {
     return {
       success: false as const,
       message:
-        error instanceof CheckoutError || error instanceof DiscountCodeError
+        error instanceof CheckoutError || error instanceof DiscountCodeError || error instanceof PaymentError
           ? error.message
           : 'ثبت سفارش انجام نشد. دوباره تلاش کن؛ درخواست تکراری سفارش تازه نمی‌سازد.',
     }

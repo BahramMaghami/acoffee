@@ -44,10 +44,10 @@ export function CheckoutSummary({ quote, initialShippingMethod }: { quote: Summa
     </form>
     <dl><div><dt>جمع کالاها</dt><dd>{formatPrice(current.subtotal)}</dd></div>
       {applied && <div><dt>تخفیف کد</dt><dd>− {formatPrice(applied.discount)}</dd></div>}
-      <div><dt>هزینهٔ ارسال</dt><dd>هنوز تعیین نشده</dd></div>
-      <div className="summary-total"><dt>جمع فعلی سفارش</dt><dd>{formatPrice(current.total)}</dd></div>
+      <div><dt>هزینهٔ ارسال</dt><dd>جداگانه دریافت می‌شود</dd></div>
+      <div className="summary-total"><dt>مبلغ قابل پرداخت کالا</dt><dd>{formatPrice(current.total)}</dd></div>
     </dl>
     <PlaceOrderButton checkoutKey={current.checkoutKey} quoteHash={current.quoteHash} discountCode={applied?.code} initialShippingMethod={initialShippingMethod} disabled={pending || unapplied} onPendingChange={setPlacing} />
-    <p>سفارش با وضعیت «در انتظار پرداخت» ثبت می‌شود. هزینهٔ ارسال و پرداخت آنلاین در مرحلهٔ بعد فعال می‌شوند.</p>
+    <p>هزینهٔ ارسال جداگانه دریافت می‌شود. وضعیت پرداخت پس از تأیید درگاه در سفارش ثبت می‌شود.</p>
   </aside>
 }

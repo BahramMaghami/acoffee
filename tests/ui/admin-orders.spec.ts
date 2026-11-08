@@ -24,6 +24,7 @@ test.describe('admin order management', () => {
   test.afterAll(async () => {
     try {
       const owners = { user: { email: { in: emails } } }
+      await db.paymentAttempt.deleteMany({ where: { order: owners } })
       await db.orderItem.deleteMany({ where: { order: owners } })
       await db.order.deleteMany({ where: owners })
       await db.user.deleteMany({ where: { email: { in: emails } } })
@@ -37,7 +38,7 @@ test.describe('admin order management', () => {
     await db.user.create({ data: { name: 'مدیر آزمایشی', email: emails[0], passwordHash, role: 'ADMIN' } })
     const buyer = await db.user.create({ data: { name: 'خریدار آزمایشی', email: emails[1], passwordHash } })
     const order = await db.order.create({ data: {
-      userId: buyer.id, recipientName: 'گیرندهٔ آزمایشی', phone: '09121234567', province: 'تهران', city: 'تهران', addressLine: 'نشانی موقت تست مدیریت', postalCode: '1234567890', subtotal: 3000, total: 3000,
+      userId: buyer.id, paymentEnvironment: 'SANDBOX', paymentExpiresAt: new Date(Date.now() + 1800000), recipientName: 'گیرندهٔ آزمایشی', phone: '09121234567', province: 'تهران', city: 'تهران', addressLine: 'نشانی موقت تست مدیریت', postalCode: '1234567890', subtotal: 3000, total: 3000,
       items: { create: { productName: 'قهوهٔ آزمایشی مدیریت', productSlug: 'admin-order-test', weightGrams: 500, quantity: 3, unitPrice: 1000, lineTotal: 3000 } },
     } })
     await page.goto('/login')
@@ -51,12 +52,13 @@ test.describe('admin order management', () => {
     await expect(card).toContainText('خریدار آزمایشی')
     await card.getByRole('link').click()
     const dialog = page.getByRole('dialog')
-    await page.getByRole('button', { name: 'تأیید پرداخت', exact: true }).click()
+    await page.getByLabel('توضیح و دلیل پرداخت خارج از درگاه').fill('رسید کارت به کارت بررسی شد')
+    await page.getByRole('button', { name: 'ثبت پرداخت خارج از درگاه', exact: true }).click()
     await dialog.getByRole('button', { name: 'انصراف' }).click()
     expect((await db.order.findUniqueOrThrow({ where: { id: order.id } })).paidAt).toBeNull()
-    await page.getByRole('button', { name: 'تأیید پرداخت', exact: true }).click()
+    await page.getByRole('button', { name: 'ثبت پرداخت خارج از درگاه', exact: true }).click()
     await dialog.getByRole('button', { name: 'ثبت تغییر' }).click()
-    await expect(page.getByRole('button', { name: 'لغو تأیید پرداخت', exact: true })).toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('button', { name: 'ابطال ثبت دستی', exact: true })).toBeVisible({ timeout: 20000 })
     const paid = await db.order.findUniqueOrThrow({ where: { id: order.id } })
     expect(paid.paymentStatus).toBe('PAID')
     expect(paid.paidAt).not.toBeNull()
@@ -79,14 +81,19 @@ test.describe('admin order management', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: 'artifacts/ui/admin-order-mobile.png', animations: 'disabled' })
-    for (const label of ['لغو تأیید پرداخت', 'لغو تأیید تحویل']) {
+    await page.getByLabel('دلیل ابطال ثبت دستی').fill('رسید متعلق به سفارش دیگری بود')
+    for (const label of ['ابطال ثبت دستی', 'لغو تأیید تحویل']) {
       await page.getByRole('button', { name: label, exact: true }).click()
       await dialog.getByRole('button', { name: 'ثبت تغییر' }).click()
       await expect(dialog).toHaveCount(0, { timeout: 20000 })
     }
     const reverted = await db.order.findUniqueOrThrow({ where: { id: order.id } })
     expect([reverted.paymentStatus, reverted.status, reverted.paidAt, reverted.deliveredAt]).toEqual(['UNPAID', 'PENDING', null, null])
-    await db.order.update({ where: { id: order.id }, data: { status: 'PROCESSING' } })
+    await expect(page.getByRole('button', { name: 'حذف سفارش', exact: true })).toBeDisabled()
+    expect(await db.paymentAttempt.count({ where: { orderId: order.id, status: 'VOIDED' } })).toBe(1)
+    const deletable = await db.order.create({ data: { userId: buyer.id, recipientName: 'آزمون حذف', phone: '09121234567', province: 'تهران', city: 'تهران', addressLine: 'نشانی آزمایشی', postalCode: '1234567890', subtotal: 1000, total: 1000 } })
+    await page.goto(`/admin/orders/${deletable.id}`)
+    await db.order.update({ where: { id: deletable.id }, data: { status: 'PROCESSING' } })
     await page.getByRole('button', { name: 'حذف سفارش', exact: true }).click()
     await dialog.getByRole('button', { name: 'حذف دائمی سفارش' }).click()
     await expect(dialog.getByRole('alert')).toContainText('تغییر کرده', { timeout: 20000 })
@@ -113,8 +120,8 @@ test.describe('admin order management', () => {
     await page.getByRole('button', { name: 'حذف سفارش', exact: true }).click()
     await dialog.getByRole('button', { name: 'حذف دائمی سفارش' }).click()
     await expect(page).toHaveURL(/\/admin\/orders$/, { timeout: 20000 })
-    expect(await db.order.count({ where: { id: order.id } })).toBe(0)
-    expect(await db.orderItem.count({ where: { orderId: order.id } })).toBe(0)
+    expect(await db.order.count({ where: { id: deletable.id } })).toBe(0)
+    expect(await db.order.count({ where: { id: order.id } })).toBe(1)
     expect(await db.user.count({ where: { id: buyer.id } })).toBe(1)
   })
 })

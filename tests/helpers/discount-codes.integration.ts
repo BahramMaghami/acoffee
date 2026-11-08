@@ -12,6 +12,7 @@ test('coupon migration, distinct-user races, per-user races and durable history 
   const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: urls.pooled, max: 5, connectionTimeoutMillis: 15000 }) })
   const schema = `coupon_test_${randomUUID().replaceAll('-', '')}`
   const migration = await readFile(new URL('../../prisma/migrations/20261106010000_discount_codes/migration.sql', import.meta.url), 'utf8')
+  const payments = (await readFile(new URL('../../prisma/migrations/20261108000000_zarinpal_payments/migration.sql', import.meta.url), 'utf8')).replace(/^BEGIN;|^COMMIT;/gm, '')
   const inSchema = <T>(run: (tx: Prisma.TransactionClient) => Promise<T>) => db.$transaction(async tx => {
     await tx.$executeRawUnsafe(`SET LOCAL search_path TO "${schema}"`)
     return run(tx)
@@ -22,6 +23,8 @@ test('coupon migration, distinct-user races, per-user races and durable history 
       await tx.$executeRawUnsafe('CREATE TABLE "Order" ("id" TEXT PRIMARY KEY, "total" DECIMAL(14,0))')
       await tx.$executeRawUnsafe(`INSERT INTO "Order" VALUES ('historic', 123456)`)
       for (const statement of migration.split(';').map(sql => sql.trim()).filter(Boolean)) await tx.$executeRawUnsafe(statement)
+      await tx.$executeRawUnsafe('CREATE TABLE "Cart" (id TEXT PRIMARY KEY)')
+      for (const statement of payments.split(';').map(sql => sql.trim()).filter(Boolean)) await tx.$executeRawUnsafe(statement)
       const [old] = await tx.$queryRaw<{ total: unknown; discountCode: null }[]>`SELECT "total", "discountCode" FROM "Order" WHERE "id" = 'historic'`
       assert.equal(Number(old.total), 123456); assert.equal(old.discountCode, null)
       await tx.$executeRaw`INSERT INTO "DiscountCode" ("id", "code", "type", "value", "maxUsers", "maxUsesPerUser", "expiresAt", "updatedAt") VALUES ('code', 'ABCD234567', 'PERCENT', 20, 1, 2, now() + interval '1 day', now())`
@@ -31,7 +34,7 @@ test('coupon migration, distinct-user races, per-user races and durable history 
       // Prisma normally qualifies public tables; use a small query facade to
       // exercise the real resolver against this explicitly isolated schema.
       const reader = { $queryRaw: tx.$queryRaw.bind(tx), discountCode: { findUnique: async () => (await tx.$queryRaw`SELECT * FROM "DiscountCode" WHERE "id" = 'code'` as unknown[])[0] } } as unknown as Parameters<typeof resolveDiscountCode>[0]
-      const coupon = await resolveDiscountCode(reader, 'ABCD234567', userId, 1000)
+      const coupon = await resolveDiscountCode(reader, 'ABCD234567', userId, 1000, 'LIVE')
       const orderId = randomUUID()
       await tx.$executeRaw`INSERT INTO "Order" ("id", "total") VALUES (${orderId}, ${1000 - coupon.amount})`
       await tx.$executeRaw`INSERT INTO "DiscountRedemption" ("id", "discountCodeId", "userId", "orderId", "amount") VALUES (${randomUUID()}, ${coupon.id}, ${userId}, ${orderId}, ${coupon.amount})`
@@ -50,6 +53,23 @@ test('coupon migration, distinct-user races, per-user races and durable history 
       assert.deepEqual(usage, { users: 1, uses: 2, orphaned: 1 })
     })
     await assert.rejects(consume(winner.value.userId), /تعداد/)
+    // Historical real uses do not consume sandbox capacity. An expired hold
+    // still does, until payment reconciliation explicitly releases it.
+    const reserve = (userId: string) => inSchema(async tx => {
+      await lockDiscountCode(tx, 'ABCD234567')
+      const reader = { $queryRaw: tx.$queryRaw.bind(tx), discountCode: { findUnique: async () => (await tx.$queryRaw`SELECT * FROM "DiscountCode" WHERE "id" = 'code'` as unknown[])[0] } } as unknown as Parameters<typeof resolveDiscountCode>[0]
+      const coupon = await resolveDiscountCode(reader, 'ABCD234567', userId, 1000, 'SANDBOX')
+      const orderId = randomUUID()
+      await tx.$executeRaw`INSERT INTO "Order" ("id", "total") VALUES (${orderId}, ${1000 - coupon.amount})`
+      await tx.$executeRaw`INSERT INTO "DiscountReservation" ("id", "discountCodeId", "userId", "orderId", "environment", "amount", "expiresAt", "updatedAt") VALUES (${randomUUID()}, ${coupon.id}, ${userId}, ${orderId}, 'SANDBOX', ${coupon.amount}, now() - interval '1 minute', now())`
+      return userId
+    })
+    const holds = await Promise.allSettled([reserve('sandbox-alice'), reserve('sandbox-bob')])
+    assert.equal(holds.filter(r => r.status === 'fulfilled').length, 1)
+    const holder = (holds.find(r => r.status === 'fulfilled') as PromiseFulfilledResult<string>).value
+    const sameUser = await Promise.allSettled([reserve(holder), reserve(holder)])
+    assert.equal(sameUser.filter(r => r.status === 'fulfilled').length, 1)
+    await assert.rejects(reserve(holder), /تعداد/)
   } finally {
     // The only deleted schema is this generated test prefix on the guarded test branch.
     await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)

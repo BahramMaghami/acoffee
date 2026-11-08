@@ -18,7 +18,7 @@ export async function getMyOrders(requestedPage: unknown) {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: {
         id: true, number: true, createdAt: true, total: true,
-        paymentStatus: true, status: true, shippingFeeFinalized: true, shippingMethod: true,
+        paymentStatus: true, paymentEnvironment: true, status: true, shippingFeeFinalized: true, shippingMethod: true,
         items: { select: { id: true, productName: true, weightGrams: true, quantity: true, grind: true, grindDevice: true }, orderBy: { id: 'asc' } },
       },
     })

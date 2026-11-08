@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { build } from 'esbuild'
 import { checkoutQuote, lastShippingMethod } from '../../lib/checkout'
+process.env.ZARINPAL_SANDBOX = 'true'
+process.env.ZARINPAL_MERCHANT_ID = 'f58f584a-2d2a-4daa-974a-8259d22ba8e6'
+process.env.PAYMENT_BASE_URL = 'http://localhost:3000'
 
 function fixture() {
   const product = { id: 'sku', slug: 'coffee', name: 'قهوه', weightGrams: 500, price: 1000, isActive: true, catalogProduct: { isActive: true }, grindOptions: ['WHOLE_BEAN', 'GROUND'] }
@@ -59,7 +62,7 @@ test('cart action persists distinct devices and rejects incomplete or forged pre
   const state = { user: { id: 'owner' } as { id: string } | null, db: { ...db, $transaction: async (callback: (tx: typeof db) => unknown) => callback(db) } }
   const bundle = await build({ entryPoints: ['actions/cart.actions.ts'], bundle: true, write: false, platform: 'node', format: 'cjs', conditions: ['react-server'], plugins: [{ name: 'cart-boundaries', setup(builder) {
     builder.onResolve({ filter: /^@\/lib\/(current-user|db|auth-error)$/ }, args => ({ path: args.path, namespace: 'stub' }))
-    builder.onResolve({ filter: /^\.\/db$/ }, args => args.importer.endsWith('checkout.ts') ? { path: 'db', namespace: 'stub' } : undefined)
+    builder.onResolve({ filter: /^\.\/db$/ }, () => ({ path: 'db', namespace: 'stub' }))
     builder.onLoad({ filter: /.*/, namespace: 'stub' }, args => {
       if (args.path.endsWith('current-user')) return { contents: 'export const getCurrentUser=async()=>state.user;' }
       if (args.path.endsWith('auth-error')) return { contents: 'export const logAuthError=()=>{};' }
@@ -97,7 +100,7 @@ test('order action validates delivery, saves immutable snapshots and preserves i
   const state = { user: { id: 'owner' } as { id: string } | null, db: { ...db, $transaction: async (callback: (tx: typeof db) => unknown) => callback(db) } }
   const bundle = await build({ entryPoints: ['actions/order.actions.ts'], bundle: true, write: false, platform: 'node', format: 'cjs', conditions: ['react-server'], plugins: [{ name: 'order-boundaries', setup(builder) {
     builder.onResolve({ filter: /^(next\/cache|@\/lib\/(current-user|db|auth-error))$/ }, args => ({ path: args.path, namespace: 'stub' }))
-    builder.onResolve({ filter: /^\.\/db$/ }, args => args.importer.endsWith('checkout.ts') ? { path: 'db', namespace: 'stub' } : undefined)
+    builder.onResolve({ filter: /^\.\/db$/ }, () => ({ path: 'db', namespace: 'stub' }))
     builder.onLoad({ filter: /.*/, namespace: 'stub' }, args => {
       if (args.path === 'next/cache') return { contents: 'export const revalidatePath=()=>{}' }
       if (args.path.endsWith('current-user')) return { contents: 'export const getCurrentUser=async()=>state.user; export const requireAdmin=async()=>state.user;' }

@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, CreditCard } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { requireUser } from '@/lib/current-user'
 import { getDb } from '@/lib/db'
 import { formatNumber, formatPrice } from '@/lib/storefront'
 import { formatPersianDate } from '@/lib/date'
-import { Button } from '@/components/ui/button'
+import { PaymentControls } from './payment-controls'
+import { PaymentHistory } from './payment-history'
+import { paymentView } from '@/lib/payment-view'
 import { preparationLabel, shippingLabel } from '@/lib/order-options'
 import '../../checkout/checkout.css'
 
@@ -22,12 +24,16 @@ export default async function OrderPage({
   const order = await getDb()
     .order.findFirst({
       where: { id, userId: user.id },
-      include: { items: true },
+      include: {
+        items: true,
+        payments: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] },
+      },
     })
     .catch(() => {
       throw new Error('اطلاعات سفارش دریافت نشد.')
     })
   if (!order) notFound()
+  const payment = paymentView(order)
   return (
     <div className="shell page-space checkout-page">
       <div className="page-heading">
@@ -37,9 +43,11 @@ export default async function OrderPage({
           </span>
           <h1>سفارش شمارهٔ {formatNumber(order.number)}</h1>
           <p>
-            {formatPersianDate(order.createdAt)} ·{' '}
-            {order.paymentStatus === 'PAID' ? 'پرداخت‌شده' : 'در انتظار پرداخت'}
+            {formatPersianDate(order.createdAt)} · {payment.label}
           </p>
+          {order.paymentEnvironment === 'SANDBOX' && (
+            <p>سفارش آزمایشی — وجه واقعی دریافت نمی‌شود</p>
+          )}
         </div>
       </div>
       <div className="checkout-grid">
@@ -53,7 +61,8 @@ export default async function OrderPage({
                   <p>
                     {formatNumber(item.quantity)} بسته ·{' '}
                     {formatNumber(item.weightGrams)} گرم
-                    {' · '}{preparationLabel(item.grind, item.grindDevice)}
+                    {' · '}
+                    {preparationLabel(item.grind, item.grindDevice)}
                   </p>
                 </div>
                 <span>{formatPrice(Number(item.lineTotal))}</span>
@@ -73,7 +82,11 @@ export default async function OrderPage({
             <p>
               شماره تماس: <bdi>{order.phone}</bdi>
             </p>
-            {order.alternatePhone && <p>شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi></p>}
+            {order.alternatePhone && (
+              <p>
+                شمارهٔ تماس جایگزین: <bdi>{order.alternatePhone}</bdi>
+              </p>
+            )}
           </section>
         </div>
         <aside className="order-summary">
@@ -93,10 +106,17 @@ export default async function OrderPage({
               <dd>
                 {order.shippingFeeFinalized
                   ? formatPrice(Number(order.shippingFee))
-                  : 'هنوز تعیین نشده'}
+                  : 'جداگانه دریافت می‌شود'}
               </dd>
             </div>
-            {Number(order.discount) > 0 && <div><dt>تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}</dt><dd>− {formatPrice(Number(order.discount))}</dd></div>}
+            {Number(order.discount) > 0 && (
+              <div>
+                <dt>
+                  تخفیف {order.discountCode && <bdi>{order.discountCode}</bdi>}
+                </dt>
+                <dd>− {formatPrice(Number(order.discount))}</dd>
+              </div>
+            )}
             <div className="summary-total">
               <dt>
                 {order.shippingFeeFinalized ? 'مبلغ سفارش' : 'جمع فعلی سفارش'}
@@ -104,18 +124,9 @@ export default async function OrderPage({
               <dd>{formatPrice(Number(order.total))}</dd>
             </div>
           </dl>
-          {order.paymentStatus !== 'PAID' && (
-            <>
-              <Button className="w-full" size="lg" disabled>
-                <CreditCard />
-                پرداخت آنلاین به‌زودی
-              </Button>
-              <p>
-                درگاه پرداخت هنوز فعال نیست و مبلغی دریافت نشده است. هزینهٔ
-                ارسال پیش از پرداخت مشخص خواهد شد.
-              </p>
-            </>
-          )}
+          <p>هزینهٔ ارسال جداگانه دریافت می‌شود.</p>
+          <PaymentControls orderId={order.id} {...payment} />
+          <PaymentHistory payments={order.payments} />
           <Link href="/account" className="quiet-link">
             مشاهدهٔ حساب و سفارش‌ها
           </Link>

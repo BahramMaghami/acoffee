@@ -12,6 +12,8 @@
     "test:ui": "playwright test",
     "test:unit": "node --import tsx --test tests/unit/*.test.ts tests/helpers/*.test.ts",
     "test:images": "node --conditions=react-server --import tsx --test tests/server/product-image.test.ts",
+    "test:payments": "node --conditions=react-server --import tsx --test tests/server/payments*.test.ts tests/server/zarinpal.test.ts tests/helpers/payments.integration.ts",
+    "payments:reconcile": "node --conditions=react-server --import tsx scripts/reconcile-payments.ts",
     "db:prepare:test": "tsx scripts/prepare-test-db.ts",
     "test:recovery": "node --conditions=react-server --import tsx --test tests/helpers/recovery.integration.ts",
     "test:mail": "node --conditions=react-server --import tsx --test tests/helpers/mail.server.ts",

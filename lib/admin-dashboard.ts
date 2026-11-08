@@ -14,6 +14,7 @@ export async function getAdminDashboard(selection: DashboardSelection) {
       SELECT "id", "total", COALESCE("paidAt", "createdAt") AS paid_on
       FROM "Order"
       WHERE "paymentStatus" = 'PAID'
+        AND ("paymentEnvironment" IS NULL OR "paymentEnvironment" = 'LIVE')
         AND COALESCE("paidAt", "createdAt") >= (${window.start}::date::timestamp AT TIME ZONE 'Asia/Tehran')
         AND COALESCE("paidAt", "createdAt") < (${window.endExclusive}::date::timestamp AT TIME ZONE 'Asia/Tehran')
     ), daily AS (
