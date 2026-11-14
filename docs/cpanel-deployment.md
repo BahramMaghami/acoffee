@@ -53,8 +53,11 @@ Push به GitHub به‌تنهایی این مراحل را اجرا نمی‌ک
 برای نخستین نصب لازم نیست جداگانه Run NPM Install بزنید؛ اسکریپت نصب را انجام می‌دهد.
 اگر flock یا دسترسی shell در هاست موجود نباشد، از پشتیبانی بخواهید فراهم کند.
 
-نصب با `npm install --include=dev --package-lock=true --no-save` انجام می‌شود تا symlink
-مدیریت‌شدهٔ node_modules حذف و lockfile مخزن تغییر نکند. Build از webpack استفاده می‌کند
+نصب با `npm install --include=dev --package-lock=true --no-save --ignore-scripts` انجام می‌شود تا symlink
+مدیریت‌شدهٔ node_modules حذف و lockfile مخزن تغییر نکند. هوک‌های نصب esbuild، sharp و
+@prisma/engines جداگانه اجرا می‌شوند؛ سپس Prisma با مسیر صریح config و Next با مسیر
+صریح پروژه اجرا می‌شوند تا postinstall در پوشهٔ مجازی CloudLinux دنبال schema نگردد.
+Build از webpack استفاده می‌کند
 تا وابستگی‌های بیرون از ریشه در محیط CloudLinux مانع Turbopack نشوند.
 اسکریپت با اولین خطا متوقف می‌شود و فقط بعد از build موفق، `tmp/restart.txt` را لمس می‌کند.
 

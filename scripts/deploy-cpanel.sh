@@ -30,11 +30,19 @@ fi
 
 # npm ci can remove CloudLinux's node_modules symlink. Install using the lockfile
 # without rewriting it, retaining build-time dependencies (Prisma/TypeScript).
-npm install --include=dev --package-lock=true --no-save --no-audit --no-fund
+# CloudLinux runs the root postinstall from nodevenv/.../lib, where the Prisma
+# schema does not exist. Defer lifecycle scripts, then rebuild the dependencies
+# that need install hooks explicitly (never run the root postinstall there).
+npm install --include=dev --package-lock=true --no-save --no-audit --no-fund --ignore-scripts
+npm rebuild --ignore-scripts=false esbuild sharp @prisma/engines
+
+cd "$APP_ROOT"
+test -f "$APP_ROOT/prisma/schema.prisma"
+node "$APP_ROOT/node_modules/prisma/build/index.js" generate --config "$APP_ROOT/prisma.config.ts"
 
 # Webpack supports CloudLinux's external node_modules symlink without Turbopack
 # workspace-root restrictions. The normal Vercel build remains unchanged.
-npm run build -- --webpack
+node "$APP_ROOT/node_modules/next/dist/bin/next" build "$APP_ROOT" --webpack
 test -s .next/BUILD_ID
 
 # Passenger restarts on the next request, only after a successful build.
