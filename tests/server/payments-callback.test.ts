@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { build } from 'esbuild'
 import { createRequire } from 'node:module'
 
-test('callback ignores browser success, uses only a known authority and never requires a session or trusts the request origin', async () => {
+test('callback uses OK only to trigger verification of a known authority; NOK cannot settle or cancel', async () => {
   const state = { known: true, unavailable: false, calls: [] as unknown[][], reads: 0 }
   const bundle = await build({ entryPoints: ['app/api/payments/zarinpal/callback/route.ts'], platform: 'node', bundle: true, write: false, format: 'cjs', plugins: [{ name: 'boundaries', setup(builder) {
     builder.onResolve({ filter: /^(next\/(server|cache)|@\/lib\/(db|payment-rules|payments))$/ }, args => ({ path: args.path, namespace: 'stub' }))
@@ -21,18 +21,25 @@ test('callback ignores browser success, uses only a known authority and never re
   const invoke = (query: string) => mod.exports.GET(new Request('https://untrusted.example/api/payments/zarinpal/callback?' + query))
   assert.equal((await invoke('Authority=bad&Status=OK')).status, 400)
   assert.equal((await invoke(`Authority=${authority}&Authority=${authority}`)).status, 400)
+  assert.equal((await invoke(`Authority=${authority}`)).status, 400)
+  assert.equal((await invoke(`Authority=${authority}&Status=BAD`)).status, 400)
+  assert.equal((await invoke(`Authority=${authority}&Status=OK&Status=NOK`)).status, 400)
   assert.equal(state.reads, 0)
   state.known = false
   assert.equal((await invoke(`Authority=${authority}&Status=OK&amount=1`)).status, 404)
   assert.equal(state.calls.length, 0)
   state.known = true
   for (const status of ['OK', 'NOK']) {
+    const before: number = state.calls.length
     const response = await invoke(`Authority=${authority}&Status=${status}&amount=1`)
     assert.equal(response.status, 303)
     assert.equal(response.headers.get('location'), 'http://localhost:3000/orders/known-order')
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(response.headers.get('referrer-policy'), 'no-referrer')
-    assert.deepEqual(state.calls.at(-1), ['known-order', undefined, authority])
+    if (status === 'OK') {
+      assert.deepEqual(state.calls.at(-1), ['known-order', undefined, authority, 'OK'])
+      assert.equal(state.calls.length, before + 1)
+    } else assert.equal(state.calls.length, before)
   }
   state.unavailable = true
   const failure = await invoke(`Authority=${authority}&Status=OK`)

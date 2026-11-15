@@ -268,6 +268,7 @@ export function paymentService(
     orderId: string,
     actor?: Actor,
     knownAuthority?: string,
+    callbackStatus?: 'OK',
   ): Promise<PaymentResult> {
     const token = randomUUID()
     const preparation = await transaction(async (tx) => {
@@ -312,6 +313,16 @@ export function paymentService(
         attempt.merchantId !== config.merchantId
       )
         throw new PaymentError('تنظیمات درگاه با این تراکنش مطابقت ندارد.')
+      // OK is only a trigger to verify a known transaction, never proof of payment.
+      // Persist the verification workflow start before checking the lease so a
+      // simultaneous inquiry cannot swallow the callback; later checks retry it.
+      if (callbackStatus === 'OK' && knownAuthority && !attempt.verificationStartedAt) {
+        attempt.verificationStartedAt = now()
+        await tx.paymentAttempt.update({
+          where: { id: attempt.id },
+          data: { verificationStartedAt: attempt.verificationStartedAt },
+        })
+      }
       if (attempt.leaseUntil && attempt.leaseUntil > now())
         return { response: result(orderId, attempt.status, pendingMessage) }
       if (!attempt.authority) {
@@ -340,7 +351,11 @@ export function paymentService(
     if (preparation.response) return preparation.response
     const { attempt, order } = preparation
     try {
-      const bank = await gateway.inquiry(attempt.authority!)
+      // Successful callbacks and retries of a started verification go directly
+      // to verify. Inquiry may still report IN_BANK after the bank redirects.
+      const bank = attempt.verificationStartedAt
+        ? null
+        : await gateway.inquiry(attempt.authority!)
       if (bank === 'IN_BANK') {
         await db.paymentAttempt.updateMany({
           where: { id: attempt.id, leaseToken: token },

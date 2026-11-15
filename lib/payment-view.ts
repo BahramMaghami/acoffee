@@ -13,7 +13,7 @@ export function paymentView(order: Order & { payments: PaymentAttempt[] }) {
   return {
     settled, active,
     enabled: Boolean(environment && (!order.paymentEnvironment || matching)),
-    canStart: !settled && !blocked && fresh && (!latest || latest.status === 'PENDING'),
+    canStart: !settled && !blocked && fresh && (!latest || (latest.status === 'PENDING' && !latest.verificationStartedAt)),
     canReprice: !settled && !blocked && !active,
     canManual: !settled && !blocked && fresh && !active && !order.payments.some(p => p.method === 'ZARINPAL') && Number(order.total) > 0,
     label: latest ? paymentStateLabels[latest.status] : settled ? 'تسویه‌شده' : 'در انتظار پرداخت',

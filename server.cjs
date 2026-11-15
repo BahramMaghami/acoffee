@@ -11,22 +11,27 @@ const next = require('next')
 const app = next({ dev: false, dir: __dirname })
 const handle = app.getRequestHandler()
 
-app.prepare().then(() => {
-  const server = createServer((req, res) => {
-    Promise.resolve(handle(req, res)).catch(() => {
-      // Do not log request URLs: password-reset links contain sensitive tokens.
-      console.error('cPanel request handling failed')
-      if (!res.headersSent) res.writeHead(500)
-      res.end()
+app
+  .prepare()
+  .then(() => {
+    const server = createServer((req, res) => {
+      Promise.resolve(handle(req, res)).catch(() => {
+        // Do not log request URLs: password-reset links contain sensitive tokens.
+        console.error('cPanel request handling failed')
+        if (!res.headersSent) res.writeHead(500)
+        res.end()
+      })
     })
+    server.on('error', () => {
+      console.error('cPanel HTTP server failed to start')
+      process.exit(1)
+    })
+    if (passenger) server.listen('passenger')
+    else server.listen(Number(process.env.PORT || 3000), '127.0.0.1')
   })
-  server.on('error', () => {
-    console.error('cPanel HTTP server failed to start')
+  .catch(() => {
+    console.error(
+      'Next.js startup failed. Check the production build and environment configuration.',
+    )
     process.exit(1)
   })
-  if (passenger) server.listen('passenger')
-  else server.listen(Number(process.env.PORT || 3000), '127.0.0.1')
-}).catch(() => {
-  console.error('Next.js startup failed. Check the production build and environment configuration.')
-  process.exit(1)
-})

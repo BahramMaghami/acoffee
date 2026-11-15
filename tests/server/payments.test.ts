@@ -3,6 +3,82 @@ import assert from 'node:assert/strict'
 import { owner, admin, paymentFixture, sandboxConfig } from '../helpers/payment-fixture'
 import { paymentService } from '../../lib/payments'
 import { canDeleteFinancialOrder, paymentLifetimeMs } from '../../lib/payment-rules'
+import { GatewayError } from '../../lib/zarinpal'
+
+test('an OK callback is not proof of payment when the gateway rejects verification', async () => {
+  const f = paymentFixture({ coupon: true })
+  await f.service.begin('order', owner)
+  f.gateway.verify = async () => { throw new GatewayError('GATEWAY_-51', true) }
+  assert.equal((await f.service.check('order', undefined, f.state.payments[0].authority!, 'OK')).status, 'UNKNOWN')
+  assert.equal(f.state.order.paymentStatus, 'UNPAID')
+  assert.equal(f.state.redemptions.length, 0)
+  assert.equal(f.state.reservation?.status, 'ACTIVE')
+  assert.equal(f.state.payments[0].errorCode, 'GATEWAY_-51')
+})
+
+test('OK callback verifies even when inquiry says IN_BANK, with stored amount and one coupon consumption', async () => {
+  const f = paymentFixture({ coupon: true, total: 2500 })
+  await f.service.begin('order', owner)
+  f.state.bank = 'IN_BANK'
+  const authority = f.state.payments[0].authority!
+  const original = f.gateway.verify
+  f.gateway.verify = async (value, amount) => {
+    assert.equal(value, authority)
+    assert.equal(amount, 25000)
+    return original(value, amount)
+  }
+  await Promise.all([
+    f.service.check('order', undefined, authority, 'OK'),
+    f.service.check('order', undefined, authority, 'OK'),
+  ])
+  assert.equal(f.state.inquiries, 0)
+  assert.equal(f.state.verifies, 1)
+  assert.equal(f.state.order.paymentStatus, 'PAID')
+  assert.equal(f.state.redemptions.length, 1)
+  await f.service.check('order', undefined, authority, 'OK')
+  assert.equal(f.state.verifies, 1)
+})
+
+test('verify timeout after OK stays unknown and a normal check retries without an inquiry gate', async () => {
+  const f = paymentFixture({ coupon: true })
+  await f.service.begin('order', owner)
+  f.state.bank = 'IN_BANK'
+  const original = f.gateway.verify
+  f.gateway.verify = async () => { throw Error('timeout') }
+  assert.equal((await f.service.check('order', undefined, f.state.payments[0].authority!, 'OK')).status, 'UNKNOWN')
+  assert.equal(f.state.order.paymentStatus, 'UNPAID')
+  assert.equal(f.state.reservation?.status, 'ACTIVE')
+  assert.ok(f.state.payments[0].verificationStartedAt)
+  f.gateway.verify = original
+  assert.equal((await f.service.check('order', owner)).status, 'SUCCEEDED')
+  assert.equal(f.state.inquiries, 0)
+})
+
+test('OK does not bypass released reservations, superseded orders or unknown authorities', async () => {
+  for (const condition of ['released', 'superseded', 'unknown']) {
+    const f = paymentFixture({ coupon: true })
+    await f.service.begin('order', owner)
+    let authority = f.state.payments[0].authority!
+    if (condition === 'released') f.state.reservation!.status = 'RELEASED'
+    if (condition === 'superseded') f.state.order.supersededAt = new Date()
+    if (condition === 'unknown') authority = 'S' + '9'.repeat(35)
+    await f.service.check('order', undefined, authority, 'OK')
+    assert.equal(f.state.verifies, 0)
+    assert.equal(f.state.order.paymentStatus, 'UNPAID')
+  }
+})
+
+test('OK callback received during a lease is remembered for a later check', async () => {
+  const f = paymentFixture()
+  await f.service.begin('order', owner)
+  f.state.bank = 'IN_BANK'
+  f.state.payments[0].leaseUntil = new Date(f.state.payments[0].createdAt.getTime() + 60000)
+  await f.service.check('order', undefined, f.state.payments[0].authority!, 'OK')
+  assert.equal(f.state.verifies, 0)
+  f.advance(61000)
+  assert.equal((await f.service.check('order', owner)).status, 'SUCCEEDED')
+  assert.equal(f.state.inquiries, 0)
+})
 
 test('one attempt, one settlement and one coupon use under concurrent starts and repeated callbacks', async () => {
   const f = paymentFixture({ coupon: true })

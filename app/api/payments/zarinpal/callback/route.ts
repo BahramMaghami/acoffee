@@ -9,8 +9,11 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const query = new URL(request.url).searchParams
   const authority = query.get('Authority')
+  const status = query.get('Status')
   if (
     query.getAll('Authority').length !== 1 ||
+    query.getAll('Status').length !== 1 ||
+    (status !== 'OK' && status !== 'NOK') ||
     !authority ||
     !/^[AS][a-zA-Z0-9]{35}$/.test(authority)
   )
@@ -31,8 +34,10 @@ export async function GET(request: Request) {
         status: 404,
         headers: { 'Cache-Control': 'no-store' },
       })
-    // Status is untrusted, including NOK. Inquiry/verify determine the result.
-    await paymentService().check(payment.orderId, undefined, authority)
+    // The browser can request verification, but only the gateway's verified
+    // response can settle an order. NOK never cancels/releases a payment here.
+    if (status === 'OK')
+      await paymentService().check(payment.orderId, undefined, authority, 'OK')
     for (const path of [
       '/admin',
       '/orders',
