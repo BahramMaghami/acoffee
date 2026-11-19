@@ -1,0 +1,54 @@
+.brand-intro {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--background);
+  color: var(--foreground);
+  place-items: center;
+}
+html[data-intro] .brand-intro { display: grid; }
+html[data-intro='drawing'] body { overflow: hidden; }
+html[data-intro='drawing'] :is(.announcement, .site-header, #main-content, .site-footer, .skip-link) { visibility: hidden; }
+.intro-signature { display: flex; align-items: center; flex-direction: column; transform: translateY(-16px); }
+.intro-monogram { width: clamp(120px, 25vw, 180px); height: auto; overflow: visible; }
+.intro-letter {
+  stroke: var(--primary);
+  stroke-width: 1.15;
+  fill: var(--primary);
+  fill-opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: intro-draw 1.25s cubic-bezier(.4, 0, .2, 1) .1s forwards, intro-ink .7s ease .95s forwards;
+}
+[data-theme='dark'] .intro-letter { stroke: #ead9bd; fill: #ead9bd; }
+.intro-caption { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; letter-spacing: .2em; margin-top: 14px; }
+.intro-motto { color: var(--muted-foreground); font-size: 12px; margin-top: 22px; }
+.intro-caption, .intro-motto { opacity: 0; animation: intro-caption .65s ease .95s forwards; }
+.intro-motto { animation-delay: 1.15s; }
+.intro-skip {
+  position: absolute;
+  bottom: max(32px, env(safe-area-inset-bottom));
+  background: transparent;
+  border: 0;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+}
+.intro-skip span { margin-inline-start: 12px; }
+.intro-skip:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 4px; }
+html[data-intro='revealing'] .brand-intro { animation: intro-exit .65s ease forwards; pointer-events: none; }
+html[data-intro='revealing'] .intro-skip { visibility: hidden; }
+html[data-intro='revealing'] #main-content { animation: intro-page .65s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes intro-draw { to { stroke-dashoffset: 0; } }
+@keyframes intro-ink { to { fill-opacity: 1; } }
+@keyframes intro-caption { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes intro-exit { to { opacity: 0; visibility: hidden; } }
+@keyframes intro-page { from { opacity: .3; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-intro] .brand-intro { display: none; }
+  html[data-intro='drawing'] body { overflow: auto; }
+  html[data-intro] :is(.announcement, .site-header, #main-content, .site-footer, .skip-link) { visibility: visible; animation: none; }
+}

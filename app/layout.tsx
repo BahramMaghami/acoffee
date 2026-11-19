@@ -8,6 +8,9 @@ import './auth.css'
 import './brand-theme.css'
 import { getCurrentUser } from '@/lib/current-user'
 import { defaultTheme, themeScript } from './theme'
+import { BrandIntro } from './brand-intro'
+import { introScript } from './intro'
+import './brand-intro.css'
 
 export const metadata: Metadata = {
   title: { default: 'آ طعمی اصیل', template: '%s | آ' },
@@ -23,8 +26,10 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
     <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="h-full antialiased" data-theme={defaultTheme} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: introScript }} />
       </head>
       <body>
+        <BrandIntro />
         <a className="skip-link" href="#main-content">
           رفتن به محتوای صفحه
         </a>
