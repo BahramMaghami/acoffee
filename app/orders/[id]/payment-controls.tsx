@@ -26,10 +26,6 @@ export function PaymentControls({
   canReprice: boolean
   enabled: boolean
 }) {
-  // this is just for testing for payment and this should be asked from chatgpt
-  // canReprice = false
-  // canStart = true
-
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
   const [confirm, setConfirm] = useState(false)

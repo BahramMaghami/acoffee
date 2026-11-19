@@ -44,8 +44,13 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
             dir="ltr"
             onClick={() => setOpen(false)}
           >
-            <span className="brand-mark" aria-hidden="true">A</span>
-            <span className="brand-descriptor" aria-hidden="true"><span>coffee</span><span>roastery</span></span>
+            <span className="brand-mark" aria-hidden="true">
+              A
+            </span>
+            <span className="brand-descriptor" aria-hidden="true">
+              <span>coffee</span>
+              <span>roasters</span>
+            </span>
           </Link>
           <nav className="desktop-nav" aria-label="منوی اصلی">
             {links.map((link) => (

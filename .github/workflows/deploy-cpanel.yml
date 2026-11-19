@@ -23,7 +23,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS"
+          if [ -z "$SSH_KEY" ]; then
+            echo '::error::CPANEL_SSH_KEY is missing. Add it to the production environment secrets.'
+            exit 1
+          fi
+          if [ -z "$KNOWN_HOSTS" ]; then
+            echo '::error::CPANEL_KNOWN_HOSTS is missing. Add it to the production environment secrets.'
+            exit 1
+          fi
           [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
           umask 077
           mkdir -p "$HOME/.ssh"
