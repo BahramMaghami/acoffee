@@ -11,8 +11,11 @@ export const grindDevices = [
   { value: 'HOME_ESPRESSO', label: 'اسپرسوساز خانگی' },
   { value: 'SEMI_COMMERCIAL', label: 'دستگاه نیمه‌صنعتی' },
   { value: 'COMMERCIAL', label: 'دستگاه صنعتی' },
+  { value: 'V60_AEROPRESS', label: 'وی 60 / اروپرس' },
+  { value: 'FRENCH_PRESS', label: 'فرنچ پرس و قهوه پیستونی' },
+  { value: 'CHEMEX_CLEVER', label: 'کمکس/کلور' },
 ] as const
-export const grindDeviceValues = ['MOKA_POT', 'HOME_ESPRESSO', 'SEMI_COMMERCIAL', 'COMMERCIAL'] as const
+export const grindDeviceValues = ['MOKA_POT', 'HOME_ESPRESSO', 'SEMI_COMMERCIAL', 'COMMERCIAL', 'V60_AEROPRESS', 'FRENCH_PRESS', 'CHEMEX_CLEVER'] as const
 export type GrindDevice = (typeof grindDeviceValues)[number]
 export const isGrindDevice = (value: unknown): value is GrindDevice => grindDevices.some(option => option.value === value)
 export const grindDeviceLabel = (value: string | null | undefined) => grindDevices.find(option => option.value === value)?.label ?? 'دستگاه ثبت نشده'

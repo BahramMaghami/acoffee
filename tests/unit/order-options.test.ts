@@ -30,7 +30,7 @@ test('devices separate identical SKUs, merge exact selections and retain legacy 
   assert.equal(cartInputSchema.safeParse(lines.slice(0, 2)).success, true)
   assert.equal(cartInputSchema.safeParse([lines[0], lines[0]]).success, false)
   for (const grindDevice of [null, undefined, '', 'FAKE']) assert.equal(cartInputSchema.safeParse([{ ...item, grindDevice }]).success, false)
-  for (const grindDevice of ['MOKA_POT', 'HOME_ESPRESSO', 'SEMI_COMMERCIAL', 'COMMERCIAL']) {
+  for (const grindDevice of ['MOKA_POT', 'HOME_ESPRESSO', 'SEMI_COMMERCIAL', 'COMMERCIAL', 'V60_AEROPRESS', 'FRENCH_PRESS', 'CHEMEX_CLEVER']) {
     assert.equal(cartInputSchema.safeParse([{ ...item, grindDevice }]).success, true)
     assert.equal(cartInputSchema.safeParse([{ ...item, grind: 'WHOLE_BEAN', grindDevice }]).success, false)
   }
@@ -38,6 +38,20 @@ test('devices separate identical SKUs, merge exact selections and retain legacy 
   assert.match(preparationLabel('GROUND', null), /دستگاه ثبت نشده/)
   assert.match(preparationLabel('GROUND', 'MOKA_POT'), /موکاپات/)
   assert.doesNotMatch(preparationLabel('WHOLE_BEAN', null), /دستگاه/)
+})
+
+test('new brewing devices survive cart storage, keep separate lines and display their labels', () => {
+  const choices = [
+    ['V60_AEROPRESS', 'وی 60 / اروپرس'],
+    ['FRENCH_PRESS', 'فرنچ پرس و قهوه پیستونی'],
+    ['CHEMEX_CLEVER', 'کمکس/کلور'],
+  ] as const
+  const items = choices.map(([grindDevice]) => ({ productId: 'coffee', quantity: 1, grind: 'GROUND', grindDevice }))
+  const parsed = parseCart(JSON.stringify([...items, items[0]]))
+  assert.equal(parsed.length, 3)
+  assert.deepEqual(parsed.map(item => item.quantity), [2, 1, 1])
+  assert.equal(cartInputSchema.safeParse(parsed).success, true)
+  for (const [device, label] of choices) assert.equal(preparationLabel('GROUND', device), `آسیاب‌شده · ${label}`)
 })
 
 test('delivery is mandatory, restricted to supported options, and legacy orders never receive an invented label', () => {

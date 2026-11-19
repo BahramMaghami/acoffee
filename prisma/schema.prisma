@@ -163,6 +163,9 @@ enum GrindDevice {
   HOME_ESPRESSO
   SEMI_COMMERCIAL
   COMMERCIAL
+  V60_AEROPRESS
+  FRENCH_PRESS
+  CHEMEX_CLEVER
 }
 
 enum ShippingMethod {

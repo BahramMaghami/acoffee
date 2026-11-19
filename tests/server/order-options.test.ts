@@ -21,6 +21,13 @@ test('quotes snapshot both grinds, detect changes, and reject unavailable or leg
   assert.deepEqual(quote.items.map(item => item.grind), ['GROUND', 'WHOLE_BEAN'])
   assert.deepEqual(quote.items.map(item => item.grindDevice), ['MOKA_POT', null])
   assert.equal(quote.total, 3000)
+  for (const device of ['V60_AEROPRESS', 'FRENCH_PRESS', 'CHEMEX_CLEVER']) {
+    f.cart.items[0].grindDevice = device
+    const updated = await checkoutQuote('owner', db)
+    assert.equal(updated.items[0].grindDevice, device)
+    assert.notEqual(updated.quoteHash, quote.quoteHash)
+    assert.equal(updated.total, quote.total)
+  }
   f.cart.items[0].grindDevice = 'HOME_ESPRESSO'
   assert.notEqual((await checkoutQuote('owner', db)).quoteHash, quote.quoteHash)
   assert.equal((await checkoutQuote('owner', db)).total, quote.total)
