@@ -48,9 +48,9 @@ export default function GuidePage() {
     <div className="shell page-space">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">از دانه تا فنجان</span>
-          <h1>خوب دم کن، آرام لذت ببر.</h1>
-          <p>چند نقطهٔ شروع ساده برای یک فنجان بهتر در خانه.</p>
+          <span className="eyebrow">دم‌آوری در خانه</span>
+          <h1>راهنمای دم‌آوری قهوه</h1>
+          <p>مقدار قهوه، درجهٔ آسیاب و مراحل دم‌آوری با سه وسیلهٔ رایج.</p>
         </div>
         <Coffee size={46} strokeWidth={1} className="guide-icon" />
       </div>
@@ -71,7 +71,7 @@ export default function GuidePage() {
         ))}
       </div>
       <div className="guide-bottom">
-        <p>روش دم‌آوری‌ات را پیدا کردی؟ حالا نوبت قهوه است.</p>
+        <p>قهوه را با آسیاب مناسب وسیلهٔ دم‌آوری‌ات سفارش بده.</p>
         <Button asChild>
           <Link href="/shop">
             انتخاب قهوه <ArrowLeft />

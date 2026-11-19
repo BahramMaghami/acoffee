@@ -9,19 +9,15 @@ export function HomeHero() {
       <div className="hero-copy">
         <div className="eyebrow">
           <span className="little-line" />
-          قهوه، به وقت خودت
+          قهوه‌های آ
         </div>
         <h1>
-          روز خوب،
+          آ
           <br />
-          از یک <span>فنجان</span>
-          <br />
-          شروع می‌شود.
+          طعمی <span>اصیل</span>
         </h1>
         <p>
-          گاهی همه‌چیز از یک مکث کوچک شروع می‌شود.
-          <br className="desktop-break" /> قهوه‌ات را پیدا کن؛ بقیهٔ روز را به
-          خودت بسپار.
+          قهوه را با وزن، رست و آسیاب موردنظرت سفارش بده.
         </p>
         <div className="hero-cta">
           <Button asChild size="lg">
@@ -32,10 +28,6 @@ export function HomeHero() {
           <Link className="quiet-link" href="/about">
             با آ آشنا شو <ArrowDownLeft size={17} />
           </Link>
-        </div>
-        <div className="hero-footnote">
-          <span dir="ltr">A LITTLE RITUAL. A BETTER DAY.</span>
-          <span>آیین کوچکِ هر روز</span>
         </div>
       </div>
       <div className="hero-visual">

@@ -22,11 +22,9 @@ export default function AuthLayout({
             priority
           />
           <div className="auth-photo-copy">
-            <span dir="ltr">A LITTLE RITUAL. A BETTER DAY.</span>
+            <span dir="ltr">A COFFEE ROASTERY</span>
             <p>
-              فنجان تو،
-              <br />
-              جای تو، لحظهٔ تو.
+              آ طعمی اصیل
             </p>
           </div>
         </aside>

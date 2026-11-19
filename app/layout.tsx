@@ -10,9 +10,9 @@ import { getCurrentUser } from '@/lib/current-user'
 import { defaultTheme, themeScript } from './theme'
 
 export const metadata: Metadata = {
-  title: { default: 'آ | قهوه، به وقت خودت', template: '%s | آ' },
+  title: { default: 'آ طعمی اصیل', template: '%s | آ' },
   description:
-    'قهوه‌های آ؛ از ترکیب‌های شکلاتی و عمیق تا عربیکای روشن و میوه‌ای. قهوهٔ مناسب فنجانت را پیدا کن.',
+    'آ طعمی اصیل؛ خرید قهوهٔ ترکیبی، تک‌دان و سنتی با انتخاب وزن، رست و نوع آسیاب.',
 }
 
 export default async function RootLayout({ children }: LayoutProps<'/'>) {

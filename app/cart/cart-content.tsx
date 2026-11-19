@@ -109,7 +109,7 @@ export function CartContent({ products }: { products: StoreProduct[] }) {
       </div>
       <aside className="order-summary">
         <span className="eyebrow">خلاصهٔ سبد</span>
-        <h2>برای فنجان‌های پیش رو</h2>
+        <h2>جزئیات سبد خرید</h2>
         <dl>
           <div>
             <dt>جمع کالاها ({formatNumber(count)} بسته)</dt>

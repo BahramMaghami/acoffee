@@ -12,9 +12,9 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   const destination = safeAuthRedirect(next)
   if (await getCurrentUser()) redirect(destination)
   return <>
-    <span className="eyebrow">آشنایی از یک فنجان شروع می‌شود</span>
-    <h1 className="auth-title">جای تو اینجاست.</h1>
-    <p className="auth-intro">حسابت را بساز و همراه آ باش.</p>
+    <span className="eyebrow">حساب کاربری آ</span>
+    <h1 className="auth-title">ثبت‌نام</h1>
+    <p className="auth-intro">برای ثبت سفارش، حساب کاربری بساز.</p>
     <RegisterForm destination={destination} />
     <p className="auth-switch">قبلاً ثبت‌نام کرده‌ای؟ <Link href={`/login?next=${encodeURIComponent(destination)}`}>وارد شو</Link></p>
   </>

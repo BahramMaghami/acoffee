@@ -30,9 +30,9 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
   return (
     <>
       <div className="announcement">
-        <span>یک مکث کوتاه، یک قهوهٔ خوب.</span>
+        <span>آ طعمی اصیل</span>
         <Link href="/shop">
-          فنجان بعدی‌ات را پیدا کن <ArrowUpLeft size={13} />
+          مشاهدهٔ قهوه‌ها <ArrowUpLeft size={13} />
         </Link>
       </div>
       <header className="site-header">

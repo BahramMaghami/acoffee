@@ -61,7 +61,7 @@ export default async function AccountPage() {
           </dl>
         </section>
         <section className="account-activity">
-          <h2>فنجان‌های پیش رو</h2>
+          <h2>خلاصهٔ حساب</h2>
           <div className="account-stat">
             <ShoppingBag size={20} />
             <span>سفارش‌های من</span>

@@ -9,11 +9,11 @@ export default async function CartPage() {
     <div className="shell page-space">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">انتخاب‌های خوش‌عطر تو</span>
+          <span className="eyebrow">سفارش شما</span>
           <h1>سبد خرید</h1>
-          <p>یک قدم نزدیک‌تر به فنجان بعدی.</p>
+          <p>اقلام و تعداد بسته‌ها را پیش از ادامه بررسی کن.</p>
         </div>
-        <span className="heading-index">YOUR NEXT CUP</span>
+        <span className="heading-index">SHOPPING CART</span>
       </div>
       <CartContent products={products} />
     </div>

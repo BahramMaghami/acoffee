@@ -8,8 +8,8 @@ export default function ShopPage() {
       <div className="page-heading">
         <div>
           <span className="eyebrow">مجموعهٔ آ</span>
-          <h1>هر سلیقه، یک فنجان.</h1>
-          <p>از طعم‌های روشن و میوه‌ای تا ترکیب‌های عمیق و شکلاتی.</p>
+          <h1>قهوه‌های آ</h1>
+          <p>محصولات را بر اساس دسته‌بندی ببین و انتخاب کن.</p>
         </div>
         <span className="heading-index" aria-hidden="true">
           01 / COFFEE

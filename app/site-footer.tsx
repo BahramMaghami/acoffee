@@ -11,9 +11,7 @@ export function SiteFooter() {
               acoffee<span>.</span>
             </Link>
             <p>
-              برای روزهای معمولی،
-              <br />
-              قهوه‌های غیرمعمولی.
+              آ طعمی اصیل
             </p>
             <a
               className="footer-enamad"
@@ -45,17 +43,15 @@ export function SiteFooter() {
             </Link>
           </nav>
           <div className="footer-note">
-            <span className="eyebrow">از دانه تا فنجان</span>
+            <span className="eyebrow">سفارش قهوه</span>
             <p>
-              چیزهای خوب، ساده‌اند.
-              <br />
-              یک قهوه، یک فنجان، کمی وقت برای خودت.
+              انتخاب وزن، رست و آسیاب در صفحهٔ محصول.
             </p>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>آ؛ با حوصله، برای تو.</span>
-          <span dir="ltr">GOOD COFFEE. EVERY DAY.</span>
+          <span>قهوه‌های آ</span>
+          <span dir="ltr">A COFFEE ROASTERY</span>
         </div>
       </div>
     </footer>

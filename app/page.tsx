@@ -20,18 +20,18 @@ export default function HomePage() {
       <div className="promise-strip shell">
         <div>
           <Bean />
-          <span>دانه‌های منتخب</span>
-          <small>هر طعم، با یک انتخاب خوب شروع می‌شود</small>
+          <span>انتخاب رست</span>
+          <small>مدیوم یا مدیوم‌دارک، بسته به محصول</small>
         </div>
         <div>
           <Coffee />
-          <span>آسیاب برای فنجان تو</span>
+          <span>انتخاب آسیاب</span>
           <small>متناسب با روشی که قهوه‌ات را دم می‌کنی</small>
         </div>
         <div>
           <PackageCheck />
-          <span>عطر قهوه، در بسته می‌ماند</span>
-          <small>بسته‌بندی با توجه به تازگی و کیفیت</small>
+          <span>انتخاب وزن</span>
+          <small>بسته‌های خانگی و عمده</small>
         </div>
       </div>
       <section className="story-band">
@@ -42,16 +42,13 @@ export default function HomePage() {
           <div>
             <span className="eyebrow">کمی دربارهٔ ما</span>
             <h2>
-              قهوهٔ خوب،
-              <br />
-              بهانهٔ یک حال خوب.
+              دربارهٔ آ
             </h2>
           </div>
           <div>
             <p>
-              آ از علاقه به همین لحظه‌های ساده شروع شد؛ عطر قهوه در خانه، فنجانی
-              روی میز کار و گپی که کمی طولانی‌تر می‌شود. ما اینجاییم تا سهم
-              کوچکی در این لحظه‌ها داشته باشیم.
+              قهوه‌های آ برای مصرف خانگی، کافه‌ها و شرکت‌ها عرضه می‌شوند.
+              در صفحهٔ هر محصول می‌توانی وزن، نوع قهوه و آسیاب را انتخاب کنی.
             </p>
             <Link className="quiet-link" href="/about">
               داستان آ <ArrowLeft size={18} />
@@ -61,8 +58,8 @@ export default function HomePage() {
       </section>
       <section className="shell brew-teaser">
         <div>
-          <span className="eyebrow">از قهوه‌ات بیشتر لذت ببر</span>
-          <h2>فنجان بهتر، با چند قدم ساده.</h2>
+          <span className="eyebrow">دم‌آوری در خانه</span>
+          <h2>راهنمای دم‌آوری قهوه</h2>
           <p>موکاپات، فرنچ‌پرس یا وی۶۰؟ از همین‌جا شروع کن.</p>
         </div>
         <Button asChild variant="outline" size="lg">
