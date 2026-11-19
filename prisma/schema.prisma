@@ -169,6 +169,7 @@ enum GrindDevice {
 }
 
 enum ShippingMethod {
+  RASHT
   POST
   TIPAX
   COURIER

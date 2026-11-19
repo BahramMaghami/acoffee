@@ -42,6 +42,6 @@ export function ManualPaymentForm({ orderId, updatedAt, amount, canManual, activ
     </form>}
     {message && <p role="status">{message}</p>}
     {form.formState.errors.root && !confirm && <p role="alert">{form.formState.errors.root.message}</p>}
-    {confirm && <ConfirmationDialog title={confirm === 'record' ? 'ثبت پرداخت خارج از درگاه' : 'ابطال ثبت دستی'} description={confirm === 'record' ? 'دریافت کامل مبلغ کالا را تأیید می‌کنی؟ نام مدیر، زمان و توضیح ثبت می‌شود. هزینهٔ ارسال جداگانه است.' : 'ثبت دستی ابطال می‌شود؛ سابقه و سهمیهٔ مصرف‌شدهٔ تخفیف باقی می‌مانند. این کار بازپرداخت بانکی انجام نمی‌دهد.'} confirmLabel="ثبت تغییر" pending={pending} error={form.formState.errors.root?.message ?? null} onCancel={() => setConfirm(null)} onConfirm={() => submit(confirm)} />}
+    {confirm && <ConfirmationDialog title={confirm === 'record' ? 'ثبت پرداخت خارج از درگاه' : 'ابطال ثبت دستی'} description={confirm === 'record' ? 'دریافت کامل مبلغ سفارش را تأیید می‌کنی؟ نام مدیر، زمان و توضیح ثبت می‌شود.' : 'ثبت دستی ابطال می‌شود؛ سابقه و سهمیهٔ مصرف‌شدهٔ تخفیف باقی می‌مانند. این کار بازپرداخت بانکی انجام نمی‌دهد.'} confirmLabel="ثبت تغییر" pending={pending} error={form.formState.errors.root?.message ?? null} onCancel={() => setConfirm(null)} onConfirm={() => submit(confirm)} />}
   </div>
 }

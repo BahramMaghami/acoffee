@@ -2,7 +2,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import type { Prisma } from '@/generated/prisma/client'
 import { getDb } from './db'
-import { isShippingMethod } from './order-options'
+import { isShippingMethod, shippingFees } from './order-options'
 import { grindSelectionSchema } from './validators/checkout'
 import { resolveDiscountCode } from './discount-codes'
 import { verifiedContactPhone, addressContactDefaults } from './address-contact'
@@ -79,9 +79,9 @@ export async function checkoutQuote(
   const coupon = discountCode ? await resolveDiscountCode(db, discountCode, userId, subtotal) : null
   const discount = coupon?.amount ?? 0
   const quoteHash = createHash('sha256')
-    .update(JSON.stringify({ items, shipping, fee, coupon, source: cart.repriceSourceId ?? null }))
+    .update(JSON.stringify({ items, shipping, fee, shippingFees, coupon, source: cart.repriceSourceId ?? null }))
     .digest('hex')
-  const baseQuoteHash = createHash('sha256').update(JSON.stringify({ items, shipping, fee, coupon: null, source: cart.repriceSourceId ?? null })).digest('hex')
+  const baseQuoteHash = createHash('sha256').update(JSON.stringify({ items, shipping, fee, shippingFees, coupon: null, source: cart.repriceSourceId ?? null })).digest('hex')
   return {
     repriceSourceId: cart.repriceSourceId ?? null,
     checkoutKey: cart.checkoutKey,

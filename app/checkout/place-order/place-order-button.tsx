@@ -12,7 +12,7 @@ import { shippingSelectionSchema } from '@/lib/validators/checkout'
 import { shippingMethods, type ShippingMethod } from '@/lib/order-options'
 import { useCart, rememberOrderCart } from '@/app/cart/cart-store'
 
-export function PlaceOrderButton({ checkoutKey, quoteHash, initialShippingMethod = null, discountCode, disabled = false, onPendingChange }: { checkoutKey: string; quoteHash: string; initialShippingMethod?: ShippingMethod | null; discountCode?: string; disabled?: boolean; onPendingChange?: (pending: boolean) => void }) {
+export function PlaceOrderButton({ checkoutKey, quoteHash, initialShippingMethod = null, discountCode, disabled = false, onPendingChange, onShippingChange }: { checkoutKey: string; quoteHash: string; initialShippingMethod?: ShippingMethod | null; discountCode?: string; disabled?: boolean; onPendingChange?: (pending: boolean) => void; onShippingChange?: (method: ShippingMethod | null) => void }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const router = useRouter()
@@ -37,7 +37,7 @@ export function PlaceOrderButton({ checkoutKey, quoteHash, initialShippingMethod
   })}>
     <div className="form-field">
       <label htmlFor="shipping-method">روش دریافت سفارش</label>
-      <select id="shipping-method" {...form.register('shippingMethod')} disabled={pending || disabled} aria-invalid={Boolean(form.formState.errors.shippingMethod)} aria-describedby="shipping-method-error shipping-method-note">
+      <select id="shipping-method" {...form.register('shippingMethod', { onChange: event => onShippingChange?.(event.target.value || null) })} disabled={pending || disabled} aria-invalid={Boolean(form.formState.errors.shippingMethod)} aria-describedby="shipping-method-error shipping-method-note">
         <option value="">روش دریافت را انتخاب کن</option>
         {shippingMethods.map(method => <option key={method.value} value={method.value}>{method.label}</option>)}
       </select>

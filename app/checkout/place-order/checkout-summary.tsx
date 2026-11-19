@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { applyDiscountCodeSchema } from '@/lib/validators/discount-codes'
 import { applyDiscountCodeAction } from '@/actions/discount-code.actions'
 import { formatPrice } from '@/lib/storefront'
-import type { ShippingMethod } from '@/lib/order-options'
+import { shippingCharge, type ShippingMethod } from '@/lib/order-options'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlaceOrderButton } from './place-order-button'
@@ -17,6 +17,8 @@ export function CheckoutSummary({ quote, initialShippingMethod }: { quote: Summa
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [placing, setPlacing] = useState(false)
+  const [shippingMethod, setShippingMethod] = useState(initialShippingMethod)
+  const delivery = shippingCharge(shippingMethod)
   const [applied, setApplied] = useState<(Summary & { code: string; discount: number }) | null>(null)
   const form = useForm<{ code: string; checkoutKey: string; quoteHash: string }>({ resolver: zodResolver(applyDiscountCodeSchema), defaultValues: { code: '', checkoutKey: quote.checkoutKey, quoteHash: quote.quoteHash } })
   const current = applied ?? quote
@@ -44,10 +46,10 @@ export function CheckoutSummary({ quote, initialShippingMethod }: { quote: Summa
     </form>
     <dl><div><dt>جمع کالاها</dt><dd>{formatPrice(current.subtotal)}</dd></div>
       {applied && <div><dt>تخفیف کد</dt><dd>− {formatPrice(applied.discount)}</dd></div>}
-      <div><dt>هزینهٔ ارسال</dt><dd>جداگانه دریافت می‌شود</dd></div>
-      <div className="summary-total"><dt>مبلغ قابل پرداخت کالا</dt><dd>{formatPrice(current.total)}</dd></div>
+      <div><dt>هزینهٔ ارسال</dt><dd>{delivery.finalized ? formatPrice(delivery.fee) : shippingMethod ? 'جداگانه دریافت می‌شود' : 'روش ارسال را انتخاب کن'}</dd></div>
+      <div className="summary-total"><dt>مبلغ قابل پرداخت</dt><dd>{formatPrice(current.total + delivery.fee)}</dd></div>
     </dl>
-    <PlaceOrderButton checkoutKey={current.checkoutKey} quoteHash={current.quoteHash} discountCode={applied?.code} initialShippingMethod={initialShippingMethod} disabled={pending || unapplied} onPendingChange={setPlacing} />
-    <p>هزینهٔ ارسال جداگانه دریافت می‌شود. وضعیت پرداخت پس از تأیید درگاه در سفارش ثبت می‌شود.</p>
+    <PlaceOrderButton checkoutKey={current.checkoutKey} quoteHash={current.quoteHash} discountCode={applied?.code} initialShippingMethod={initialShippingMethod} disabled={pending || unapplied} onPendingChange={setPlacing} onShippingChange={setShippingMethod} />
+    <p>{delivery.finalized ? 'هزینهٔ ارسال داخل شهر رشت در مبلغ قابل پرداخت محاسبه شده است.' : 'هزینهٔ پست، تیپاکس و پیک جداگانه دریافت می‌شود.'} وضعیت پرداخت پس از تأیید درگاه در سفارش ثبت می‌شود.</p>
   </aside>
 }

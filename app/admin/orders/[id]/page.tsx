@@ -62,7 +62,7 @@ export default async function AdminOrderPage({
       </section>
       <section className="admin-order-panel">
         <h2>پرداخت و سوابق مالی</h2>
-        <p>{payment.label} · هزینهٔ ارسال جداگانه دریافت می‌شود.</p>
+        <p>{payment.label} · {order.shippingFeeFinalized ? 'هزینهٔ ارسال در مبلغ سفارش محاسبه شده است.' : 'هزینهٔ ارسال جداگانه دریافت می‌شود.'}</p>
         <ManualPaymentForm
           key={order.updatedAt.toISOString()}
           orderId={order.id}

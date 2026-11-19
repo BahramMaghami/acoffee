@@ -126,7 +126,7 @@ export default async function OrderPage({
               <dd>{formatPrice(Number(order.total))}</dd>
             </div>
           </dl>
-          <p>هزینهٔ ارسال جداگانه دریافت می‌شود.</p>
+          <p>{order.shippingFeeFinalized ? 'هزینهٔ ارسال در مبلغ سفارش محاسبه شده است.' : 'هزینهٔ ارسال جداگانه دریافت می‌شود.'}</p>
           <PaymentControls orderId={order.id} {...payment} />
           <PaymentHistory payments={order.payments} />
           <Link href="/account" className="quiet-link">

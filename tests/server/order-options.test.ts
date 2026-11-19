@@ -44,7 +44,7 @@ test('quotes snapshot both grinds, detect changes, and reject unavailable or leg
 })
 
 test('previous delivery lookup is scoped to the current user and first order stays empty', async () => {
-  let result: { shippingMethod: 'TIPAX' | 'PICKUP' } | null = null
+  let result: { shippingMethod: 'TIPAX' | 'PICKUP' | 'RASHT' } | null = null
   const db = { order: { findFirst: async (input: unknown) => {
     assert.deepEqual(input, { where: { userId: 'owner', shippingMethod: { not: null } }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: { shippingMethod: true } })
     return result
@@ -52,6 +52,8 @@ test('previous delivery lookup is scoped to the current user and first order sta
   assert.equal(await lastShippingMethod('owner', db), null)
   result = { shippingMethod: 'TIPAX' }
   assert.equal(await lastShippingMethod('owner', db), 'TIPAX')
+  result = { shippingMethod: 'RASHT' }
+  assert.equal(await lastShippingMethod('owner', db), 'RASHT')
   result = { shippingMethod: 'PICKUP' }
   assert.equal(await lastShippingMethod('owner', db), null)
 })
@@ -97,7 +99,7 @@ test('cart action persists distinct devices and rejects incomplete or forged pre
 
 test('order action validates delivery, saves immutable snapshots and preserves idempotency and ownership', async () => {
   const f = fixture()
-  type Stored = { id: string; userId: string; shippingMethod: string; items: { create: { grind: string; grindDevice: string | null }[] }; addressLine: string }
+  type Stored = { id: string; userId: string; shippingMethod: string; shippingFee: number; shippingFeeFinalized: boolean; total: number; items: { create: { grind: string; grindDevice: string | null }[] }; addressLine: string }
   let saved: Stored | null = null, creates = 0
   const db = { ...f.db, $queryRaw: async () => [],
     order: { findUnique: async () => saved, create: async ({ data }: { data: Omit<Stored, 'id'> }) => {
@@ -133,6 +135,9 @@ test('order action validates delivery, saves immutable snapshots and preserves i
   assert.equal((await place(input)).success, true)
   const order = saved! as Stored
   assert.equal(order.userId, 'owner'); assert.equal(order.shippingMethod, 'TIPAX')
+  assert.equal(order.shippingFee, 0)
+  assert.equal(order.shippingFeeFinalized, false)
+  assert.equal(order.total, 3000)
   assert.deepEqual(order.items.create.map(item => item.grind), ['GROUND', 'WHOLE_BEAN'])
   assert.deepEqual(order.items.create.map(item => item.grindDevice), ['MOKA_POT', null])
   f.address.addressLine = 'نشانی تغییر کرده'; f.cart.items[0].grind = 'WHOLE_BEAN'
@@ -141,4 +146,16 @@ test('order action validates delivery, saves immutable snapshots and preserves i
   assert.equal(order.items.create[0].grindDevice, 'MOKA_POT')
   assert.equal(order.items.create[0].grind, 'GROUND'); assert.equal(order.addressLine, 'نشانی آزمایشی پلاک ۱')
   state.user = { id: 'another-user' }; assert.equal((await place(input)).success, false)
+  state.user = { id: 'owner' }; saved = null
+  f.cart.items[0].grind = 'GROUND'
+  const refreshed = await checkoutQuote('owner', f.db as unknown as Parameters<typeof checkoutQuote>[1])
+  const rasht = { ...input, quoteHash: refreshed.quoteHash, shippingMethod: 'RASHT', shippingFee: 1, total: 1 }
+  assert.equal((await place(rasht)).success, true)
+  const localOrder = saved! as Stored
+  assert.equal(localOrder.shippingFee, 100_000)
+  assert.equal(localOrder.shippingFeeFinalized, true)
+  assert.equal(localOrder.total, 103_000)
+  assert.equal(localOrder.shippingMethod, 'RASHT')
+  assert.equal((await place(rasht)).orderId, 'saved-order')
+  assert.equal(creates, 2)
 })

@@ -12,6 +12,7 @@ import { lockDiscountCode, reserveDiscount, releaseDiscount } from '@/lib/discou
 import { DiscountCodeError } from '@/lib/discount-code-rules'
 import { paymentConfig, paymentLifetimeMs, tomanToRial, requireGatewayMinimum, canDeleteFinancialOrder, PaymentError } from '@/lib/payment-rules'
 import { lockPaymentOrder } from '@/lib/payments'
+import { shippingCharge } from '@/lib/order-options'
 
 export async function manageOrderAction(
   input: unknown,
@@ -125,7 +126,11 @@ export async function placeOrderAction(input: unknown) {
           throw new CheckoutError(
             'سبد، آدرس یا قیمت تغییر کرده است. صفحه را تازه کن و دوباره تأیید کن.',
           )
-        requireGatewayMinimum(tomanToRial(quote.total))
+        const delivery = shippingCharge(parsed.data.shippingMethod)
+        const total = quote.total + delivery.fee
+        if (!Number.isSafeInteger(total) || total > 99_999_999_999_999)
+          throw new CheckoutError('مبلغ سفارش بیش از حد مجاز است.')
+        requireGatewayMinimum(tomanToRial(total))
         const expiresAt = new Date(Date.now() + paymentLifetimeMs)
         if (quote.repriceSourceId) {
           const source = await tx.order.findFirst({ where: { id: quote.repriceSourceId, userId: user.id }, select: { id: true, paymentStatus: true, status: true } })
@@ -141,8 +146,9 @@ export async function placeOrderAction(input: unknown) {
             ...quote.shipping,
             shippingMethod: parsed.data.shippingMethod,
             subtotal: quote.subtotal,
-            shippingFee: quote.shippingFee,
-            total: quote.total,
+            shippingFee: delivery.fee,
+            shippingFeeFinalized: delivery.finalized,
+            total,
             discount: quote.discount,
             discountCode: quote.coupon?.code ?? null,
             discountCodeType: quote.coupon?.type ?? null,

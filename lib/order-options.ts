@@ -29,8 +29,14 @@ export const shippingMethods = [
   { value: 'POST', label: 'پست' },
   { value: 'TIPAX', label: 'تیپاکس' },
   { value: 'COURIER', label: 'پیک' },
+  { value: 'RASHT', label: 'ارسال داخل شهر رشت' },
 ] as const
-export const shippingValues = ['POST', 'TIPAX', 'COURIER'] as const
+export const shippingValues = ['POST', 'TIPAX', 'COURIER', 'RASHT'] as const
+export const shippingFees = { POST: 0, TIPAX: 0, COURIER: 0, RASHT: 100_000 } as const
+export const shippingCharge = (method: ShippingMethod | null) => ({
+  fee: method ? shippingFees[method] : 0,
+  finalized: method === 'RASHT',
+})
 export type ShippingMethod = (typeof shippingMethods)[number]['value']
 export const isShippingMethod = (value: unknown): value is ShippingMethod => shippingMethods.some(option => option.value === value)
 // Keep historical orders readable while rejecting pickup on all new orders.
