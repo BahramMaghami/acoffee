@@ -8,12 +8,13 @@ mkdir -p tmp
 touch tmp/restart.txt
 # LiteSpeed on this host did not honor restart.txt. Only signal this user's
 # processes whose entire title identifies this exact application directory.
-while read -r pid args; do
+# A pipe works inside CloudLinux/CageFS even when /dev/fd is unavailable.
+ps -u "$(id -u)" -o pid=,args= | while read -r pid args; do
   if [ "$args" = "lsnode:$APP_ROOT/" ] || [ "$args" = "lsnode:$APP_ROOT" ]; then
     current="$(ps -p "$pid" -o args= 2>/dev/null || true)"
     if [ "$current" = "$args" ]; then kill -TERM "$pid"; fi
   fi
-done < <(ps -u "$(id -u)" -o pid=,args=)
+done
 for attempt in {1..12}; do
   if curl --silent --show-error --fail --max-time 15 \
       --resolve acoffeeroasters.com:443:213.176.126.248 \
