@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { PrismaNeon } from '@prisma/adapter-neon'
+import { createDatabaseAdapter } from '../lib/database-adapter'
 import { Prisma, PrismaClient } from '../generated/prisma/client'
 import { products, variants, categories, storefrontImages } from '../lib/catalog-fixture'
 import { categoryDefaults } from '../lib/product-pricing'
@@ -8,7 +8,7 @@ const apply = process.argv.includes('--apply')
 // Explicitly reviewed legacy SKUs can remain unattached and unchanged. Never
 // silently ignore new unknown records or map them to a different product.
 const preservedSlugs = new Set(process.argv.filter(arg => arg.startsWith('--preserve-unmapped=')).flatMap(arg => arg.slice('--preserve-unmapped='.length).split(',')).filter(Boolean))
-const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15000 }) })
+const db = new PrismaClient({ adapter: createDatabaseAdapter() })
 try {
   // This query works before the schema migration and never mutates data.
   const existing = await db.product.findMany({ select: { id: true, slug: true, price: true, weightGrams: true, isActive: true, imageUrl: true } })

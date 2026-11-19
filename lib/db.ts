@@ -1,21 +1,10 @@
 import 'server-only'
 
-import { PrismaNeon } from '@prisma/adapter-neon'
+import { createDatabaseAdapter } from './database-adapter'
 import { Prisma, PrismaClient } from '@/generated/prisma/client'
 
 function createDb() {
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) {
-    throw new Error(
-      'DATABASE_URL is required. Configure the Neon pooled URL in .env.',
-    )
-  }
-
-  const adapter = new PrismaNeon({
-    connectionString,
-    connectionTimeoutMillis: 10_000,
-    max: 5,
-  })
+  const adapter = createDatabaseAdapter()
 
   return new PrismaClient({
     adapter,

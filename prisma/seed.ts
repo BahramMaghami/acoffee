@@ -3,7 +3,7 @@ import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { createDatabaseAdapter } from "../lib/database-adapter";
 import { compare, hash } from "bcryptjs";
 import { PrismaClient, Role } from "../generated/prisma/client";
 
@@ -35,7 +35,7 @@ async function main() {
   if (!connectionString) throw new Error("DATABASE_URL is required in .env.");
 
   const prisma = new PrismaClient({
-    adapter: new PrismaNeon({ connectionString, connectionTimeoutMillis: 10_000 }),
+    adapter: createDatabaseAdapter(connectionString),
   });
 
   try {
