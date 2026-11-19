@@ -1385,7 +1385,7 @@ p {
     gap: 25px;
   }
   .footer-note {
-    display: none;
+    grid-column: 1 / -1;
   }
   .footer-bottom {
     gap: 15px;

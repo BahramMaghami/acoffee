@@ -43,9 +43,13 @@ export function SiteFooter() {
             </Link>
           </nav>
           <div className="footer-note">
-            <span className="eyebrow">سفارش قهوه</span>
+            <span className="eyebrow">پشتیبانی</span>
             <p>
-              انتخاب وزن، رست و آسیاب در صفحهٔ محصول.
+              برای پشتیبانی با شمارهٔ{' '}
+              <a className="underline underline-offset-4" href="tel:09115905681">
+                <bdi dir="ltr">۰۹۱۱۵۹۰۵۶۸۱</bdi>
+              </a>{' '}
+              تماس بگیرید.
             </p>
           </div>
         </div>
