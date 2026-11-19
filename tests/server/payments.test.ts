@@ -5,6 +5,36 @@ import { paymentService } from '../../lib/payments'
 import { canDeleteFinancialOrder, paymentLifetimeMs } from '../../lib/payment-rules'
 import { GatewayError } from '../../lib/zarinpal'
 
+test('settlement clears only its own checkout cart, and pending payments keep the cart', async () => {
+  for (const key of ['checkout', 'new-checkout']) {
+    const f = paymentFixture()
+    f.state.order.checkoutKey = 'checkout'
+    f.state.cart!.checkoutKey = key
+    await f.service.begin('order', owner)
+    assert.ok(f.state.cart)
+    await f.service.check('order', undefined, f.state.payments[0].authority!, 'OK')
+    assert.equal(f.state.order.paymentStatus, 'PAID')
+    assert.equal(f.state.cart?.checkoutKey ?? null, key === 'checkout' ? null : key)
+    f.state.cart = { userId: 'owner', checkoutKey: 'later-checkout' }
+    await f.service.check('order')
+    assert.equal(f.state.cart.checkoutKey, 'later-checkout')
+  }
+})
+
+test('unknown verification preserves cart and zero-total settlement clears it', async () => {
+  const pending = paymentFixture()
+  pending.state.order.checkoutKey = 'checkout'
+  await pending.service.begin('order', owner)
+  pending.gateway.verify = async () => { throw Error('timeout') }
+  await pending.service.check('order', undefined, pending.state.payments[0].authority!, 'OK')
+  assert.equal(pending.state.cart?.checkoutKey, 'checkout')
+  const free = paymentFixture({ total: 0 })
+  free.state.order.checkoutKey = 'checkout'
+  await free.service.begin('order', owner)
+  assert.equal(free.state.order.paymentStatus, 'PAID')
+  assert.equal(free.state.cart, null)
+})
+
 test('an OK callback is not proof of payment when the gateway rejects verification', async () => {
   const f = paymentFixture({ coupon: true })
   await f.service.begin('order', owner)

@@ -8,6 +8,7 @@ import { formatNumber, formatPrice } from '@/lib/storefront'
 import { formatPersianDate } from '@/lib/date'
 import { PaymentControls } from './payment-controls'
 import { PaymentHistory } from './payment-history'
+import { PaidCartSync } from './paid-cart-sync'
 import { paymentView } from '@/lib/payment-view'
 import { preparationLabel, shippingLabel } from '@/lib/order-options'
 import '../../checkout/checkout.css'
@@ -36,6 +37,7 @@ export default async function OrderPage({
   const payment = paymentView(order)
   return (
     <div className="shell page-space checkout-page">
+      {order.paymentStatus === 'PAID' && <PaidCartSync orderId={order.id} items={order.items.map(item => ({ productId: item.productSlug, quantity: item.quantity, grind: item.grind, grindDevice: item.grindDevice }))} />}
       <div className="page-heading">
         <div>
           <span className="eyebrow">

@@ -103,6 +103,8 @@ export function paymentService(
       where: { id: order.id },
       data: { paymentStatus: 'PAID', paidAt: now() },
     })
+    // A later checkout has a different key and must survive an older payment.
+    if (order.checkoutKey) await tx.cart.deleteMany({ where: { userId: order.userId, checkoutKey: order.checkoutKey } })
   }
   async function failed(
     tx: Prisma.TransactionClient,

@@ -10,20 +10,24 @@ import { placeOrderAction } from '@/actions/order.actions'
 import { startPaymentAction } from '@/actions/payment.actions'
 import { shippingSelectionSchema } from '@/lib/validators/checkout'
 import { shippingMethods, type ShippingMethod } from '@/lib/order-options'
+import { useCart, rememberOrderCart } from '@/app/cart/cart-store'
 
 export function PlaceOrderButton({ checkoutKey, quoteHash, initialShippingMethod = null, discountCode, disabled = false, onPendingChange }: { checkoutKey: string; quoteHash: string; initialShippingMethod?: ShippingMethod | null; discountCode?: string; disabled?: boolean; onPendingChange?: (pending: boolean) => void }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const router = useRouter()
+  const cart = useCart()
   const form = useForm<{ shippingMethod: ShippingMethod }>({ resolver: zodResolver(shippingSelectionSchema), defaultValues: { shippingMethod: initialShippingMethod ?? undefined } })
   return <form className="delivery-form" noValidate aria-busy={pending} onSubmit={form.handleSubmit(values => {
     setError('')
     if (disabled || pending) return
     onPendingChange?.(true)
+    const submittedItems = cart.items.map(item => ({ ...item }))
     startTransition(async () => {
       try {
         const result = await placeOrderAction({ checkoutKey, quoteHash, discountCode, ...values })
         if (!result.success) { setError(result.message); return }
+        rememberOrderCart(result.orderId, submittedItems)
         const payment = await startPaymentAction({ orderId: result.orderId })
         if (payment.success && payment.redirectUrl) { window.location.assign(payment.redirectUrl); return }
         router.replace(`/orders/${result.orderId}`)

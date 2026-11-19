@@ -15,6 +15,7 @@ export function paymentFixture({ coupon = false, total = 10000 } = {}) {
       paymentEnvironment: 'SANDBOX', paymentExpiresAt: new Date(clock + 30 * 60000), updatedAt: new Date(clock),
       discountCode: coupon ? 'ABCD234567' : null, supersededAt: null, paidAt: null } as unknown as Order,
     payments: [] as PaymentAttempt[], redemptions: [] as DiscountRedemption[],
+    cart: { userId: 'owner', checkoutKey: 'checkout' } as { userId: string; checkoutKey: string } | null,
     reservation: (coupon ? { id: 'reservation', orderId: 'order', userId: 'owner', discountCodeId: 'coupon', amount: 2000, status: 'ACTIVE', environment: 'SANDBOX', expiresAt: new Date(clock + 30 * 60000) } : null) as unknown as DiscountReservation | null,
     requests: 0, verifies: 0, inquiries: 0, failSettlement: false, version: 0,
     bank: 'PAID' as Awaited<ReturnType<PaymentGateway['inquiry']>>,
@@ -29,6 +30,10 @@ export function paymentFixture({ coupon = false, total = 10000 } = {}) {
   }
   function update(row: object, data: object) { Object.assign(row, data, { updatedAt: new Date(++clock) }); return row }
   const tx = {
+    cart: { deleteMany: async ({ where }: { where: Where }) => {
+      if (state.cart && matches(state.cart, where)) { state.cart = null; return { count: 1 } }
+      return { count: 0 }
+    } },
     $queryRaw: async () => [],
     user: { findUnique: async ({ where }: { where: { id: string } }) => ['owner', 'admin'].includes(where.id) ? { name: where.id, sessionVersion: state.version, role: where.id === 'admin' ? 'ADMIN' : 'CUSTOMER' } : null },
     order: {
@@ -64,7 +69,7 @@ export function paymentFixture({ coupon = false, total = 10000 } = {}) {
   const db = { ...tx, $transaction: async (fn: (transaction: typeof tx) => Promise<unknown>) => {
     const previous = queue; let release!: () => void
     queue = new Promise<void>(resolve => { release = resolve }); await previous
-    const saved = structuredClone({ order: state.order, payments: state.payments, reservation: state.reservation, redemptions: state.redemptions })
+    const saved = structuredClone({ order: state.order, payments: state.payments, reservation: state.reservation, redemptions: state.redemptions, cart: state.cart })
     try { return await fn(tx) } catch (error) { Object.assign(state, saved); throw error } finally { release() }
   } } as unknown as ReturnType<typeof getDb>
   const gateway: PaymentGateway = {
