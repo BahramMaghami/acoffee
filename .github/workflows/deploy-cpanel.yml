@@ -1,0 +1,37 @@
+name: Deploy cPanel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cpanel-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Deploy through SSH
+        env:
+          SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+          DEPLOY_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS"
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          trap 'rm -f "$HOME/.ssh/acoffee_deploy"' EXIT
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/acoffee_deploy"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/acoffee_deploy" -o IdentitiesOnly=yes \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=6 \
+            acoffeer@213.176.126.133 \
+            "bash /home/acoffeer/repositories/acoffee/scripts/deploy-github.sh $DEPLOY_SHA"

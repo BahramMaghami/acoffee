@@ -18,7 +18,9 @@ node -e 'if (Number(process.versions.node.split(".")[0]) !== 24) { console.error
 
 # Prevent two deployments from installing/building in the same directory.
 mkdir -p tmp
-exec 9>tmp/deploy.lock
+if [ "${ACOFFEE_DEPLOY_LOCK_HELD:-0}" != 1 ]; then
+  exec 9>tmp/deploy.lock
+fi
 flock -n 9 || { echo "Another deployment is running."; exit 1; }
 
 # cPanel application variables are not necessarily inherited by Git deployment.
@@ -38,13 +40,14 @@ npm rebuild --ignore-scripts=false esbuild sharp @prisma/engines
 
 cd "$APP_ROOT"
 test -f "$APP_ROOT/prisma/schema.prisma"
-node "$APP_ROOT/node_modules/prisma/build/index.js" generate --config "$APP_ROOT/prisma.config.ts"
+node "$APP_ROOT/node_modules/prisma/build/index.js" generate --config "$APP_ROOT/prisma.config.ts" --no-hints
 
 # Webpack supports CloudLinux's external node_modules symlink without Turbopack
 # workspace-root restrictions. The normal Vercel build remains unchanged.
 node "$APP_ROOT/node_modules/next/dist/bin/next" build "$APP_ROOT" --webpack
 test -s .next/BUILD_ID
 
-# Passenger restarts on the next request, only after a successful build.
-touch tmp/restart.txt
-echo "Build complete; Passenger restart requested. No database migration was run."
+# Stamp the completed build; the startup process reads this once for verification.
+git rev-parse HEAD > .next/DEPLOY_COMMIT
+bash "$APP_ROOT/scripts/restart-cpanel.sh"
+echo "Deployment verified. No database migration or seed was run."
