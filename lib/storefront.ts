@@ -3,7 +3,7 @@ import type { GrindOption } from './order-options'
 export const formatNumber = (value: number) => new Intl.NumberFormat('fa-IR').format(value)
 export const formatPrice = (value: number) => formatNumber(value) + ' تومان'
 export const formatWeight = (grams: number) => grams >= 1000 ? formatNumber(grams / 1000) + ' کیلوگرم' : formatNumber(grams) + ' گرم'
-export const storefrontImages = { light: '/images/acoffee.jpg', dark: '/images/acoffee-cinematic.png' } as const
+export const storefrontImages = { light: '/images/acoffee.jpg', dark: '/images/acoffee.jpg' } as const
 export const gradeLabels = { standard: 'Commercial Blend', vip: 'Premium Blend' } as const
 export const roastOptions = [{ value: 'medium', label: 'مدیوم' }, { value: 'medium-dark', label: 'مدیوم-دارک' }] as const
 export const cafeGroups = [{ value: 'robusta', label: 'قهوه‌های روبوستا' }, { value: 'arabica', label: 'قهوه‌های عربیکا' }] as const

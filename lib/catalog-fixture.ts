@@ -7,7 +7,7 @@ export const formatWeight = (grams: number) =>
     : `${formatNumber(grams)} گرم`
 export const storefrontImages = {
   light: '/images/acoffee.jpg',
-  dark: '/images/acoffee-cinematic.png',
+  dark: '/images/acoffee.jpg',
 } as const
 export const gradeLabels = {
   standard: 'Commercial Blend',

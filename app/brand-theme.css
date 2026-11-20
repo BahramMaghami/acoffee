@@ -93,8 +93,6 @@
 /* The saved preference is applied before the first paint. */
 :root { color-scheme: light; --product-photo-background: #151515; --product-photo-caption: #decca9; }
 :root[data-theme='dark'] {
-  --product-photo-background: #e3ddd3;
-  --product-photo-caption: #554731;
   color-scheme: dark;
   --link-accent: #ed9aa0;
   --background: #151413;
@@ -151,8 +149,6 @@
 
 /* The photo and its captions work with either surrounding palette. */
 .hero-photo-caption, .photo-index, .detail-image-caption { color: var(--product-photo-caption); }
-.storefront-image-dark, [data-theme='dark'] .storefront-image-light { display: none; }
-[data-theme='dark'] .storefront-image-dark { display: block; }
 .theme-toggle { flex-shrink: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--foreground); }
 .wholesale-ribbon { position: absolute; top: 0; right: 14px; display: grid; gap: 2px; padding: 12px 10px 20px; text-align: center; background: #8c252d; color: #fff8ee; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 9px), 0 100%); }
 .wholesale-ribbon strong { font-size: 13px; font-weight: 650; }
