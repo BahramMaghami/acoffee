@@ -4,7 +4,11 @@ import { CategorySlider } from './category-slider'
 import { CafeOffer } from './cafe-offer'
 import { Button } from '@/components/ui/button'
 
-export async function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) {
+export async function ShopCatalog({
+  idPrefix = 'shop',
+}: {
+  idPrefix?: string
+}) {
   const { products, categories: visibleCategories } = await getStoreCatalog()
   return (
     <div className="category-catalog">
@@ -17,7 +21,9 @@ export async function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) 
       </nav>
       <div className="category-sliders">
         {visibleCategories.map((category) => {
-          const items = products.filter((product) => product.category === category.value)
+          const items = products.filter(
+            (product) => product.category === category.value,
+          )
           return (
             <div key={category.value}>
               <CategorySlider
@@ -26,7 +32,9 @@ export async function ShopCatalog({ idPrefix = 'shop' }: { idPrefix?: string }) 
                 href={`/shop/category/${category.value}`}
                 count={items.length}
               >
-                {items.map((product) => <ProductCard key={product.id} product={product} />)}
+                {items.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
               </CategorySlider>
               {category.value === 'wholesale' && <CafeOffer />}
             </div>
