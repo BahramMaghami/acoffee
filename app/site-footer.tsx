@@ -10,9 +10,7 @@ export function SiteFooter() {
             <Link href="/" className="wordmark">
               acoffee<span>.</span>
             </Link>
-            <p>
-              آ طعمی اصیل
-            </p>
+            <p>آ طعمی اصیل</p>
             <a
               className="footer-enamad"
               referrerPolicy="origin"
@@ -46,7 +44,10 @@ export function SiteFooter() {
             <span className="eyebrow">پشتیبانی</span>
             <p>
               برای پشتیبانی با شمارهٔ{' '}
-              <a className="underline underline-offset-4" href="tel:09115905681">
+              <a
+                className="underline underline-offset-4"
+                href="tel:09115905681"
+              >
                 <bdi dir="ltr">۰۹۱۱۵۹۰۵۶۸۱</bdi>
               </a>{' '}
               تماس بگیرید.
@@ -56,8 +57,12 @@ export function SiteFooter() {
         <div className="footer-bottom">
           <span>قهوه‌های آ</span>
           <span className="footer-credit">
-            کاری از{' '}
-            <a href="https://bahrammaghami.com" target="_blank" rel="noopener noreferrer">
+            طراح سایت:{' '}
+            <a
+              href="https://bahrammaghami.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               بهرام مقامی
             </a>
           </span>
