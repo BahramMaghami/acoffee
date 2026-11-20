@@ -583,10 +583,21 @@ p {
   border-top: 1px solid #d9d3c8;
   padding-block: 19px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
   justify-content: space-between;
   font-size: 10px;
   color: #867c6d;
 }
+.footer-credit { white-space: nowrap; }
+.footer-credit a {
+  color: var(--link-accent, var(--primary));
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.footer-credit a:hover { text-decoration-thickness: 2px; }
+.footer-credit a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 2px; }
 .footer-bottom [dir='ltr'] {
   font-family: Arial, sans-serif;
   font-size: 8px;

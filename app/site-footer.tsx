@@ -55,6 +55,12 @@ export function SiteFooter() {
         </div>
         <div className="footer-bottom">
           <span>قهوه‌های آ</span>
+          <span className="footer-credit">
+            کاری از{' '}
+            <a href="https://bahrammaghami.com" target="_blank" rel="noopener noreferrer">
+              بهرام مقامی
+            </a>
+          </span>
           <span dir="ltr">A COFFEE ROASTERY</span>
         </div>
       </div>
