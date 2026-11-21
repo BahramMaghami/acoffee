@@ -59,7 +59,7 @@ export function SiteFooter() {
           <span className="footer-credit">
             طراح سایت:{' '}
             <a
-              href="https://bahrammaghami.com"
+              href="https://bahrammaghami.com/fa"
               target="_blank"
               rel="noopener noreferrer"
             >
